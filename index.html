@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>경제 지표 관계도</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard Variable',sans-serif;background:#0f0f14;color:#eee;overflow:hidden;touch-action:none}
+svg{width:100vw;height:100vh;display:block}
+
+/* 노드 */
+.node-group{cursor:pointer}
+.node-circle{stroke-width:2;transition:r .2s}
+.node-label{font-size:13px;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none}
+.node-sub{font-size:10px;fill:#999;text-anchor:middle;pointer-events:none}
+
+/* 선 */
+.link-line{stroke-width:2;fill:none;opacity:.5;transition:opacity .2s}
+.link-label{font-size:10px;fill:#888;text-anchor:middle;pointer-events:none}
+
+/* 하이라이트 */
+.highlighted .link-line{opacity:1;stroke-width:3}
+.dimmed .node-circle{opacity:.15}
+.dimmed .node-label{opacity:.15}
+.dimmed .node-sub{opacity:.1}
+.dimmed .link-line{opacity:.05}
+.dimmed .link-label{opacity:.05}
+.active .node-circle{r:38}
+
+/* 팝업 */
+#popup{position:fixed;bottom:0;left:0;right:0;background:#1a1a24;border-top:1px solid #333;padding:20px 24px;transform:translateY(100%);transition:transform .3s;z-index:10;max-height:45vh;overflow-y:auto}
+#popup.show{transform:translateY(0)}
+#popup h3{font-size:16px;margin-bottom:8px}
+#popup p{font-size:13px;color:#aaa;line-height:1.6}
+#popup .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin:2px;font-weight:600}
+.tag-up{background:#16a34a22;color:#16a34a}
+.tag-down{background:#dc262622;color:#dc2626}
+.tag-neutral{background:#88888822;color:#888}
+
+/* 범례 */
+#legend{position:fixed;top:12px;left:12px;font-size:11px;color:#666;z-index:5}
+#legend div{margin:4px 0;display:flex;align-items:center;gap:6px}
+#legend .line-sample{width:24px;height:3px;border-radius:2px}
+
+#title{position:fixed;top:12px;right:16px;font-size:14px;font-weight:700;color:#555;z-index:5}
+</style>
+</head>
+<body>
+
+<div id="title">경제 지표 관계도</div>
+
+<div id="legend">
+  <div><span class="line-sample" style="background:#4ade80"></span> 비례 (같이 움직임)</div>
+  <div><span class="line-sample" style="background:#f87171"></span> 반비례 (반대로 움직임)</div>
+  <div><span class="line-sample" style="background:#facc15"></span> 조건부</div>
+</div>
+
+<svg id="canvas"></svg>
+
+<div id="popup">
+  <h3 id="popup-title"></h3>
+  <div id="popup-tags"></div>
+  <p id="popup-desc"></p>
+</div>
+
+<script>
+// === 데이터 ===
+const nodes = [
+  {id:'rate', label:'기준금리', sub:'Fed Funds Rate', cat:'금리', x:400, y:300,
+   desc:'연준이 설정하는 기준금리. 모든 금리의 기준점이며 경제 전반에 가장 큰 영향을 미침.'},
+  {id:'bond', label:'채권가격', sub:'국채 10Y', cat:'채권', x:650, y:180,
+   desc:'금리와 반대로 움직임. 금리 상승기엔 채권 가격 하락, 금리 하락기엔 채권 가격 상승.'},
+  {id:'growth', label:'성장주', sub:'나스닥/기술주', cat:'주식', x:200, y:150,
+   desc:'미래 이익을 현재가치로 할인하므로 금리에 민감. 금리↑ → 할인율↑ → 밸류에이션↓'},
+  {id:'dollar', label:'달러', sub:'달러인덱스', cat:'환율', x:620, y:450,
+   desc:'미국 금리 상승 → 달러 투자 매력↑ → 달러 강세. 안전자산 역할도 함.'},
+  {id:'krw', label:'원화', sub:'원/달러 환율', cat:'환율', x:400, y:550,
+   desc:'달러 강세 → 원화 약세. 원화 약세 시 외국인 자금 유출 가속.'},
+  {id:'foreign', label:'외국인 매매', sub:'순매수/순매도', cat:'수급', x:180, y:450,
+   desc:'환율과 밀접. 원화 약세 → 환차손 우려 → 외국인 매도. 외국인 동향은 대형주 방향성의 핵심.'},
+  {id:'oil', label:'유가', sub:'WTI', cat:'원자재', x:750, y:320,
+   desc:'전쟁/감산 → 유가↑ → 물류비·원자재비↑ → 인플레 압력. 에너지주에는 호재.'},
+  {id:'inflation', label:'인플레이션', sub:'CPI/PCE', cat:'물가', x:500, y:150,
+   desc:'물가 상승. 유가·임금 상승이 주 원인. 인플레↑ → 연준 긴축 → 금리↑ 사이클.'},
+  {id:'gold', label:'금', sub:'Gold', cat:'안전자산', x:250, y:300,
+   desc:'인플레 헤지 + 안전자산. 실질금리와 반비례. 위기 시 수요↑.'},
+  {id:'bank', label:'은행주', sub:'금융섹터', cat:'주식', x:150, y:60,
+   desc:'금리↑ → 예대마진↑ → 은행 수익↑. 금리 상승기에 유리한 섹터.'},
+  {id:'war', label:'전쟁/지정학', sub:'리스크 이벤트', cat:'이벤트', x:750, y:500,
+   desc:'유가↑, 안전자산(금·달러)↑, 주식시장 불확실성↑. 공급망 교란 시 인플레 압력.'},
+  {id:'vix', label:'VIX', sub:'공포지수', cat:'심리', x:50, y:200,
+   desc:'시장 변동성 지표. 20 이상이면 불안, 30 이상이면 공포. 극단적 공포는 역발상 매수 시그널이 될 수 있으나 위기 시 유보.'},
+];
+
+const links = [
+  {source:'rate', target:'bond', relation:'반비례', color:'#f87171', desc:'금리↑ → 채권가격↓'},
+  {source:'rate', target:'growth', relation:'반비례', color:'#f87171', desc:'금리↑ → 할인율↑ → 성장주↓'},
+  {source:'rate', target:'dollar', relation:'비례', color:'#4ade80', desc:'금리↑ → 달러 매력↑ → 달러↑'},
+  {source:'rate', target:'bank', relation:'비례', color:'#4ade80', desc:'금리↑ → 예대마진↑ → 은행↑'},
+  {source:'rate', target:'gold', relation:'반비례', color:'#f87171', desc:'실질금리↑ → 금 매력↓'},
+  {source:'dollar', target:'krw', relation:'반비례', color:'#f87171', desc:'달러↑ → 원화↓(약세)'},
+  {source:'krw', target:'foreign', relation:'비례', color:'#4ade80', desc:'원화↓ → 환차손 → 외국인 매도↑'},
+  {source:'oil', target:'inflation', relation:'비례', color:'#4ade80', desc:'유가↑ → 물류비↑ → 물가↑'},
+  {source:'inflation', target:'rate', relation:'비례', color:'#4ade80', desc:'인플레↑ → 연준 긴축 → 금리↑'},
+  {source:'war', target:'oil', relation:'비례', color:'#4ade80', desc:'전쟁 → 공급 불안 → 유가↑'},
+  {source:'war', target:'gold', relation:'비례', color:'#4ade80', desc:'전쟁 → 안전자산 수요↑ → 금↑'},
+  {source:'war', target:'vix', relation:'비례', color:'#4ade80', desc:'전쟁 → 불확실성↑ → VIX↑'},
+  {source:'foreign', target:'growth', relation:'조건부', color:'#facc15', desc:'외국인 매도 → 대형 기술주 하락 압력'},
+  {source:'vix', target:'growth', relation:'반비례', color:'#f87171', desc:'VIX↑ → 위험자산 회피 → 성장주↓'},
+  {source:'inflation', target:'gold', relation:'비례', color:'#4ade80', desc:'인플레↑ → 인플레 헤지 → 금↑'},
+];
+
+// === 카테고리 색상 ===
+const catColors = {
+  '금리':'#60a5fa','채권':'#a78bfa','주식':'#34d399','환율':'#fbbf24',
+  '수급':'#fb923c','원자재':'#f87171','물가':'#f472b6','안전자산':'#fcd34d',
+  '이벤트':'#ef4444','심리':'#c084fc'
+};
+
+// === 렌더링 ===
+const svg = document.getElementById('canvas');
+const popup = document.getElementById('popup');
+const W = window.innerWidth, H = window.innerHeight;
+
+// 뷰포트에 맞게 노드 위치 스케일링
+const scaleX = W / 850, scaleY = H / 620;
+nodes.forEach(n => { n.x *= scaleX; n.y *= scaleY; });
+
+let selectedNode = null;
+
+// 링크 그리기
+const linkGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+linkGroup.id = 'links';
+svg.appendChild(linkGroup);
+
+links.forEach(l => {
+  const s = nodes.find(n=>n.id===l.source);
+  const t = nodes.find(n=>n.id===l.target);
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.classList.add('link-group');
+  g.dataset.source = l.source;
+  g.dataset.target = l.target;
+
+  // 곡선
+  const mx = (s.x+t.x)/2, my = (s.y+t.y)/2;
+  const dx = t.x-s.x, dy = t.y-s.y;
+  const cx = mx - dy*0.15, cy = my + dx*0.15;
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',`M${s.x},${s.y} Q${cx},${cy} ${t.x},${t.y}`);
+  path.setAttribute('stroke', l.color);
+  path.classList.add('link-line');
+  g.appendChild(path);
+
+  // 라벨
+  const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+  const lx = (s.x + cx*2 + t.x)/4, ly = (s.y + cy*2 + t.y)/4;
+  text.setAttribute('x', (s.x+2*cx+t.x)/4);
+  text.setAttribute('y', (s.y+2*cy+t.y)/4);
+  text.classList.add('link-label');
+  text.textContent = l.relation;
+  g.appendChild(text);
+
+  l.el = g;
+  linkGroup.appendChild(g);
+});
+
+// 노드 그리기
+const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+nodeGroup.id = 'nodes';
+svg.appendChild(nodeGroup);
+
+nodes.forEach(n => {
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.classList.add('node-group');
+  g.dataset.id = n.id;
+
+  const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('cx', n.x);
+  circle.setAttribute('cy', n.y);
+  circle.setAttribute('r', 32);
+  circle.setAttribute('fill', catColors[n.cat] || '#666');
+  circle.setAttribute('stroke', '#fff');
+  circle.classList.add('node-circle');
+  g.appendChild(circle);
+
+  const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+  label.setAttribute('x', n.x);
+  label.setAttribute('y', n.y + 1);
+  label.setAttribute('dy', '.35em');
+  label.classList.add('node-label');
+  label.textContent = n.label;
+  g.appendChild(label);
+
+  const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
+  sub.setAttribute('x', n.x);
+  sub.setAttribute('y', n.y + 18);
+  sub.setAttribute('dy', '.35em');
+  sub.classList.add('node-sub');
+  sub.textContent = n.sub;
+  g.appendChild(sub);
+
+  // 터치/클릭
+  g.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectNode(n);
+  });
+
+  // 드래그
+  let dragging = false, dragStartX, dragStartY, moved;
+  g.addEventListener('pointerdown', (e) => {
+    dragging = true; moved = false;
+    dragStartX = e.clientX - n.x;
+    dragStartY = e.clientY - n.y;
+    g.setPointerCapture(e.pointerId);
+  });
+  g.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    moved = true;
+    n.x = e.clientX - dragStartX;
+    n.y = e.clientY - dragStartY;
+    updateNodePosition(n);
+  });
+  g.addEventListener('pointerup', (e) => {
+    dragging = false;
+    if (!moved) return;
+    g.releasePointerCapture(e.pointerId);
+  });
+
+  n.el = g;
+  nodeGroup.appendChild(g);
+});
+
+// 빈 곳 클릭 → 해제
+svg.addEventListener('click', () => { deselectAll(); });
+
+function updateNodePosition(n) {
+  const g = n.el;
+  g.querySelector('.node-circle').setAttribute('cx', n.x);
+  g.querySelector('.node-circle').setAttribute('cy', n.y);
+  const texts = g.querySelectorAll('text');
+  texts[0].setAttribute('x', n.x);
+  texts[0].setAttribute('y', n.y + 1);
+  texts[1].setAttribute('x', n.x);
+  texts[1].setAttribute('y', n.y + 18);
+
+  // 링크 업데이트
+  links.forEach(l => {
+    if (l.source === n.id || l.target === n.id) {
+      const s = nodes.find(nd=>nd.id===l.source);
+      const t = nodes.find(nd=>nd.id===l.target);
+      const mx=(s.x+t.x)/2, my=(s.y+t.y)/2;
+      const dx=t.x-s.x, dy=t.y-s.y;
+      const cx=mx-dy*0.15, cy=my+dx*0.15;
+      l.el.querySelector('path').setAttribute('d',`M${s.x},${s.y} Q${cx},${cy} ${t.x},${t.y}`);
+      const txt = l.el.querySelector('text');
+      txt.setAttribute('x',(s.x+2*cx+t.x)/4);
+      txt.setAttribute('y',(s.y+2*cy+t.y)/4);
+    }
+  });
+}
+
+function selectNode(n) {
+  selectedNode = n;
+
+  // 연결된 노드/링크 찾기
+  const connectedIds = new Set([n.id]);
+  const connectedLinks = [];
+  links.forEach(l => {
+    if (l.source === n.id || l.target === n.id) {
+      connectedIds.add(l.source);
+      connectedIds.add(l.target);
+      connectedLinks.push(l);
+    }
+  });
+
+  // 하이라이트
+  nodes.forEach(nd => {
+    if (connectedIds.has(nd.id)) {
+      nd.el.classList.remove('dimmed');
+      nd.el.classList.add(nd.id===n.id ? 'active' : '');
+    } else {
+      nd.el.classList.add('dimmed');
+      nd.el.classList.remove('active');
+    }
+  });
+  links.forEach(l => {
+    if (connectedLinks.includes(l)) {
+      l.el.classList.add('highlighted');
+      l.el.classList.remove('dimmed');
+    } else {
+      l.el.classList.remove('highlighted');
+      l.el.classList.add('dimmed');
+    }
+  });
+
+  // 팝업
+  document.getElementById('popup-title').textContent = `${n.label} (${n.sub})`;
+  document.getElementById('popup-desc').textContent = n.desc;
+
+  let tagsHtml = `<span class="tag" style="background:${catColors[n.cat]}22;color:${catColors[n.cat]}">${n.cat}</span>`;
+  connectedLinks.forEach(l => {
+    const cls = l.relation==='비례'?'tag-up':l.relation==='반비례'?'tag-down':'tag-neutral';
+    tagsHtml += `<span class="tag ${cls}">${l.desc}</span>`;
+  });
+  document.getElementById('popup-tags').innerHTML = tagsHtml;
+  popup.classList.add('show');
+}
+
+function deselectAll() {
+  selectedNode = null;
+  nodes.forEach(n => { n.el.classList.remove('dimmed','active'); });
+  links.forEach(l => { l.el.classList.remove('highlighted','dimmed'); });
+  popup.classList.remove('show');
+}
+</script>
+</body>
+</html>
