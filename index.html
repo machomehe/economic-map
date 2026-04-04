@@ -37,6 +37,12 @@ html,body{
 /* 필터 */
 #filters{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
 #filters::-webkit-scrollbar{display:none}
+/* 수정 버튼 */
+.top-btn{width:40px;height:40px;border:1px solid #333;border-radius:10px;background:#1a1a24ee;color:#aaa;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);flex-shrink:0;transition:all .2s}
+.top-btn.active{border-color:#60a5fa;color:#60a5fa;background:#60a5fa18}
+#edit-banner{position:fixed;bottom:0;left:0;right:0;padding:10px 16px;background:#60a5fa22;border-top:1px solid #60a5fa44;text-align:center;font-size:12px;color:#60a5fa;font-weight:600;z-index:25;display:none}
+#edit-banner.show{display:block}
+
 .filter-btn{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #333;background:#1a1a24dd;color:#aaa;font-size:12px;font-family:inherit;font-weight:500;cursor:pointer;transition:all .2s;min-height:34px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .filter-btn.active{border-color:var(--c);color:var(--c);background:var(--bg)}
 
@@ -116,6 +122,7 @@ html,body{
       <span id="search-icon">&#x1F50D;</span>
       <input id="search" type="text" placeholder="지표 검색..." autocomplete="off">
       <div id="search-results"></div>
+    <button class="top-btn" id="edit-btn" title="배치 수정">&#x270F;&#xFE0F;</button>
     </div>
   </div>
   <div id="filters"></div>
@@ -132,6 +139,7 @@ html,body{
   <button id="sim-exit">닫기</button>
 </div>
 
+<div id="edit-banner">배치 수정 모드 — 노드와 그룹을 드래그하여 이동</div>
 <svg id="canvas"></svg>
 
 <div id="sheet">
@@ -412,8 +420,10 @@ html,body{
     .attr('transform',d=>`translate(${d.x},${d.y})`);
 
   nodeEls.append('circle').attr('class','node-touch').attr('r',d=>Math.max(22,isCore(d)?34:28));
+  // 노드 색상: 상승=빨강, 하락=파랑, 기본=회색
+  const chgFill = d => d._chgDir==='up'?'#ef4444':d._chgDir==='down'?'#3b82f6':'#555';
   nodeEls.append('circle').attr('class','node-circle').attr('r',d=>isCore(d)?nodeR+6:nodeR)
-    .attr('fill',d=>catColor(d.category)).attr('stroke','#ffffff33');
+    .attr('fill',d=>chgFill(d)).attr('stroke','#ffffff33');
   nodeEls.append('text').attr('class','node-label').attr('dy','.35em').text(d=>d.label);
   nodeEls.append('text').attr('class','node-sub').attr('dy','.35em')
     .attr('y',d=>(isCore(d)?nodeR+6:nodeR)+12).text(d=>d.sub||'');
@@ -441,8 +451,21 @@ html,body{
 
   nodeEls.on('click',(e,d)=>{e.stopPropagation();selectNode(d)});
 
-  // 노드 드래그 — 박스 안에 가두기
+  // ============================================================
+  //  수정 모드
+  // ============================================================
+  let editMode = false;
+  const editBtn = document.getElementById('edit-btn');
+  const editBanner = document.getElementById('edit-banner');
+  editBtn.addEventListener('click',()=>{
+    editMode=!editMode;
+    editBtn.classList.toggle('active',editMode);
+    editBanner.classList.toggle('show',editMode);
+  });
+
+  // 노드 드래그 — 수정 모드에서만 + 박스 안에 가두기
   nodeEls.call(d3.drag()
+    .filter(()=>editMode)
     .on('start',(e,d)=>{e.sourceEvent.stopPropagation()})
     .on('drag',(e,d)=>{
       const info = boxInfo[d.category];
@@ -457,10 +480,10 @@ html,body{
     })
   );
 
-  // 박스 드래그 — 내부 노드 전체 이동
+  // 박스 드래그 — 수정 모드에서만 + 내부 노드 전체 이동
   boxG.selectAll('.cat-group').call(d3.drag()
+    .filter(()=>editMode)
     .on('start',function(e){
-      const cat = d3.select(this).datum().cat;
       d3.select(this).datum().startX = e.x;
       d3.select(this).datum().startY = e.y;
       e.sourceEvent.stopPropagation();
@@ -470,14 +493,10 @@ html,body{
       const dx = e.x - dd.startX, dy = e.y - dd.startY;
       dd.startX = e.x; dd.startY = e.y;
       const info = boxInfo[dd.cat];
-      // 박스 이동
       info.x += dx; info.y += dy;
       d3.select(this).select('.cat-box').attr('x',info.x).attr('y',info.y);
       d3.select(this).select('.cat-label').attr('x',info.x+12).attr('y',info.y+22);
-      // 내부 노드 이동
-      catNodes[dd.cat].forEach(n=>{
-        n.x += dx; n.y += dy;
-      });
+      catNodes[dd.cat].forEach(n=>{n.x+=dx;n.y+=dy});
       nodeEls.filter(n=>n.category===dd.cat).attr('transform',n=>`translate(${n.x},${n.y})`);
       updateLinks();
     })
