@@ -86,7 +86,8 @@ html,body{
 .sim-arrow{font-size:16px;font-weight:800;text-anchor:middle;pointer-events:none;filter:drop-shadow(0 0 4px rgba(0,0,0,.8))}
 
 /* dim/highlight */
-.dimmed .node-circle,.dimmed .node-label,.dimmed .node-sub{opacity:.08}
+.node-val,.node-chg{transition:opacity .3s}
+.dimmed .node-circle,.dimmed .node-label,.dimmed .node-sub,.dimmed .node-val,.dimmed .node-chg{opacity:.08}
 .dimmed .link-line,.dimmed .link-desc{opacity:.03}
 .dimmed .cat-box{opacity:.3}
 .dimmed .cat-label{opacity:.15}
@@ -175,6 +176,67 @@ html,body{
   }
 
   // ============================================================
+  //  실시간 값 로드
+  // ============================================================
+  // FRED 시리즈 → 노드 매핑 (dataSource.fred 기반 + 보조 매핑)
+  const fredAlias = {'VIXCLS':'^VIX','NASDAQCOM':'^IXIC'};
+  let valuesData = {};
+  try {
+    const vr = await fetch('data/values.json');
+    if(vr.ok){
+      const vj = await vr.json();
+      valuesData = vj.data||{};
+    }
+  } catch(e){}
+
+  // 각 노드에 값/변화 부여
+  const fmtMap = {
+    'FEDFUNDS':'%','DFII10':'%','DGS10':'%','T10Y2Y':'%p','BAMLH0A0HYM2':'%',
+    'UNRATE':'%','CPIAUCSL':'idx','DTWEXBGS':'idx','DEXKOUS':'₩','DCOILWTICO':'$',
+    'VIXCLS':'','NASDAQCOM':',','SP500':',','A191RL1Q225SBEA':'%','RSAFS':'M$'
+  };
+
+  function fmtVal(v, series){
+    const f=fmtMap[series]||'';
+    if(f==='%') return v.toFixed(2)+'%';
+    if(f==='%p') return (v>=0?'+':'')+v.toFixed(2)+'%p';
+    if(f==='$') return '$'+v.toFixed(1);
+    if(f==='₩') return v.toFixed(0)+'원';
+    if(f==='idx') return v.toFixed(1);
+    if(f===',') return v.toLocaleString('en',{maximumFractionDigits:0});
+    if(f==='M$') return (v/1000).toFixed(0)+'B$';
+    return v.toFixed(2);
+  }
+
+  nodes.forEach(n=>{
+    const fred = (n.dataSource||{}).fred||'';
+    // FRED 시리즈 찾기 (직접 매핑 또는 alias)
+    let series = fred;
+    if(!valuesData[series]){
+      // alias 역매핑: yahoo → FRED
+      for(const[fid,yid]of Object.entries(fredAlias)){
+        if(yid===fred && valuesData[fid]){series=fid;break;}
+      }
+    }
+    const obs = valuesData[series];
+    if(obs && obs.length>=2){
+      const cur = parseFloat(obs[0].value);
+      const prev = parseFloat(obs[1].value);
+      const chg = cur-prev;
+      const pct = prev?((chg/Math.abs(prev))*100):0;
+      n._val = fmtVal(cur, series);
+      n._chgDir = chg>0?'up':chg<0?'down':'flat';
+      n._chgText = (chg>0?'+':'')+(Math.abs(pct)>=1?pct.toFixed(1)+'%':chg.toFixed(2));
+      n._date = obs[0].date;
+    } else if(obs && obs.length===1){
+      const cur = parseFloat(obs[0].value);
+      n._val = fmtVal(cur, series);
+      n._chgDir = 'flat';
+      n._chgText = '';
+    }
+  });
+
+  // ============================================================
   //  그리드 레이아웃 계산
   // ============================================================
   // 카테고리별 노드 그룹
@@ -201,10 +263,10 @@ html,body{
   // 치수
   const nodeR = 24;
   const nodeSpaceX = 90;
-  const nodeSpaceY = 0;
+  const nodeSpaceY = 20;
   const boxPadX = 30;
   const boxPadTop = 38;
-  const boxPadBot = 30;
+  const boxPadBot = 40;
   const boxGap = 20;
   const rowGap = 25;
 
@@ -355,6 +417,27 @@ html,body{
   nodeEls.append('text').attr('class','node-label').attr('dy','.35em').text(d=>d.label);
   nodeEls.append('text').attr('class','node-sub').attr('dy','.35em')
     .attr('y',d=>(isCore(d)?nodeR+6:nodeR)+12).text(d=>d.sub||'');
+
+  // 실시간 값 표시
+  nodeEls.filter(d=>d._val).each(function(d){
+    const el=d3.select(this);
+    const r=isCore(d)?nodeR+6:nodeR;
+    const valY = r+26;
+    const chgColor = d._chgDir==='up'?'#4ade80':d._chgDir==='down'?'#f87171':'#888';
+    const arrow = d._chgDir==='up'?'\u25B2':d._chgDir==='down'?'\u25BC':'';
+    el.append('text').attr('class','node-val')
+      .attr('y',valY).attr('dy','.35em').attr('text-anchor','middle')
+      .attr('fill','#ddd').attr('font-size','10px').attr('font-weight','600')
+      .attr('pointer-events','none')
+      .text(d._val);
+    if(d._chgText){
+      el.append('text').attr('class','node-chg')
+        .attr('y',valY+13).attr('dy','.35em').attr('text-anchor','middle')
+        .attr('fill',chgColor).attr('font-size','9px').attr('font-weight','600')
+        .attr('pointer-events','none')
+        .text(arrow+' '+d._chgText);
+    }
+  });
 
   nodeEls.on('click',(e,d)=>{e.stopPropagation();selectNode(d)});
 

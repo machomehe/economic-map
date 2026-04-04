@@ -1,0 +1,23 @@
+name: Fetch FRED Data
+on:
+  schedule:
+    - cron: '30 13 * * 1-5'  # 평일 한국시간 22:30
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python fetch_data.py
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/values.json
+          git diff --cached --quiet || git commit -m "chore: update FRED data" && git push
