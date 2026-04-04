@@ -1,143 +1,177 @@
 {
-  "version": "2.0",
+  "version": "3.0",
   "lastUpdated": "2026-04-04",
   "categories": {
-    "미국·통화재정": {"color": "#60a5fa"},
-    "미국·경기물가": {"color": "#f472b6"},
-    "미국·금융시장": {"color": "#34d399"},
+    "미국·지표": {"color": "#60a5fa"},
+    "미국·자산": {"color": "#fbbf24"},
     "미국·리스크": {"color": "#ef4444"},
-    "한국·통화재정": {"color": "#818cf8"},
-    "한국·실물경제": {"color": "#fb923c"},
-    "한국·금융시장": {"color": "#2dd4bf"}
+    "한국·지표": {"color": "#818cf8"},
+    "한국·자산": {"color": "#2dd4bf"}
   },
   "nodes": [
+    {
+      "id": "us_cash",
+      "label": "현금/예금",
+      "sub": "MMF·CD·정기예금",
+      "category": "미국·자산",
+      "level": 1,
+      "isAsset": true,
+      "description": "가장 안전한 자산. 금리 상승기에 매력 증가. 인플레이션에 약함.",
+      "interpretation": {"up": "안전 선호 또는 금리 상승기. 자금이 위험자산에서 이탈.", "down": "위험자산 선호. 금리 인하로 예금 매력 감소."},
+      "dataSource": {},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "us_bonds",
+      "label": "채권",
+      "sub": "국채·회사채",
+      "category": "미국·자산",
+      "level": 1,
+      "isAsset": true,
+      "description": "금리와 반대로 움직임. 경기 불안 시 안전자산 역할.",
+      "interpretation": {"up": "금리 인하기 또는 경기 불안. 안전자산 수요 증가.", "down": "금리 상승기. 채권 가격 하락, 신규 발행 채권 수익률 상승."},
+      "dataSource": {},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "us_stocks",
+      "label": "주식",
+      "sub": "S&P500·나스닥",
+      "category": "미국·자산",
+      "level": 1,
+      "isAsset": true,
+      "description": "경기 확장기에 강세. 금리·유동성에 민감.",
+      "interpretation": {"up": "경기 확장, 유동성 풍부, 기업실적 호조. 위험선호 확산.", "down": "경기 둔화, 금리 상승, 유동성 축소. 위험회피 심화."},
+      "dataSource": {},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "us_realestate",
+      "label": "부동산",
+      "sub": "모기지·REIT",
+      "category": "미국·자산",
+      "level": 1,
+      "isAsset": true,
+      "description": "금리에 민감. 인플레 헤지 기능. 유동성 낮음.",
+      "interpretation": {"up": "금리 인하기, 유동성 풍부. 모기지 부담 감소로 수요 증가.", "down": "금리 상승기. 모기지 부담 증가, 거래 위축, 가격 하락 압력."},
+      "dataSource": {},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "us_commodity",
+      "label": "원자재/금",
+      "sub": "Gold·WTI·원자재",
+      "category": "미국·자산",
+      "level": 1,
+      "isAsset": true,
+      "description": "인플레 헤지, 전쟁 시 안전자산. 달러와 역상관.",
+      "interpretation": {"up": "인플레 헤지 수요 증가, 지정학 리스크 확대, 달러 약세.", "down": "달러 강세, 실질금리 상승, 위험선호 확산으로 실물자산 매력 감소."},
+      "dataSource": {},
+      "tags": ["핵심"]
+    },
     {
       "id": "us_rate",
       "label": "기준금리",
       "sub": "Fed Funds Rate",
-      "category": "미국·통화재정",
+      "category": "미국·지표",
       "level": 1,
+      "isAsset": false,
       "description": "연준이 설정하는 기준금리. 모든 금리의 기준점이며 경제 전반에 가장 큰 영향을 미침.",
       "interpretation": {"up": "긴축. 대출비용↑, 자산가격↓, 달러↑", "down": "완화. 유동성↑, 자산가격↑, 달러↓"},
       "dataSource": {"fred": "FEDFUNDS"},
       "tags": ["핵심"]
     },
     {
-      "id": "us_real_rate",
-      "label": "실질금리",
-      "sub": "10Y TIPS",
-      "category": "미국·통화재정",
-      "level": 2,
-      "description": "명목금리에서 기대인플레이션을 차감한 금리. 자산가격의 진정한 할인율이며 금 가격과 가장 강한 역의 상관관계를 보임.",
-      "interpretation": {"up": "실질 자금 비용↑. 금·성장주↓, 달러↑", "down": "실질 자금 비용↓. 금·성장주↑, 실물자산 매력↑"},
-      "dataSource": {"fred": "DFII10"},
-      "tags": []
-    },
-    {
-      "id": "us_fiscal",
-      "label": "재정정책",
-      "sub": "재정적자/국채",
-      "category": "미국·통화재정",
-      "level": 3,
-      "description": "정부의 재정지출과 국채 발행 규모. 대규모 재정적자는 국채 공급 증가로 금리 상승 압력을 유발.",
-      "interpretation": {"up": "재정 확대. 국채 공급↑ → 금리↑, 단기 경기 부양. 달러 신뢰↓ 가능", "down": "재정 긴축. 국채 공급↓ → 금리↓, 경기 위축 가능"},
-      "dataSource": {},
-      "tags": []
-    },
-    {
-      "id": "us_liquidity",
-      "label": "글로벌 유동성",
-      "sub": "주요국 통화정책",
-      "category": "미국·통화재정",
-      "level": 2,
-      "description": "주요 중앙은행의 통화정책과 글로벌 유동성 총량. 자산가격의 방향을 결정하는 거시 변수.",
-      "interpretation": {"up": "유동성 확대. 자산가격 전반 상승, 위험선호↑", "down": "유동성 축소. 자산가격 전반 하락, 위험회피↑"},
-      "dataSource": {},
-      "tags": []
-    },
-    {
-      "id": "us_m2",
-      "label": "M2/부동자금",
-      "sub": "통화공급량",
-      "category": "미국·통화재정",
-      "level": 3,
-      "description": "시중에 풀린 통화량. M2 증가 시 유동성이 금융시장으로 유입되어 자산가격 상승 압력.",
-      "interpretation": {"up": "통화공급 증가. 자산시장 유입↑, 인플레 압력 가능", "down": "통화공급 감소. 유동성 위축, 자산가격 하락 압력"},
-      "dataSource": {},
-      "tags": []
-    },
-    {
-      "id": "us_gdp",
-      "label": "GDP 성장률",
-      "sub": "실질 GDP",
-      "category": "미국·경기물가",
-      "level": 1,
-      "description": "경제 전체의 생산량 변화율. 분기별 발표되며 경기 사이클의 기준 지표.",
-      "interpretation": {"up": "경기 확장. 기업실적↑, 고용↑, 과열 시 긴축 우려", "down": "경기 둔화. 실적↓, 실업↑, 완화 기대. 2분기 연속 마이너스 시 기술적 침체"},
-      "dataSource": {"fred": "A191RL1Q225SBEA"},
-      "tags": ["핵심"]
-    },
-    {
-      "id": "us_unemployment",
-      "label": "실업률",
-      "sub": "U-3",
-      "category": "미국·경기물가",
-      "level": 2,
-      "description": "노동시장 건전성 지표. 연준 이중 책무(물가+고용) 중 하나의 핵심 기준.",
-      "interpretation": {"up": "노동시장 악화. 소비↓, 연준 완화 기대↑", "down": "노동시장 강세. 임금↑ → 인플레 압력, 긴축 유지 명분"},
-      "dataSource": {"fred": "UNRATE"},
-      "tags": []
-    },
-    {
       "id": "us_cpi",
       "label": "인플레이션",
       "sub": "CPI/PCE",
-      "category": "미국·경기물가",
+      "category": "미국·지표",
       "level": 1,
+      "isAsset": false,
       "description": "물가 상승률. 유가·임금 상승이 주 원인. 인플레이션 상승 시 연준 긴축 사이클 유발.",
       "interpretation": {"up": "구매력↓, 긴축 압력↑. 채권·성장주↓, 금 수요↑", "down": "구매력 안정, 완화 여지↑. 채권·성장주↑"},
       "dataSource": {"fred": "CPIAUCSL"},
       "tags": ["핵심"]
     },
     {
+      "id": "us_dollar",
+      "label": "달러",
+      "sub": "달러인덱스",
+      "category": "미국·지표",
+      "level": 1,
+      "isAsset": false,
+      "description": "미국 달러의 가치 지수. 금리 상승 시 달러 투자 매력 증가로 강세. 안전자산 역할도 수행.",
+      "interpretation": {"up": "미국 경제 상대적 강세 또는 위험 회피. 신흥국 자본 유출, 원자재↓", "down": "금리 인하 기대 또는 위험선호. 신흥국·원자재에 긍정적"},
+      "dataSource": {"fred": "DTWEXBGS"},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "us_gdp",
+      "label": "GDP 성장률",
+      "sub": "실질 GDP",
+      "category": "미국·지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "경제 전체의 생산량 변화율. 분기별 발표되며 경기 사이클의 기준 지표.",
+      "interpretation": {"up": "경기 확장. 기업실적↑, 고용↑, 과열 시 긴축 우려", "down": "경기 둔화. 실적↓, 실업↑, 완화 기대. 2분기 연속 마이너스 시 기술적 침체"},
+      "dataSource": {"fred": "A191RL1Q225SBEA"},
+      "tags": []
+    },
+    {
+      "id": "us_unemployment",
+      "label": "실업률",
+      "sub": "U-3",
+      "category": "미국·지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "노동시장 건전성 지표. 연준 이중 책무(물가+고용) 중 하나의 핵심 기준.",
+      "interpretation": {"up": "노동시장 악화. 소비↓, 연준 완화 기대↑", "down": "노동시장 강세. 임금↑ → 인플레 압력, 긴축 유지 명분"},
+      "dataSource": {"fred": "UNRATE"},
+      "tags": []
+    },
+    {
+      "id": "us_vix",
+      "label": "VIX",
+      "sub": "공포지수",
+      "category": "미국·지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "시장 변동성 지표. 20 이상이면 불안, 30 이상이면 공포. 극단적 공포는 역발상 매수 시그널.",
+      "interpretation": {"up": "시장 불안↑, 옵션 프리미엄↑, 위험자산 매도 압력", "down": "시장 안정, 위험선호 확산. 12 이하 시 과열 경고"},
+      "dataSource": {"fred": "VIXCLS"},
+      "tags": []
+    },
+    {
+      "id": "us_liquidity",
+      "label": "글로벌 유동성",
+      "sub": "주요국 통화정책",
+      "category": "미국·지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "주요 중앙은행의 통화정책과 글로벌 유동성 총량. 자산가격의 방향을 결정하는 거시 변수.",
+      "interpretation": {"up": "유동성 확대. 자산가격 전반 상승, 위험선호↑", "down": "유동성 축소. 자산가격 전반 하락, 위험회피↑"},
+      "dataSource": {},
+      "tags": []
+    },
+    {
       "id": "us_oil",
       "label": "유가",
       "sub": "WTI",
-      "category": "미국·경기물가",
+      "category": "미국·지표",
       "level": 2,
+      "isAsset": false,
       "description": "원유 가격. 에너지 비용의 기준이며 인플레이션의 주요 원인. 전쟁·감산 시 급등.",
       "interpretation": {"up": "에너지비↑, 인플레 압력↑, 운송·항공 비용↑", "down": "에너지비↓, 인플레 완화, 소비자 구매력↑"},
       "dataSource": {"fred": "DCOILWTICO"},
       "tags": []
     },
     {
-      "id": "us_sentiment",
-      "label": "소비자심리",
-      "sub": "미시간대 지수",
-      "category": "미국·경기물가",
-      "level": 3,
-      "description": "소비자 경기 체감 지수. 미래 소비 지출의 선행 지표 역할.",
-      "interpretation": {"up": "경기 낙관. 소비 확대 기대, 내수 성장 지지", "down": "경기 비관. 소비 위축 우려, 경기 둔화 시그널"},
-      "dataSource": {},
-      "tags": []
-    },
-    {
-      "id": "us_bond",
-      "label": "국채금리",
-      "sub": "10Y Treasury",
-      "category": "미국·금융시장",
-      "level": 2,
-      "description": "미국 10년 국채 수익률. 모기지·회사채 등 장기 금리의 벤치마크이자 경기 기대를 반영.",
-      "interpretation": {"up": "경기 회복 기대 또는 인플레 우려. 대출금리↑, 주식 밸류에이션 압박", "down": "경기 둔화 우려 또는 안전자산 선호. 대출금리↓, 성장주 지지"},
-      "dataSource": {"fred": "DGS10"},
-      "tags": []
-    },
-    {
       "id": "us_spread",
       "label": "장단기금리차",
       "sub": "10Y-2Y",
-      "category": "미국·금융시장",
+      "category": "미국·지표",
       "level": 3,
+      "isAsset": false,
       "description": "10년물과 2년물 국채 금리의 차이. 역전(마이너스) 시 경기침체 선행 지표.",
       "interpretation": {"up": "정상적 곡선 회복. 경기 회복 기대, 은행 수익성↑", "down": "곡선 역전. 6-18개월 내 경기침체 가능성↑"},
       "dataSource": {"fred": "T10Y2Y"},
@@ -145,67 +179,49 @@
     },
     {
       "id": "us_hy",
-      "label": "하이일드 스프레드",
-      "sub": "BBB",
-      "category": "미국·금융시장",
+      "label": "하이일드",
+      "sub": "BBB 스프레드",
+      "category": "미국·지표",
       "level": 3,
+      "isAsset": false,
       "description": "투기등급 채권과 국채 간 금리 차이. 신용 리스크의 바로미터이자 경기 선행 지표.",
       "interpretation": {"up": "신용 리스크 확대. 기업 부도 우려↑, 위험자산 매도 압력", "down": "신용 리스크 축소. 기업 재무 건전성 신뢰, 위험선호 확산"},
       "dataSource": {"fred": "BAMLH0A0HYM2"},
       "tags": []
     },
     {
-      "id": "us_nasdaq",
-      "label": "성장주",
-      "sub": "나스닥",
-      "category": "미국·금융시장",
-      "level": 1,
-      "description": "미래 이익을 현재가치로 할인하므로 금리에 민감. 금리 상승 시 밸류에이션 하락 압력.",
-      "interpretation": {"up": "유동성 풍부, 혁신 기대↑, 위험선호 확산", "down": "금리↑ 부담, 밸류에이션 압박, 위험 회피"},
-      "dataSource": {"fred": "NASDAQCOM"},
-      "tags": ["핵심"]
-    },
-    {
-      "id": "us_dollar",
-      "label": "달러",
-      "sub": "달러인덱스(DXY)",
-      "category": "미국·금융시장",
-      "level": 2,
-      "description": "미국 달러의 가치 지수. 금리 상승 시 달러 투자 매력 증가로 강세. 안전자산 역할도 수행.",
-      "interpretation": {"up": "미국 경제 상대적 강세 또는 위험 회피. 신흥국 자본 유출, 원자재↓", "down": "금리 인하 기대 또는 위험선호. 신흥국·원자재에 긍정적"},
-      "dataSource": {"fred": "DTWEXBGS"},
-      "tags": []
-    },
-    {
-      "id": "us_vix",
-      "label": "VIX",
-      "sub": "공포지수",
-      "category": "미국·금융시장",
-      "level": 2,
-      "description": "시장 변동성 지표. 20 이상이면 불안, 30 이상이면 공포. 극단적 공포는 역발상 매수 시그널.",
-      "interpretation": {"up": "시장 불안↑, 옵션 프리미엄↑, 위험자산 매도 압력", "down": "시장 안정, 위험선호 확산. 12 이하 시 과열 경고"},
-      "dataSource": {"fred": "VIXCLS"},
-      "tags": []
-    },
-    {
-      "id": "us_gold",
-      "label": "금",
-      "sub": "Gold/온스",
-      "category": "미국·금융시장",
-      "level": 2,
-      "description": "인플레이션 헤지 수단이자 안전자산. 실질금리와 반비례 관계. 위기 시 수요 급증.",
-      "interpretation": {"up": "인플레 헤지 수요↑, 지정학 리스크↑, 실질금리↓", "down": "실질금리↑, 위험선호 확산, 달러 강세"},
+      "id": "us_fiscal",
+      "label": "재정정책",
+      "sub": "재정적자/국채",
+      "category": "미국·지표",
+      "level": 3,
+      "isAsset": false,
+      "description": "정부의 재정지출과 국채 발행 규모. 대규모 재정적자는 국채 공급 증가로 금리 상승 압력을 유발.",
+      "interpretation": {"up": "재정 확대. 국채 공급↑ → 금리↑, 단기 경기 부양. 달러 신뢰↓ 가능", "down": "재정 긴축. 국채 공급↓ → 금리↓, 경기 위축 가능"},
       "dataSource": {},
       "tags": []
     },
     {
-      "id": "us_semi",
-      "label": "반도체/AI",
-      "sub": "SOX 지수",
-      "category": "미국·금융시장",
+      "id": "us_m2",
+      "label": "M2/부동자금",
+      "sub": "통화공급량",
+      "category": "미국·지표",
       "level": 3,
-      "description": "기술 혁신의 최전선. AI 투자 사이클과 글로벌 수요에 좌우되는 경기 민감 성장 섹터.",
-      "interpretation": {"up": "AI 투자 확대, 반도체 수요↑. 한국 수출·코스피에 긍정적", "down": "재고 조정, 수요 둔화, AI 투자 의구심. 나스닥 하락 주도"},
+      "isAsset": false,
+      "description": "시중에 풀린 통화량. M2 증가 시 유동성이 금융시장으로 유입되어 자산가격 상승 압력.",
+      "interpretation": {"up": "통화공급 증가. 자산시장 유입↑, 인플레 압력 가능", "down": "통화공급 감소. 유동성 위축, 자산가격 하락 압력"},
+      "dataSource": {},
+      "tags": []
+    },
+    {
+      "id": "us_sentiment",
+      "label": "소비자심리",
+      "sub": "미시간대 지수",
+      "category": "미국·지표",
+      "level": 3,
+      "isAsset": false,
+      "description": "소비자 경기 체감 지수. 미래 소비 지출의 선행 지표 역할.",
+      "interpretation": {"up": "경기 낙관. 소비 확대 기대, 내수 성장 지지", "down": "경기 비관. 소비 위축 우려, 경기 둔화 시그널"},
       "dataSource": {},
       "tags": []
     },
@@ -215,6 +231,7 @@
       "sub": "트럼프 관세",
       "category": "미국·리스크",
       "level": 1,
+      "isAsset": false,
       "description": "수입품에 부과되는 관세. 교역 상대국 보복 관세로 글로벌 무역 위축 및 물가 상승 유발.",
       "interpretation": {"up": "관세 부과·확대. 수입물가↑, 교역↓, 공급망 재편", "down": "관세 철회·완화. 교역 정상화, 물가 안정, 시장 안도"},
       "dataSource": {},
@@ -226,30 +243,105 @@
       "sub": "중동/우크라",
       "category": "미국·리스크",
       "level": 2,
+      "isAsset": false,
       "description": "지정학적 분쟁과 전쟁 리스크. 유가 상승, 안전자산 수요 증가, 공급망 교란을 유발.",
       "interpretation": {"up": "긴장 고조. 유가·금·VIX↑, 위험자산 매도, 공급망 리스크↑", "down": "긴장 완화. 위험자산 반등, 안전자산↓, 공급망 정상화"},
       "dataSource": {},
       "tags": []
     },
     {
+      "id": "kr_cash",
+      "label": "현금/예금",
+      "sub": "예금·CMA·MMF",
+      "category": "한국·자산",
+      "level": 1,
+      "isAsset": true,
+      "description": "금리 상승기 매력 증가. 부동자금의 주요 대기처.",
+      "interpretation": {"up": "금리 상승기 또는 위험회피. 부동자금이 안전자산으로 이동.", "down": "금리 인하기 또는 위험선호. 자금이 주식·부동산으로 이동."},
+      "dataSource": {},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "kr_bonds",
+      "label": "채권",
+      "sub": "국채·회사채",
+      "category": "한국·자산",
+      "level": 1,
+      "isAsset": true,
+      "description": "추경 국채 발행에 민감. 금리 인하기 강세.",
+      "interpretation": {"up": "금리 인하 기대 또는 안전자산 수요 증가. 채권 가격 상승.", "down": "금리 상승기 또는 국채 대량 발행. 채권 가격 하락."},
+      "dataSource": {},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "kr_stocks",
+      "label": "주식",
+      "sub": "코스피·코스닥",
+      "category": "한국·자산",
+      "level": 1,
+      "isAsset": true,
+      "description": "외국인 수급과 환율에 민감. 글로벌 유동성 영향 큼.",
+      "interpretation": {"up": "외국인 매수 유입, 수출 호조, 글로벌 유동성 확대.", "down": "외국인 매도, 원화 약세, 대외 불확실성 확대."},
+      "dataSource": {},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "kr_realestate",
+      "label": "부동산",
+      "sub": "아파트·전세",
+      "category": "한국·자산",
+      "level": 1,
+      "isAsset": true,
+      "description": "최대 자산. 금리·전세·공급에 민감. 유동성 낮음.",
+      "interpretation": {"up": "금리 인하, 전세가 상승, 공급 부족. 가계 자산 효과 확대.", "down": "금리 상승, 공급 과잉, 역전세 리스크. 가계부채 부담 증가."},
+      "dataSource": {},
+      "tags": ["핵심"]
+    },
+    {
       "id": "kr_rate",
       "label": "기준금리",
       "sub": "한은 기준금리",
-      "category": "한국·통화재정",
+      "category": "한국·지표",
       "level": 1,
+      "isAsset": false,
       "description": "한국은행이 설정하는 기준금리. 한미 금리차, 환율, 부동산 시장에 직접적 영향.",
       "interpretation": {"up": "긴축. 대출금리↑, 부동산↓, 은행 수익↑", "down": "완화. 대출금리↓, 부동산↑, 소비 활성화"},
       "dataSource": {},
       "tags": ["핵심"]
     },
     {
-      "id": "kr_fiscal",
-      "label": "추경/재정",
-      "sub": "국고채 발행",
-      "category": "한국·통화재정",
-      "level": 3,
-      "description": "추가경정예산과 국고채 발행. 재정 확대 시 경기 부양 효과가 있으나 국채 금리 상승 압력 유발.",
-      "interpretation": {"up": "재정 확대. 경기 부양, 국채 공급↑ → 금리 상승 압력", "down": "재정 긴축. 경기 위축 가능, 국채 공급↓"},
+      "id": "kr_won",
+      "label": "원화",
+      "sub": "원/달러 환율",
+      "category": "한국·지표",
+      "level": 1,
+      "isAsset": false,
+      "description": "원/달러 환율. 달러 강세 시 원화 약세. 외국인 자금 흐름과 수출 경쟁력에 직접적 영향.",
+      "interpretation": {"up": "원화 강세(환율↓). 외국인 투자 매력↑, 수입물가 안정", "down": "원화 약세(환율↑). 외국인 자금 유출, 수입물가↑"},
+      "dataSource": {"fred": "DEXKOUS"},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "kr_foreign",
+      "label": "외국인 매매",
+      "sub": "순매수/순매도",
+      "category": "한국·지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "외국인 투자자의 순매수/순매도 동향. 환율과 밀접하며 대형주 방향성의 핵심 변수.",
+      "interpretation": {"up": "외국인 순매수↑. 원화 강세·위험선호 반영, 대형주 상승", "down": "외국인 순매도↑. 원화 약세·위험 회피, 대형주 하락 압력"},
+      "dataSource": {},
+      "tags": []
+    },
+    {
+      "id": "kr_gdp",
+      "label": "GDP 성장률",
+      "sub": "한국 GDP",
+      "category": "한국·지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "한국 경제 성장률. 수출·소비·투자의 합으로 결정되며 경기 사이클의 기준.",
+      "interpretation": {"up": "경기 확장. 기업실적↑, 고용↑, 코스피 상승 지지", "down": "경기 둔화. 실적↓, 정책 완화 기대"},
       "dataSource": {},
       "tags": []
     },
@@ -257,30 +349,21 @@
       "id": "kr_consumption",
       "label": "소비",
       "sub": "소매판매",
-      "category": "한국·실물경제",
-      "level": 1,
+      "category": "한국·지표",
+      "level": 2,
+      "isAsset": false,
       "description": "가계 소비 지출. 내수 경기의 핵심 동력이며 GDP에서 큰 비중을 차지.",
       "interpretation": {"up": "내수 회복. 기업 매출↑, GDP 성장 지지", "down": "내수 부진. 기업 실적↓, 경기 둔화 시그널"},
       "dataSource": {"fred": "RSAFS"},
-      "tags": ["핵심"]
-    },
-    {
-      "id": "kr_gdp",
-      "label": "GDP 성장률",
-      "sub": "한국 GDP",
-      "category": "한국·실물경제",
-      "level": 2,
-      "description": "한국 경제 성장률. 수출·소비·투자의 합으로 결정되며 경기 사이클의 기준.",
-      "interpretation": {"up": "경기 확장. 기업실적↑, 고용↑, 코스피 상승 지지", "down": "경기 둔화. 실적↓, 정책 완화 기대"},
-      "dataSource": {},
       "tags": []
     },
     {
       "id": "kr_construction",
       "label": "건설투자",
       "sub": "GDP 14%",
-      "category": "한국·실물경제",
-      "level": 2,
+      "category": "한국·지표",
+      "level": 3,
+      "isAsset": false,
       "description": "GDP의 약 14%를 차지하는 건설 부문 투자. 인프라·주택 건설이 경기에 큰 영향.",
       "interpretation": {"up": "건설 경기 활황. GDP↑, 고용↑, 자재 수요↑", "down": "건설 경기 침체. GDP↓, 관련 산업 연쇄 위축"},
       "dataSource": {},
@@ -290,112 +373,75 @@
       "id": "kr_export",
       "label": "수출",
       "sub": "교역량",
-      "category": "한국·실물경제",
+      "category": "한국·지표",
       "level": 3,
+      "isAsset": false,
       "description": "한국의 수출 규모. 반도체·자동차·석유화학 중심의 수출 중심 경제 구조에서 핵심 변수.",
       "interpretation": {"up": "수출 호조. GDP↑, 기업실적↑, 경상수지 흑자↑", "down": "수출 부진. GDP↓, 제조업 위축, 환율 불안"},
       "dataSource": {},
       "tags": []
     },
     {
-      "id": "kr_reits",
-      "label": "부동산",
-      "sub": "주택/리츠",
-      "category": "한국·실물경제",
-      "level": 2,
-      "description": "주택 시장과 부동산 투자. 금리에 민감하며 가계 자산의 70% 이상을 차지.",
-      "interpretation": {"up": "부동산 가격↑. 자산 효과로 소비↑, 건설투자↑", "down": "부동산 가격↓. 역자산 효과, 가계부채 리스크↑"},
-      "dataSource": {},
-      "tags": []
-    },
-    {
-      "id": "kr_housing",
-      "label": "전세",
-      "sub": "전세 수급",
-      "category": "한국·실물경제",
+      "id": "kr_fiscal",
+      "label": "추경/재정",
+      "sub": "국고채 발행",
+      "category": "한국·지표",
       "level": 3,
-      "description": "전세 시장 수급 동향. 전세가율은 매매가격의 선행 지표 역할을 하며 갭투자와 밀접한 관계.",
-      "interpretation": {"up": "전세 수요↑ 또는 공급↓. 전세가↑ → 매매가↑ 압력", "down": "전세 공급↑ 또는 수요↓. 전세가↓ → 역전세 리스크"},
-      "dataSource": {},
-      "tags": []
-    },
-    {
-      "id": "kr_won",
-      "label": "원화",
-      "sub": "원/달러 환율",
-      "category": "한국·금융시장",
-      "level": 1,
-      "description": "원/달러 환율. 달러 강세 시 원화 약세. 외국인 자금 흐름과 수출 경쟁력에 직접적 영향.",
-      "interpretation": {"up": "원화 강세(환율↓). 외국인 투자 매력↑, 수입물가 안정", "down": "원화 약세(환율↑). 외국인 자금 유출, 수입물가↑"},
-      "dataSource": {"fred": "DEXKOUS"},
-      "tags": ["핵심"]
-    },
-    {
-      "id": "kr_kospi",
-      "label": "코스피",
-      "sub": "KOSPI",
-      "category": "한국·금융시장",
-      "level": 1,
-      "description": "한국 대표 주가지수. 외국인 수급, 환율, 수출 실적에 큰 영향을 받음.",
-      "interpretation": {"up": "시장 상승. 외국인 매수, 원화 강세, 수출 호조 반영", "down": "시장 하락. 외국인 매도, 원화 약세, 대외 불확실성↑"},
-      "dataSource": {},
-      "tags": ["핵심"]
-    },
-    {
-      "id": "kr_foreign",
-      "label": "외국인 매매",
-      "sub": "순매수/순매도",
-      "category": "한국·금융시장",
-      "level": 2,
-      "description": "외국인 투자자의 순매수/순매도 동향. 환율과 밀접하며 대형주 방향성의 핵심 변수.",
-      "interpretation": {"up": "외국인 순매수↑. 원화 강세·위험선호 반영, 대형주 상승", "down": "외국인 순매도↑. 원화 약세·위험 회피, 대형주 하락 압력"},
-      "dataSource": {},
-      "tags": []
-    },
-    {
-      "id": "kr_bank",
-      "label": "은행주",
-      "sub": "금융섹터",
-      "category": "한국·금융시장",
-      "level": 3,
-      "description": "한국 금융섹터 주가. 금리 상승 시 예대마진 확대로 수혜. 경기와 금리 방향에 동시 영향.",
-      "interpretation": {"up": "금리↑ 수혜, 예대마진↑, 대출 성장 기대", "down": "금리↓ 시 마진↓, 경기 침체 시 부실채권 우려"},
+      "isAsset": false,
+      "description": "추가경정예산과 국고채 발행. 재정 확대 시 경기 부양 효과가 있으나 국채 금리 상승 압력 유발.",
+      "interpretation": {"up": "재정 확대. 경기 부양, 국채 공급↑ → 금리 상승 압력", "down": "재정 긴축. 경기 위축 가능, 국채 공급↓"},
       "dataSource": {},
       "tags": []
     }
   ],
   "links": [
     {
-      "id": "us_rate-us_bond",
+      "id": "us_rate-us_cash",
       "source": "us_rate",
-      "target": "us_bond",
+      "target": "us_cash",
       "type": "비례",
+      "strength": 4,
+      "description": "금리↑ → 예금 수익↑ → 현금 유입"
+    },
+    {
+      "id": "us_rate-us_stocks",
+      "source": "us_rate",
+      "target": "us_stocks",
+      "type": "반비례",
       "strength": 5,
-      "description": "기준금리↑ → 국채금리↑"
+      "description": "금리↑ → 할인율↑ → 주식↓"
     },
     {
-      "id": "us_rate-us_nasdaq",
+      "id": "us_rate-us_bonds",
       "source": "us_rate",
-      "target": "us_nasdaq",
+      "target": "us_bonds",
+      "type": "반비례",
+      "strength": 5,
+      "description": "금리↑ → 채권가격↓"
+    },
+    {
+      "id": "us_rate-us_realestate",
+      "source": "us_rate",
+      "target": "us_realestate",
       "type": "반비례",
       "strength": 4,
-      "description": "금리↑ → 할인율↑ → 성장주↓"
+      "description": "금리↑ → 모기지 부담↑ → 부동산↓"
     },
     {
-      "id": "us_rate-us_dollar",
-      "source": "us_rate",
-      "target": "us_dollar",
+      "id": "us_cpi-us_cash",
+      "source": "us_cpi",
+      "target": "us_cash",
+      "type": "반비례",
+      "strength": 4,
+      "description": "인플레↑ → 현금 실질가치↓"
+    },
+    {
+      "id": "us_cpi-us_commodity",
+      "source": "us_cpi",
+      "target": "us_commodity",
       "type": "비례",
       "strength": 4,
-      "description": "금리↑ → 달러 매력↑ → 달러↑"
-    },
-    {
-      "id": "us_rate-us_gold",
-      "source": "us_rate",
-      "target": "us_gold",
-      "type": "반비례",
-      "strength": 3,
-      "description": "실질금리↑ → 금 매력↓"
+      "description": "인플레↑ → 실물자산 헤지 수요↑"
     },
     {
       "id": "us_cpi-us_rate",
@@ -406,12 +452,76 @@
       "description": "인플레↑ → 긴축 압력 → 금리↑"
     },
     {
+      "id": "us_vix-us_stocks",
+      "source": "us_vix",
+      "target": "us_stocks",
+      "type": "반비례",
+      "strength": 4,
+      "description": "공포↑ → 주식 매도"
+    },
+    {
+      "id": "us_vix-us_bonds",
+      "source": "us_vix",
+      "target": "us_bonds",
+      "type": "비례",
+      "strength": 3,
+      "description": "공포↑ → 안전자산(채권) 매수"
+    },
+    {
+      "id": "us_vix-us_commodity",
+      "source": "us_vix",
+      "target": "us_commodity",
+      "type": "비례",
+      "strength": 3,
+      "description": "공포↑ → 금 매수"
+    },
+    {
+      "id": "us_gdp-us_stocks",
+      "source": "us_gdp",
+      "target": "us_stocks",
+      "type": "비례",
+      "strength": 4,
+      "description": "성장↑ → 기업실적↑ → 주식↑"
+    },
+    {
+      "id": "us_gdp-us_rate",
+      "source": "us_gdp",
+      "target": "us_rate",
+      "type": "반비례",
+      "strength": 3,
+      "description": "성장↓ → 금리인하 압력"
+    },
+    {
+      "id": "us_liquidity-us_stocks",
+      "source": "us_liquidity",
+      "target": "us_stocks",
+      "type": "비례",
+      "strength": 5,
+      "description": "유동성↑ → 자산가격↑"
+    },
+    {
+      "id": "us_liquidity-us_realestate",
+      "source": "us_liquidity",
+      "target": "us_realestate",
+      "type": "비례",
+      "strength": 3,
+      "description": "유동성↑ → 부동산↑"
+    },
+    {
+      "id": "us_dollar-us_commodity",
+      "source": "us_dollar",
+      "target": "us_commodity",
+      "type": "반비례",
+      "strength": 4,
+      "description": "달러↑ → 원자재↓"
+    },
+    {
       "id": "us_oil-us_cpi",
       "source": "us_oil",
       "target": "us_cpi",
       "type": "비례",
       "strength": 4,
-      "description": "유가↑ → 에너지 물가↑ → CPI↑"
+      "description": "유가↑ → 에너지 물가↑"
     },
     {
       "id": "us_oil-us_gdp",
@@ -422,84 +532,20 @@
       "description": "유가↑ → 비용↑ → 성장↓"
     },
     {
-      "id": "us_war-us_oil",
-      "source": "us_war",
-      "target": "us_oil",
-      "type": "비례",
-      "strength": 4,
-      "description": "전쟁 → 공급불안 → 유가↑"
-    },
-    {
-      "id": "us_war-us_gold",
-      "source": "us_war",
-      "target": "us_gold",
+      "id": "us_m2-us_stocks",
+      "source": "us_m2",
+      "target": "us_stocks",
       "type": "비례",
       "strength": 3,
-      "description": "전쟁 → 안전자산 수요↑ → 금↑"
+      "description": "부동자금↑ → 자산시장 유입"
     },
     {
-      "id": "us_war-us_vix",
-      "source": "us_war",
-      "target": "us_vix",
-      "type": "비례",
-      "strength": 3,
-      "description": "전쟁 → 불확실성↑ → VIX↑"
-    },
-    {
-      "id": "us_vix-us_nasdaq",
-      "source": "us_vix",
-      "target": "us_nasdaq",
-      "type": "반비례",
-      "strength": 3,
-      "description": "공포↑ → 위험회피 → 성장주↓"
-    },
-    {
-      "id": "us_tariff-us_cpi",
-      "source": "us_tariff",
-      "target": "us_cpi",
-      "type": "비례",
-      "strength": 4,
-      "description": "관세↑ → 수입물가↑ → 인플레↑ (3-6개월 시차)"
-    },
-    {
-      "id": "us_tariff-us_gdp",
-      "source": "us_tariff",
-      "target": "us_gdp",
-      "type": "반비례",
-      "strength": 4,
-      "description": "관세↑ → 교역↓ → 성장↓"
-    },
-    {
-      "id": "us_liquidity-us_nasdaq",
-      "source": "us_liquidity",
-      "target": "us_nasdaq",
-      "type": "비례",
-      "strength": 5,
-      "description": "유동성↑ → 자산가격↑"
-    },
-    {
-      "id": "us_liquidity-us_gold",
-      "source": "us_liquidity",
-      "target": "us_gold",
-      "type": "비례",
-      "strength": 3,
-      "description": "유동성↑ → 실물자산 수요↑"
-    },
-    {
-      "id": "us_gdp-us_rate",
-      "source": "us_gdp",
-      "target": "us_rate",
-      "type": "반비례",
-      "strength": 4,
-      "description": "성장↓ → 금리인하 압력"
-    },
-    {
-      "id": "us_fiscal-us_bond",
+      "id": "us_fiscal-us_bonds",
       "source": "us_fiscal",
-      "target": "us_bond",
-      "type": "비례",
+      "target": "us_bonds",
+      "type": "반비례",
       "strength": 3,
-      "description": "국채발행↑ → 국채금리↑"
+      "description": "국채발행↑ → 채권가격↓"
     },
     {
       "id": "us_fiscal-us_dollar",
@@ -507,15 +553,7 @@
       "target": "us_dollar",
       "type": "반비례",
       "strength": 3,
-      "description": "재정적자↑ → 달러 신뢰↓"
-    },
-    {
-      "id": "us_real_rate-us_gold",
-      "source": "us_real_rate",
-      "target": "us_gold",
-      "type": "반비례",
-      "strength": 4,
-      "description": "실질금리↑ → 금↓"
+      "description": "재정적자↑ → 달러 약세"
     },
     {
       "id": "us_unemployment-us_gdp",
@@ -526,60 +564,108 @@
       "description": "실업↑ → 소비↓ → 성장↓"
     },
     {
-      "id": "us_semi-us_cpi",
-      "source": "us_semi",
-      "target": "us_cpi",
-      "type": "반비례",
-      "strength": 2,
-      "description": "AI 생산성↑ → 인플레 억제"
-    },
-    {
-      "id": "us_m2-us_nasdaq",
-      "source": "us_m2",
-      "target": "us_nasdaq",
-      "type": "비례",
-      "strength": 3,
-      "description": "부동자금↑ → 자산시장 유입"
-    },
-    {
       "id": "us_sentiment-us_gdp",
       "source": "us_sentiment",
       "target": "us_gdp",
       "type": "비례",
       "strength": 2,
-      "description": "심리 개선 → 소비↑ → 성장↑"
+      "description": "심리 개선 → 소비↑"
     },
     {
-      "id": "kr_rate-kr_reits",
-      "source": "kr_rate",
-      "target": "kr_reits",
+      "id": "us_spread-us_stocks",
+      "source": "us_spread",
+      "target": "us_stocks",
+      "type": "비례",
+      "strength": 2,
+      "description": "금리차 역전 → 침체 경고 → 주식↓"
+    },
+    {
+      "id": "us_tariff-us_cpi",
+      "source": "us_tariff",
+      "target": "us_cpi",
+      "type": "비례",
+      "strength": 4,
+      "description": "관세↑ → 수입물가↑ → 인플레↑"
+    },
+    {
+      "id": "us_tariff-us_gdp",
+      "source": "us_tariff",
+      "target": "us_gdp",
       "type": "반비례",
       "strength": 4,
-      "description": "금리↓ → 부동산↑"
+      "description": "관세↑ → 교역↓ → 성장↓"
     },
     {
-      "id": "kr_rate-kr_bank",
-      "source": "kr_rate",
-      "target": "kr_bank",
+      "id": "us_war-us_oil",
+      "source": "us_war",
+      "target": "us_oil",
+      "type": "비례",
+      "strength": 4,
+      "description": "전쟁 → 공급불안 → 유가↑"
+    },
+    {
+      "id": "us_war-us_commodity",
+      "source": "us_war",
+      "target": "us_commodity",
+      "type": "비례",
+      "strength": 4,
+      "description": "전쟁 → 안전자산 수요↑ → 금↑"
+    },
+    {
+      "id": "us_war-us_vix",
+      "source": "us_war",
+      "target": "us_vix",
       "type": "비례",
       "strength": 3,
-      "description": "금리↑ → 예대마진↑ → 은행↑"
+      "description": "전쟁 → VIX↑"
     },
     {
-      "id": "kr_rate-kr_consumption",
+      "id": "kr_rate-kr_cash",
       "source": "kr_rate",
-      "target": "kr_consumption",
-      "type": "반비례",
-      "strength": 3,
-      "description": "금리↓ → 대출이자↓ → 소비↑"
+      "target": "kr_cash",
+      "type": "비례",
+      "strength": 4,
+      "description": "금리↑ → 예금 수익↑ → 현금 유입"
     },
     {
-      "id": "kr_construction-kr_gdp",
+      "id": "kr_rate-kr_stocks",
+      "source": "kr_rate",
+      "target": "kr_stocks",
+      "type": "반비례",
+      "strength": 4,
+      "description": "금리↑ → 주식↓"
+    },
+    {
+      "id": "kr_rate-kr_realestate",
+      "source": "kr_rate",
+      "target": "kr_realestate",
+      "type": "반비례",
+      "strength": 5,
+      "description": "금리↓ → 대출이자↓ → 부동산↑"
+    },
+    {
+      "id": "kr_rate-kr_bonds",
+      "source": "kr_rate",
+      "target": "kr_bonds",
+      "type": "반비례",
+      "strength": 4,
+      "description": "금리↑ → 채권가격↓"
+    },
+    {
+      "id": "kr_foreign-kr_stocks",
+      "source": "kr_foreign",
+      "target": "kr_stocks",
+      "type": "비례",
+      "strength": 5,
+      "description": "외국인 매수 → 코스피↑"
+    },
+    {
+      "id": "kr_construction-kr_realestate",
       "source": "kr_construction",
-      "target": "kr_gdp",
+      "target": "kr_realestate",
       "type": "비례",
       "strength": 4,
-      "description": "건설투자가 GDP의 14%"
+      "description": "건설투자 = GDP 14%"
     },
     {
       "id": "kr_consumption-kr_gdp",
@@ -587,39 +673,23 @@
       "target": "kr_gdp",
       "type": "비례",
       "strength": 4,
-      "description": "소비↑ → 내수 회복 → GDP↑"
+      "description": "소비↑ → 내수↑ → GDP↑"
     },
     {
-      "id": "kr_export-kr_gdp",
-      "source": "kr_export",
-      "target": "kr_gdp",
+      "id": "kr_gdp-kr_stocks",
+      "source": "kr_gdp",
+      "target": "kr_stocks",
       "type": "비례",
-      "strength": 4,
-      "description": "수출 중심 경제, 수출↑ → GDP↑"
+      "strength": 3,
+      "description": "성장↑ → 증시↑"
     },
     {
-      "id": "kr_fiscal-kr_rate",
+      "id": "kr_fiscal-kr_bonds",
       "source": "kr_fiscal",
-      "target": "kr_rate",
-      "type": "조건부",
+      "target": "kr_bonds",
+      "type": "반비례",
       "strength": 3,
-      "description": "추경 국채발행 → 금리인하 효과 상쇄"
-    },
-    {
-      "id": "kr_housing-kr_reits",
-      "source": "kr_housing",
-      "target": "kr_reits",
-      "type": "비례",
-      "strength": 3,
-      "description": "전세↑ → 매매가↑ (선행지표)"
-    },
-    {
-      "id": "kr_foreign-kr_kospi",
-      "source": "kr_foreign",
-      "target": "kr_kospi",
-      "type": "비례",
-      "strength": 4,
-      "description": "외국인 매수 → 코스피↑"
+      "description": "추경 국채발행 → 채권가격↓"
     },
     {
       "id": "us_dollar-kr_won",
@@ -643,7 +713,15 @@
       "target": "kr_rate",
       "type": "비례",
       "strength": 3,
-      "description": "한미 금리차 영향 (조건부 약화 중)"
+      "description": "한미 금리차 영향"
+    },
+    {
+      "id": "us_liquidity-kr_stocks",
+      "source": "us_liquidity",
+      "target": "kr_stocks",
+      "type": "비례",
+      "strength": 4,
+      "description": "글로벌 유동성↑ → 한국증시↑"
     },
     {
       "id": "us_tariff-kr_export",
@@ -654,36 +732,28 @@
       "description": "관세↑ → 한국 수출↓"
     },
     {
-      "id": "us_liquidity-kr_kospi",
-      "source": "us_liquidity",
-      "target": "kr_kospi",
+      "id": "kr_export-kr_gdp",
+      "source": "kr_export",
+      "target": "kr_gdp",
       "type": "비례",
       "strength": 4,
-      "description": "글로벌 유동성↑ → 한국증시↑"
+      "description": "수출 중심 경제"
     },
     {
-      "id": "us_dollar-kr_kospi",
-      "source": "us_dollar",
-      "target": "kr_kospi",
-      "type": "반비례",
+      "id": "us_stocks-kr_stocks",
+      "source": "us_stocks",
+      "target": "kr_stocks",
+      "type": "비례",
       "strength": 3,
-      "description": "달러약세 → 코스피 밸류에이션 재평가"
+      "description": "글로벌 증시 동조"
     },
     {
-      "id": "kr_won-kr_consumption",
+      "id": "kr_won-kr_realestate",
       "source": "kr_won",
-      "target": "kr_consumption",
+      "target": "kr_realestate",
       "type": "비례",
       "strength": 2,
-      "description": "원화강세 → 수입물가안정 → 소비↑"
-    },
-    {
-      "id": "us_liquidity-kr_reits",
-      "source": "us_liquidity",
-      "target": "kr_reits",
-      "type": "비례",
-      "strength": 2,
-      "description": "유동성↑ → 부동산↑"
+      "description": "원화강세 → 수입물가안정 → 자산효과"
     }
   ]
 }

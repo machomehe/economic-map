@@ -87,7 +87,7 @@ html,body{
 /* SVG 요소 */
 .cat-box{rx:12;ry:12;cursor:grab}.cat-box:active{cursor:grabbing}
 .cat-label{font-size:12px;font-weight:700;pointer-events:none}
-.node-circle{stroke-width:1.5;cursor:pointer;transition:opacity .3s}
+.node-circle{cursor:pointer;transition:opacity .3s}
 .node-label{font-size:11px;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none;transition:opacity .3s}
 .node-sub{font-size:8px;fill:#999;text-anchor:middle;pointer-events:none;transition:opacity .3s}
 .node-touch{fill:transparent;cursor:pointer}
@@ -187,6 +187,7 @@ html,body{
   const GREEN='#16a34a', RED='#dc2626', YELLOW='#ca8a04';
   const linkColor = {'비례':GREEN,'반비례':RED,'조건부':YELLOW};
   const isCore = n=>n.tags&&n.tags.includes('핵심');
+  const isAsset = n=>!!n.isAsset;
 
   if(!nodes.length){
     document.getElementById('loading').innerHTML='<div style="color:#888">데이터가 비어 있습니다.</div>';
@@ -263,13 +264,14 @@ html,body{
 
   // 컬럼 정의
   const colDef = [
-    { label: '미국', cats: ['미국·통화재정', '미국·경기물가', '미국·금융시장', '미국·리스크'] },
-    { label: '한국', cats: ['한국·통화재정', '한국·실물경제', '한국·금융시장'] }
+    { label: '미국', cats: ['미국·지표', '미국·자산', '미국·리스크'] },
+    { label: '한국', cats: ['한국·지표', '한국·자산'] }
   ];
 
-  // 치수 (폰 세로 화면용)
-  const nodeR = 20;
-  const nodeSpaceX = 72;
+  // 치수
+  const nodeR = 18;
+  const assetExtra = 10; // 자산 노드 추가 반지름
+  const nodeSpaceX = 70;
   const boxPadX = 20;
   const boxPadTop = 34;
   const boxPadBot = 35;
@@ -277,7 +279,10 @@ html,body{
   const colGap = 25;
   const maxColsPerRow = 3;
 
-  // 각 박스 크기 계산
+  // 노드 반지름 계산 함수
+  const getR = d => isAsset(d) ? nodeR + assetExtra : (isCore(d) ? nodeR + 4 : nodeR);
+
+  // 각 박스 크기 계산 — 자산 박스는 더 큰 노드 간격 고려
   const boxInfo = {};
   colDef.forEach(col=>{
     col.cats.forEach(cat=>{
@@ -285,9 +290,12 @@ html,body{
       const n = catNodes[cat].length;
       const cols = Math.min(n, maxColsPerRow);
       const rowCount = Math.ceil(n/maxColsPerRow);
-      const w = boxPadX*2 + cols*nodeSpaceX;
-      const h = boxPadTop + rowCount*(nodeR*2+20+30) + boxPadBot;
-      boxInfo[cat] = {w, h, cols, rowCount};
+      const isAssetCat = cat.includes('자산');
+      const spaceX = isAssetCat ? nodeSpaceX + 16 : nodeSpaceX;
+      const rowH = isAssetCat ? (nodeR+assetExtra)*2+20+36 : nodeR*2+20+30;
+      const w = boxPadX*2 + cols*spaceX;
+      const h = boxPadTop + rowCount*rowH + boxPadBot;
+      boxInfo[cat] = {w, h, cols, rowCount, spaceX, rowH};
     });
   });
 
@@ -306,7 +314,7 @@ html,body{
   });
 
   // 컬럼들을 가로로 배치
-  const headerSpace = 30; // 컬럼 헤더용 공간
+  const headerSpace = 30;
   let cx = 0;
   colInfo.forEach(col=>{
     col.x = cx;
@@ -322,15 +330,14 @@ html,body{
     let by = col.y;
     col.cats.forEach(cat=>{
       const info = boxInfo[cat];
-      info.x = col.x + (col.width - info.w)/2; // 컬럼 내 중앙정렬
+      info.x = col.x + (col.width - info.w)/2;
       info.y = by;
-      // 노드 위치 계산
       const cNodes = catNodes[cat];
       cNodes.forEach((n,ni)=>{
         const c = ni % info.cols;
         const r = Math.floor(ni / info.cols);
-        n.x = info.x + boxPadX + nodeSpaceX/2 + c*nodeSpaceX;
-        n.y = info.y + boxPadTop + 20 + r*(nodeR*2+20+30);
+        n.x = info.x + boxPadX + info.spaceX/2 + c*info.spaceX;
+        n.y = info.y + boxPadTop + 20 + r*info.rowH;
       });
       by += info.h + boxGap;
     });
@@ -379,17 +386,20 @@ html,body{
   //  카테고리 박스 그리기
   // ============================================================
   const allCats = colInfo.flatMap(col=>col.cats);
+  const assetCatSet = new Set(['미국·자산','한국·자산']);
+
   allCats.forEach(cat=>{
     const info = boxInfo[cat];
     const c = catColor(cat);
     const g = boxG.append('g').attr('class','cat-group').datum({cat});
+    const isAC = assetCatSet.has(cat);
 
     g.append('rect')
       .attr('class','cat-box')
       .attr('x',info.x).attr('y',info.y)
       .attr('width',info.w).attr('height',info.h)
-      .attr('fill',c).attr('fill-opacity',.06)
-      .attr('stroke',c).attr('stroke-opacity',.2);
+      .attr('fill',c).attr('fill-opacity', isAC ? .1 : .06)
+      .attr('stroke',c).attr('stroke-opacity', isAC ? .3 : .2);
 
     g.append('text')
       .attr('class','cat-label')
@@ -449,19 +459,25 @@ html,body{
   const nodeEls = nodeGrp.selectAll('g').data(nodes).join('g')
     .attr('transform',d=>`translate(${d.x},${d.y})`);
 
-  nodeEls.append('circle').attr('class','node-touch').attr('r',d=>Math.max(22,isCore(d)?34:28));
+  // 터치 영역 — 자산 노드는 더 크게
+  nodeEls.append('circle').attr('class','node-touch').attr('r',d=> isAsset(d) ? 38 : (isCore(d) ? 34 : 28));
+
   // 노드 색상: 상승=초록, 하락=빨강, 데이터 없음=회색
   const chgFill = d => d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:'#555';
-  nodeEls.append('circle').attr('class','node-circle').attr('r',d=>isCore(d)?nodeR+6:nodeR)
-    .attr('fill',d=>chgFill(d)).attr('stroke','#ffffff33');
+
+  nodeEls.append('circle').attr('class','node-circle').attr('r',d=>getR(d))
+    .attr('fill',d=>chgFill(d))
+    .attr('stroke','#ffffff33')
+    .attr('stroke-width',d=> isAsset(d) ? 2.5 : 1.5);
+
   nodeEls.append('text').attr('class','node-label').attr('dy','.35em').text(d=>d.label);
   nodeEls.append('text').attr('class','node-sub').attr('dy','.35em')
-    .attr('y',d=>(isCore(d)?nodeR+6:nodeR)+12).text(d=>d.sub||'');
+    .attr('y',d=>getR(d)+12).text(d=>d.sub||'');
 
   // 실시간 값 표시
   nodeEls.filter(d=>d._val).each(function(d){
     const el=d3.select(this);
-    const r=isCore(d)?nodeR+6:nodeR;
+    const r=getR(d);
     const valY = r+26;
     const valColor = d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:'#888';
     const arrow = d._chgDir==='up'?'\u25B2':d._chgDir==='down'?'\u25BC':'';
@@ -534,7 +550,7 @@ html,body{
       const info = boxInfo[d.category];
       if(!info){d.x=e.x;d.y=e.y;}
       else{
-        const r = isCore(d)?nodeR+6:nodeR;
+        const r = getR(d);
         d.x = Math.max(info.x+r+4, Math.min(info.x+info.w-r-4, e.x));
         d.y = Math.max(info.y+boxPadTop+r, Math.min(info.y+info.h-r-4, e.y));
       }
@@ -586,7 +602,7 @@ html,body{
     linkEls.each(function(l){d3.select(this).classed('dimmed',!cLinks.has(l)).classed('highlighted',cLinks.has(l))});
     boxG.selectAll('.cat-group').each(function(dd){d3.select(this).classed('dimmed',!cCats.has(dd.cat))});
     nodeEls.select('.node-circle').transition().duration(250)
-      .attr('r',n=>n.id===d.id?(isCore(n)?nodeR+10:nodeR+4):(isCore(n)?nodeR+6:nodeR));
+      .attr('r',n=>n.id===d.id? getR(n)+4 : getR(n));
     document.getElementById('legend').classList.add('hidden');
     showSheet(d);
   }
@@ -597,7 +613,7 @@ html,body{
     nodeEls.classed('dimmed',false).classed('highlighted',false);
     linkEls.classed('dimmed',false).classed('highlighted',false);
     boxG.selectAll('.cat-group').classed('dimmed',false);
-    nodeEls.select('.node-circle').transition().duration(250).attr('r',n=>isCore(n)?nodeR+6:nodeR);
+    nodeEls.select('.node-circle').transition().duration(250).attr('r',n=>getR(n));
     hideSheet();
     document.getElementById('legend').classList.remove('hidden');
   }
@@ -666,7 +682,7 @@ html,body{
         el.select('.node-circle').transition().duration(400).style('opacity',stepOp[info.step]||.4);
         el.select('.node-label').transition().duration(400).style('opacity',stepOp[info.step]||.4);
         el.select('.node-sub').transition().duration(400).style('opacity',(stepOp[info.step]||.4)*.7);
-        const r=isCore(n)?nodeR+6:nodeR;
+        const r=getR(n);
         const[arrow,color]=info.sign==='up'?['\u2191',GREEN]:info.sign==='down'?['\u2193',RED]:['?',YELLOW];
         el.append('text').attr('class','sim-arrow').attr('x',r*.7).attr('y',-r*.6).attr('fill',color)
           .style('font-size',info.step===0?'20px':'16px').text(arrow);
@@ -726,7 +742,7 @@ html,body{
     nodeEls.each(function(n){
       const el=d3.select(this);
       el.classed('dimmed',false).classed('highlighted',false).selectAll('.sim-arrow').remove();
-      el.select('.node-circle').transition().duration(300).style('opacity',1).attr('r',isCore(n)?nodeR+6:nodeR);
+      el.select('.node-circle').transition().duration(300).style('opacity',1).attr('r',getR(n));
       el.select('.node-label').transition().duration(300).style('opacity',1);
       el.select('.node-sub').transition().duration(300).style('opacity',1);
     });
@@ -749,7 +765,7 @@ html,body{
     const q=searchIn.value.trim().toLowerCase();
     if(!q){searchRes.style.display='none';return}
     const m=nodes.filter(n=>{
-      if(n.level > currentLevel) return false; // 숨겨진 노드 제외
+      if(n.level > currentLevel) return false;
       return n.label.toLowerCase().includes(q)||(n.sub&&n.sub.toLowerCase().includes(q))||(n.category&&n.category.toLowerCase().includes(q));
     }).slice(0,8);
     if(!m.length){searchRes.style.display='none';return}
