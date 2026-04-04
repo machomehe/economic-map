@@ -34,8 +34,12 @@ html,body{
 .result-label{font-weight:600}
 .result-sub{color:#888;font-size:11px;margin-left:4px}
 
-/* 필터 */
-#filters{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+/* 필터 + 레벨 */
+#filter-row{display:flex;gap:8px;align-items:center}
+#level-btns{display:flex;gap:4px;flex-shrink:0}
+.level-btn{padding:6px 12px;border-radius:16px;border:1px solid #333;background:#1a1a24dd;color:#aaa;font-size:11px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .2s;min-height:30px}
+.level-btn.active{background:#60a5fa;color:#000;border-color:#60a5fa}
+#filters{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;flex:1}
 #filters::-webkit-scrollbar{display:none}
 /* 수정 버튼 */
 .top-btn{width:40px;height:40px;border:1px solid #333;border-radius:10px;background:#1a1a24ee;color:#aaa;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);flex-shrink:0;transition:all .2s}
@@ -122,8 +126,13 @@ html,body{
       <span id="search-icon">&#x1F50D;</span>
       <input id="search" type="text" placeholder="지표 검색..." autocomplete="off">
       <div id="search-results"></div>
-    <button class="top-btn" id="edit-btn" title="배치 수정">&#x270F;&#xFE0F;</button>
     </div>
+    <div id="level-btns">
+      <button class="level-btn active" data-level="1">핵심</button>
+      <button class="level-btn" data-level="2">기본</button>
+      <button class="level-btn" data-level="3">심화</button>
+    </div>
+    <button class="top-btn" id="edit-btn" title="배치 수정">&#x270F;&#xFE0F;</button>
   </div>
   <div id="filters"></div>
 </div>
@@ -187,7 +196,6 @@ html,body{
   // ============================================================
   //  실시간 값 로드
   // ============================================================
-  // FRED 시리즈 → 노드 매핑 (dataSource.fred 기반 + 보조 매핑)
   const fredAlias = {'VIXCLS':'^VIX','NASDAQCOM':'^IXIC'};
   let valuesData = {};
   try {
@@ -219,10 +227,8 @@ html,body{
 
   nodes.forEach(n=>{
     const fred = (n.dataSource||{}).fred||'';
-    // FRED 시리즈 찾기 (직접 매핑 또는 alias)
     let series = fred;
     if(!valuesData[series]){
-      // alias 역매핑: yahoo → FRED
       for(const[fid,yid]of Object.entries(fredAlias)){
         if(yid===fred && valuesData[fid]){series=fid;break;}
       }
@@ -246,7 +252,7 @@ html,body{
   });
 
   // ============================================================
-  //  그리드 레이아웃 계산
+  //  컬럼 기반 레이아웃 계산
   // ============================================================
   // 카테고리별 노드 그룹
   const catNodes = {};
@@ -255,69 +261,79 @@ html,body{
     catNodes[n.category].push(n);
   });
 
-  // 레이아웃 순서 (세로 배치, 폰 세로 화면 최적화)
-  const rowDef = [
-    ['정책','주식'],
-    ['채권','환율'],
-    ['물가','수급'],
-    ['원자재','안전자산'],
-    ['이벤트','심리']
+  // 컬럼 정의
+  const colDef = [
+    { label: '미국', cats: ['미국·통화재정', '미국·경기물가', '미국·금융시장', '미국·리스크'] },
+    { label: '한국', cats: ['한국·통화재정', '한국·실물경제', '한국·금융시장'] }
   ];
 
-  // 존재하지 않는 카테고리 필터, 미배정 카테고리 추가
-  const assigned = new Set(rowDef.flat());
-  const rows = rowDef.map(r=>r.filter(c=>catNodes[c]));
-  Object.keys(catNodes).forEach(c=>{ if(!assigned.has(c)) rows[rows.length-1].push(c); });
-
-  // 치수
-  const nodeR = 24;
-  const nodeSpaceX = 90;
-  const nodeSpaceY = 20;
-  const boxPadX = 30;
-  const boxPadTop = 38;
-  const boxPadBot = 40;
-  const boxGap = 20;
-  const rowGap = 25;
+  // 치수 (폰 세로 화면용)
+  const nodeR = 20;
+  const nodeSpaceX = 72;
+  const boxPadX = 20;
+  const boxPadTop = 34;
+  const boxPadBot = 35;
+  const boxGap = 15;
+  const colGap = 25;
+  const maxColsPerRow = 3;
 
   // 각 박스 크기 계산
   const boxInfo = {};
-  rows.forEach(row=>{
-    row.forEach(cat=>{
+  colDef.forEach(col=>{
+    col.cats.forEach(cat=>{
+      if(!catNodes[cat]) return;
       const n = catNodes[cat].length;
-      const cols = Math.min(n, 4);
-      const rowCount = Math.ceil(n/4);
+      const cols = Math.min(n, maxColsPerRow);
+      const rowCount = Math.ceil(n/maxColsPerRow);
       const w = boxPadX*2 + cols*nodeSpaceX;
-      const h = boxPadTop + rowCount*(nodeR*2+nodeSpaceY+30) + boxPadBot;
+      const h = boxPadTop + rowCount*(nodeR*2+20+30) + boxPadBot;
       boxInfo[cat] = {w, h, cols, rowCount};
     });
   });
 
-  // 행별 최대 높이, 총 너비
-  const rowHeights = rows.map(row=>Math.max(...row.map(c=>boxInfo[c].h)));
-  const rowWidths = rows.map(row=>row.reduce((s,c)=>s+boxInfo[c].w,0) + (row.length-1)*boxGap);
-  const totalW = Math.max(...rowWidths);
-  const totalH = rowHeights.reduce((s,h)=>s+h,0) + (rows.length-1)*rowGap;
-
-  // 박스 위치 계산
-  let cy = 0;
-  rows.forEach((row,ri)=>{
-    const rw = rowWidths[ri];
-    let cx = (totalW-rw)/2; // 행 중앙 정렬
-    row.forEach(cat=>{
+  // 각 컬럼별로 카테고리를 세로로 쌓기
+  const colInfo = colDef.map(col=>{
+    const validCats = col.cats.filter(c=>catNodes[c]&&boxInfo[c]);
+    let maxW = 0;
+    let totalH = 0;
+    validCats.forEach((cat,i)=>{
       const info = boxInfo[cat];
-      info.x = cx;
-      info.y = cy;
+      if(info.w > maxW) maxW = info.w;
+      totalH += info.h;
+      if(i < validCats.length-1) totalH += boxGap;
+    });
+    return { label: col.label, cats: validCats, width: maxW, height: totalH, x:0, y:0, centerX:0 };
+  });
+
+  // 컬럼들을 가로로 배치
+  const headerSpace = 30; // 컬럼 헤더용 공간
+  let cx = 0;
+  colInfo.forEach(col=>{
+    col.x = cx;
+    col.y = headerSpace;
+    col.centerX = cx + col.width/2;
+    cx += col.width + colGap;
+  });
+  const totalW = cx - colGap;
+  const totalH = Math.max(...colInfo.map(c=>c.height)) + headerSpace;
+
+  // 박스 및 노드 위치 계산
+  colInfo.forEach(col=>{
+    let by = col.y;
+    col.cats.forEach(cat=>{
+      const info = boxInfo[cat];
+      info.x = col.x + (col.width - info.w)/2; // 컬럼 내 중앙정렬
+      info.y = by;
       // 노드 위치 계산
       const cNodes = catNodes[cat];
       cNodes.forEach((n,ni)=>{
-        const col = ni % info.cols;
-        const row = Math.floor(ni / info.cols);
-        n.x = cx + boxPadX + nodeSpaceX/2 + col*nodeSpaceX;
-        n.y = cy + boxPadTop + 20 + row*(nodeR*2+nodeSpaceY+30);
+        const c = ni % info.cols;
+        const r = Math.floor(ni / info.cols);
+        n.x = info.x + boxPadX + nodeSpaceX/2 + c*nodeSpaceX;
+        n.y = info.y + boxPadTop + 20 + r*(nodeR*2+20+30);
       });
-      cx += info.w + boxGap;
+      by += info.h + boxGap;
     });
-    cy += rowHeights[ri] + rowGap;
   });
 
   // ============================================================
@@ -346,9 +362,23 @@ html,body{
   const nodeGrp = zoomG.append('g');
 
   // ============================================================
+  //  컬럼 헤더
+  // ============================================================
+  colInfo.forEach(col=>{
+    zoomG.append('text')
+      .attr('x', col.centerX)
+      .attr('y', col.y - 15)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#888')
+      .attr('font-size', '14px')
+      .attr('font-weight', '700')
+      .text(col.label);
+  });
+
+  // ============================================================
   //  카테고리 박스 그리기
   // ============================================================
-  const allCats = rows.flat();
+  const allCats = colInfo.flatMap(col=>col.cats);
   allCats.forEach(cat=>{
     const info = boxInfo[cat];
     const c = catColor(cat);
@@ -371,7 +401,6 @@ html,body{
   // ============================================================
   //  링크 그리기
   // ============================================================
-  // source/target을 id로 참조 → 노드 객체 연결
   const nodeMap = {};
   nodes.forEach(n=>{nodeMap[n.id]=n});
   links.forEach(l=>{
@@ -451,6 +480,39 @@ html,body{
   });
 
   nodeEls.on('click',(e,d)=>{e.stopPropagation();selectNode(d)});
+
+  // ============================================================
+  //  레벨 토글
+  // ============================================================
+  let currentLevel = 1;
+  document.querySelectorAll('.level-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      currentLevel = parseInt(btn.dataset.level);
+      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      applyLevel();
+    });
+  });
+
+  function applyLevel(){
+    nodeEls.each(function(d){
+      const visible = d.level <= currentLevel;
+      d3.select(this).style('display', visible ? null : 'none');
+    });
+    linkEls.each(function(l){
+      const sVis = l.source.level <= currentLevel;
+      const tVis = l.target.level <= currentLevel;
+      d3.select(this).style('display', (sVis && tVis) ? null : 'none');
+    });
+    // 카테고리 박스 — 해당 레벨에 표시할 노드가 없으면 숨기기
+    boxG.selectAll('.cat-group').each(function(dd){
+      const hasVisible = catNodes[dd.cat] && catNodes[dd.cat].some(n => n.level <= currentLevel);
+      d3.select(this).style('display', hasVisible ? null : 'none');
+    });
+  }
+
+  // 초기 레벨 적용
+  applyLevel();
 
   // ============================================================
   //  수정 모드
@@ -561,7 +623,7 @@ html,body{
   sheet.addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-touchY>60)deselect()},{passive:true});
 
   // ============================================================
-  //  시뮬레이션 ("오르면?/내리면?")
+  //  시뮬레이션 ("오르면?/내리면?") — 레벨 필터링 적용
   // ============================================================
   document.getElementById('btn-up').addEventListener('click',()=>runSim('up'));
   document.getElementById('btn-down').addEventListener('click',()=>runSim('down'));
@@ -584,6 +646,9 @@ html,body{
       if(step>=3)continue;
       for(const nb of(adj.get(id)||[])){
         if(visited.has(nb.to))continue;
+        // 숨겨진 노드(레벨 초과) 스킵
+        const targetNode = nodes.find(n=>n.id===nb.to);
+        if(targetNode && targetNode.level > currentLevel) continue;
         const next=nb.type==='비례'?sign:nb.type==='반비례'?(sign==='up'?'down':'up'):'unknown';
         visited.set(nb.to,{sign:next,step:step+1});
         queue.push({id:nb.to,sign:next,step:step+1});
@@ -672,16 +737,21 @@ html,body{
     document.getElementById('top-bar').style.display='';
     document.getElementById('legend').classList.remove('hidden');
     selected=null;
+    // 레벨 필터 재적용
+    applyLevel();
   }
 
   // ============================================================
-  //  검색
+  //  검색 — 숨겨진 노드 제외
   // ============================================================
   const searchIn=document.getElementById('search'),searchRes=document.getElementById('search-results');
   searchIn.addEventListener('input',()=>{
     const q=searchIn.value.trim().toLowerCase();
     if(!q){searchRes.style.display='none';return}
-    const m=nodes.filter(n=>n.label.toLowerCase().includes(q)||(n.sub&&n.sub.toLowerCase().includes(q))||(n.category&&n.category.toLowerCase().includes(q))).slice(0,8);
+    const m=nodes.filter(n=>{
+      if(n.level > currentLevel) return false; // 숨겨진 노드 제외
+      return n.label.toLowerCase().includes(q)||(n.sub&&n.sub.toLowerCase().includes(q))||(n.category&&n.category.toLowerCase().includes(q));
+    }).slice(0,8);
     if(!m.length){searchRes.style.display='none';return}
     searchRes.innerHTML=m.map(n=>`<div class="result-item" data-id="${n.id}"><span class="result-dot" style="background:${catColor(n.category)}"></span><span class="result-label">${n.label}</span><span class="result-sub">${n.sub||''}</span></div>`).join('');
     searchRes.style.display='block';

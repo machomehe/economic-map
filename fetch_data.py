@@ -10,22 +10,21 @@ FRED_API_KEY = os.environ.get('FRED_API_KEY', '')
 
 # data/data.json의 dataSource.fred 기준
 SERIES_IDS = [
-    'FEDFUNDS',         # 기준금리
-    'DFII10',           # 실질금리
-    'A191RL1Q225SBEA',  # GDP 성장률
-    'DGS10',            # 채권(10Y 금리)
-    'T10Y2Y',           # 장단기금리차
-    'BAMLH0A0HYM2',    # 하이일드 스프레드
-    'CPIAUCSL',         # 인플레이션 (CPI)
-    'RSAFS',            # 소비 (소매판매)
-    'DTWEXBGS',         # 달러인덱스
-    'DEXKOUS',          # 원/달러 환율
-    'DCOILWTICO',       # 유가 (WTI)
-    # 금: FRED 시리즈 비활성 — 추후 대체 소스 추가
-    'UNRATE',           # 실업률
-    'VIXCLS',           # VIX
-    'NASDAQCOM',        # 나스닥 (성장주 proxy)
-    'SP500',            # S&P 500
+    'FEDFUNDS',         # us_rate: 기준금리
+    'DFII10',           # us_real_rate: 실질금리 (10Y TIPS)
+    'A191RL1Q225SBEA',  # us_gdp: GDP 성장률
+    'UNRATE',           # us_unemployment: 실업률
+    'CPIAUCSL',         # us_cpi: 인플레이션 (CPI)
+    'DCOILWTICO',       # us_oil: 유가 (WTI)
+    'DGS10',            # us_bond: 국채금리 (10Y)
+    'T10Y2Y',           # us_spread: 장단기금리차
+    'BAMLH0A0HYM2',    # us_hy: 하이일드 스프레드
+    'NASDAQCOM',        # us_nasdaq: 나스닥 (성장주)
+    'DTWEXBGS',         # us_dollar: 달러인덱스
+    'VIXCLS',           # us_vix: VIX
+    # us_gold: FRED 시리즈 비활성 — 추후 대체 소스 추가
+    'RSAFS',            # kr_consumption: 소비 (소매판매, US proxy)
+    'DEXKOUS',          # kr_won: 원/달러 환율
 ]
 
 def fetch_series(series_id):
