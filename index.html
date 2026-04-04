@@ -420,8 +420,9 @@ html,body{
     .attr('transform',d=>`translate(${d.x},${d.y})`);
 
   nodeEls.append('circle').attr('class','node-touch').attr('r',d=>Math.max(22,isCore(d)?34:28));
-  // 노드 색상: 상승=빨강, 하락=파랑, 기본=회색
-  const chgFill = d => d._chgDir==='up'?'#ef4444':d._chgDir==='down'?'#3b82f6':'#555';
+  // 노드 색상: 상승=빨강, 하락=파랑, 데이터 없으면 카테고리 색
+  const UP='#ef4444', DOWN='#3b82f6';
+  const chgFill = d => d._chgDir==='up'?UP:d._chgDir==='down'?DOWN:catColor(d.category);
   nodeEls.append('circle').attr('class','node-circle').attr('r',d=>isCore(d)?nodeR+6:nodeR)
     .attr('fill',d=>chgFill(d)).attr('stroke','#ffffff33');
   nodeEls.append('text').attr('class','node-label').attr('dy','.35em').text(d=>d.label);
@@ -433,17 +434,17 @@ html,body{
     const el=d3.select(this);
     const r=isCore(d)?nodeR+6:nodeR;
     const valY = r+26;
-    const chgColor = d._chgDir==='up'?'#4ade80':d._chgDir==='down'?'#f87171':'#888';
+    const valColor = d._chgDir==='up'?UP:d._chgDir==='down'?DOWN:'#888';
     const arrow = d._chgDir==='up'?'\u25B2':d._chgDir==='down'?'\u25BC':'';
     el.append('text').attr('class','node-val')
       .attr('y',valY).attr('dy','.35em').attr('text-anchor','middle')
-      .attr('fill','#ddd').attr('font-size','10px').attr('font-weight','600')
+      .attr('fill',valColor).attr('font-size','10px').attr('font-weight','600')
       .attr('pointer-events','none')
       .text(d._val);
     if(d._chgText){
       el.append('text').attr('class','node-chg')
         .attr('y',valY+13).attr('dy','.35em').attr('text-anchor','middle')
-        .attr('fill',chgColor).attr('font-size','9px').attr('font-weight','600')
+        .attr('fill',valColor).attr('font-size','9px').attr('font-weight','600')
         .attr('pointer-events','none')
         .text(arrow+' '+d._chgText);
     }
