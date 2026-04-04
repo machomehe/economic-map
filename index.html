@@ -288,9 +288,9 @@ html,body{
       const n = catNodes[cat].length;
       const isA = cat.includes('자산');
       const r = isA ? nodeR + assetExtra : nodeR;
-      // 노드 전체 높이: 원(r) + sub(12) + val(14) + chg(13) + 여유
-      const nodeH = r * 2 + 45;
-      const spX = isA ? 86 : 66;
+      // 자산: 원+텍스트, 지표: 카드박스+값텍스트
+      const nodeH = isA ? r * 2 + 45 : 44 + 40;
+      const spX = isA ? 86 : 88;
       const spY = nodeH + 8;
       const maxC = isA ? 3 : 4;
       const cols = Math.min(n, maxC);
@@ -460,7 +460,7 @@ html,body{
 
   // 노드 색상: 상승=초록, 하락=빨강, 데이터 없음=회색
   const chgFill = d => d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:'#555';
-  const rectW = 52, rectH = 32; // 지표용 사각형 크기
+  const rectW = 80, rectH = 44; // 지표용 카드 박스
 
   nodeEls.each(function(d){
     const el = d3.select(this);
@@ -473,22 +473,23 @@ html,body{
       el.append('text').attr('class','node-sub').attr('dy','.35em')
         .attr('y',getR(d)+14).text(d.sub||'');
     } else {
-      // 지표 = 라운드 사각형
+      // 지표 = 카드형 사각 박스 (이름+부제 박스 안에)
       el.append('rect').attr('class','node-touch')
         .attr('x',-rectW/2-4).attr('y',-rectH/2-4).attr('width',rectW+8).attr('height',rectH+8).attr('fill','transparent');
       el.append('rect').attr('class','node-rect')
         .attr('x',-rectW/2).attr('y',-rectH/2).attr('width',rectW).attr('height',rectH)
         .attr('fill',chgFill(d)).attr('stroke','#ffffff33').attr('stroke-width',1.5);
-      el.append('text').attr('class','node-label').attr('dy','.35em').text(d.label);
-      el.append('text').attr('class','node-sub').attr('dy','.35em')
-        .attr('y',rectH/2+12).text(d.sub||'');
+      // 이름: 박스 상단
+      el.append('text').attr('class','node-label').attr('y',-4).attr('dy','.35em').text(d.label);
+      // 부제: 박스 하단
+      el.append('text').attr('class','node-sub').attr('y',12).attr('dy','.35em').text(d.sub||'');
     }
   });
 
   // 실시간 값 표시
   nodeEls.filter(d=>d._val).each(function(d){
     const el=d3.select(this);
-    const valY = isAsset(d) ? getR(d)+28 : rectH/2+26;
+    const valY = isAsset(d) ? getR(d)+28 : rectH/2+14;
     const valColor = d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:'#888';
     const arrow = d._chgDir==='up'?'\u25B2':d._chgDir==='down'?'\u25BC':'';
     el.append('text').attr('class','node-val')
