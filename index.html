@@ -270,29 +270,28 @@ html,body{
   ];
 
   // 치수
-  const nodeR = 18;
+  const nodeR = 20;
   const assetExtra = 10;
-  const boxPadX = 16;
-  const boxPadTop = 32;
-  const boxPadBot = 30;
-  const boxGap = 14;
-  const colGap = 20;
+  const boxPadX = 12;
+  const boxPadTop = 30;
+  const boxPadBot = 25;
+  const boxGap = 12;
+  const colGap = 16;
 
   const getR = d => isAsset(d) ? nodeR + assetExtra : (isCore(d) ? nodeR + 4 : nodeR);
 
-  // 박스 크기 계산 — 노드 원 + 라벨 + 값 텍스트 전체 높이 고려
+  // 박스 크기 계산
   const boxInfo = {};
   colDef.forEach(col=>{
     col.cats.forEach(cat=>{
       if(!catNodes[cat]) return;
       const n = catNodes[cat].length;
       const isA = cat.includes('자산');
-      const r = isA ? nodeR + assetExtra : nodeR;
-      // 자산: 원+텍스트, 지표: 카드박스+값텍스트
-      const nodeH = isA ? r * 2 + 45 : 44 + 40;
-      const spX = isA ? 86 : 88;
-      const spY = nodeH + 8;
-      const maxC = isA ? 3 : 4;
+      // 자산: 원(R=30) + sub(14) + val(14) + chg(13) = ~100
+      // 지표: 카드(44h) + val(14) + chg(13) = ~75
+      const spX = isA ? 76 : 92;
+      const spY = isA ? 100 : 80;
+      const maxC = 3; // 모든 카테고리 최대 3열
       const cols = Math.min(n, maxC);
       const rows = Math.ceil(n / cols);
       const w = boxPadX * 2 + cols * spX;
