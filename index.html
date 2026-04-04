@@ -371,8 +371,9 @@ html,body{
   // ============================================================
   colInfo.forEach(col=>{
     zoomG.append('text')
+      .attr('class','col-header')
       .attr('x', col.centerX)
-      .attr('y', col.y - 15)
+      .attr('y', col.y - 8)
       .attr('text-anchor', 'middle')
       .attr('fill', '#888')
       .attr('font-size', '14px')
@@ -521,20 +522,84 @@ html,body{
   });
 
   function applyLevel(){
+    // 1) 노드/링크 표시/숨기기
     nodeEls.each(function(d){
-      const visible = d.level <= currentLevel;
-      d3.select(this).style('display', visible ? null : 'none');
+      d3.select(this).style('display', d.level<=currentLevel ? null : 'none');
     });
     linkEls.each(function(l){
-      const sVis = l.source.level <= currentLevel;
-      const tVis = l.target.level <= currentLevel;
-      d3.select(this).style('display', (sVis && tVis) ? null : 'none');
+      d3.select(this).style('display', (l.source.level<=currentLevel && l.target.level<=currentLevel) ? null : 'none');
     });
-    // 카테고리 박스 — 해당 레벨에 표시할 노드가 없으면 숨기기
+
+    // 2) 레이아웃 재계산 — 보이는 노드만으로 박스 크기/위치 다시 계산
+    colDef.forEach(col=>{
+      col.cats.forEach(cat=>{
+        if(!catNodes[cat]||!boxInfo[cat]) return;
+        const visNodes = catNodes[cat].filter(n=>n.level<=currentLevel);
+        const isA = cat.includes('자산');
+        const spX = isA ? 76 : 92;
+        const spY = isA ? 100 : 80;
+        const cols = Math.min(visNodes.length||1, 3);
+        const rows = Math.max(1, Math.ceil(visNodes.length/cols));
+        const info = boxInfo[cat];
+        info.w = boxPadX*2 + cols*spX;
+        info.h = boxPadTop + rows*spY + boxPadBot;
+        info.cols = cols; info.rows = rows; info.spX = spX; info.spY = spY;
+      });
+    });
+
+    // 컬럼 크기 재계산
+    colInfo.forEach(col=>{
+      const vc = col.cats.filter(c=>catNodes[c]&&catNodes[c].some(n=>n.level<=currentLevel));
+      col.width = vc.length ? Math.max(...vc.map(c=>boxInfo[c].w)) : 0;
+      col.height = vc.reduce((s,c,i)=>s+boxInfo[c].h+(i>0?boxGap:0),0);
+    });
+    let cx2=0;
+    colInfo.forEach(col=>{col.x=cx2;col.y=headerSpace;col.centerX=col.x+col.width/2;cx2+=col.width+colGap});
+
+    // 박스 및 노드 위치 재계산
+    colInfo.forEach(col=>{
+      let by=col.y;
+      col.cats.forEach(cat=>{
+        const visNodes = catNodes[cat]?catNodes[cat].filter(n=>n.level<=currentLevel):[];
+        if(!visNodes.length) return;
+        const info=boxInfo[cat];
+        info.x=col.x+(col.width-info.w)/2;
+        info.y=by;
+        visNodes.forEach((n,ni)=>{
+          const c=ni%info.cols, r=Math.floor(ni/info.cols);
+          n.x=info.x+boxPadX+info.spX/2+c*info.spX;
+          n.y=info.y+boxPadTop+info.spY/2+r*info.spY;
+        });
+        // 숨겨진 노드는 화면 밖으로
+        if(catNodes[cat]) catNodes[cat].filter(n=>n.level>currentLevel).forEach(n=>{n.x=-9999;n.y=-9999});
+        by+=info.h+boxGap;
+      });
+    });
+
+    // 3) SVG 업데이트
+    nodeEls.attr('transform',d=>`translate(${d.x},${d.y})`);
+    updateLinks();
+
+    // 4) 박스 업데이트
     boxG.selectAll('.cat-group').each(function(dd){
-      const hasVisible = catNodes[dd.cat] && catNodes[dd.cat].some(n => n.level <= currentLevel);
-      d3.select(this).style('display', hasVisible ? null : 'none');
+      const info=boxInfo[dd.cat];
+      const hasVis=catNodes[dd.cat]&&catNodes[dd.cat].some(n=>n.level<=currentLevel);
+      d3.select(this).style('display',hasVis?null:'none');
+      if(hasVis&&info){
+        d3.select(this).select('.cat-box').attr('x',info.x).attr('y',info.y).attr('width',info.w).attr('height',info.h);
+        d3.select(this).select('.cat-label').attr('x',info.x+12).attr('y',info.y+20);
+      }
     });
+
+    // 5) 컬럼 헤더 위치 업데이트
+    zoomG.selectAll('.col-header').data(colInfo).attr('x',d=>d.centerX).attr('y',d=>d.y-8);
+
+    // 6) fit to view
+    const tw2=cx2-colGap, th2=Math.max(...colInfo.map(c=>c.height))+headerSpace;
+    const sx2=(W-padX*2)/tw2, sy2=(H-padTop-padBot)/th2;
+    const sc2=Math.min(sx2,sy2);
+    const tx2=(W-tw2*sc2)/2, ty2=padTop+((H-padTop-padBot)-th2*sc2)/2;
+    svg.transition().duration(400).call(zoomBeh.transform,d3.zoomIdentity.translate(tx2,ty2).scale(sc2));
   }
 
   // 초기 레벨 적용
