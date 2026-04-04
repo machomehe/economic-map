@@ -88,8 +88,9 @@ html,body{
 .cat-box{rx:12;ry:12;cursor:grab}.cat-box:active{cursor:grabbing}
 .cat-label{font-size:12px;font-weight:700;pointer-events:none}
 .node-circle{cursor:pointer;transition:opacity .3s}
-.node-label{font-size:11px;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none;transition:opacity .3s}
-.node-sub{font-size:8px;fill:#999;text-anchor:middle;pointer-events:none;transition:opacity .3s}
+.node-rect{cursor:pointer;transition:opacity .3s;rx:8;ry:8}
+.node-label{font-size:13px;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none;transition:opacity .3s}
+.node-sub{font-size:9px;fill:#999;text-anchor:middle;pointer-events:none;transition:opacity .3s}
 .node-touch{fill:transparent;cursor:pointer}
 .link-line{fill:none;opacity:.35;transition:opacity .3s}
 .link-desc{font-size:8px;fill:#666;text-anchor:middle;pointer-events:none;transition:opacity .3s}
@@ -97,7 +98,7 @@ html,body{
 
 /* dim/highlight */
 .node-val,.node-chg{transition:opacity .3s}
-.dimmed .node-circle,.dimmed .node-label,.dimmed .node-sub,.dimmed .node-val,.dimmed .node-chg{opacity:.08}
+.dimmed .node-circle,.dimmed .node-rect,.dimmed .node-label,.dimmed .node-sub,.dimmed .node-val,.dimmed .node-chg{opacity:.08}
 .dimmed .link-line,.dimmed .link-desc{opacity:.03}
 .dimmed .cat-box{opacity:.3}
 .dimmed .cat-label{opacity:.15}
@@ -457,31 +458,42 @@ html,body{
   const nodeEls = nodeGrp.selectAll('g').data(nodes).join('g')
     .attr('transform',d=>`translate(${d.x},${d.y})`);
 
-  // 터치 영역 — 자산 노드는 더 크게
-  nodeEls.append('circle').attr('class','node-touch').attr('r',d=> isAsset(d) ? 38 : (isCore(d) ? 34 : 28));
-
   // 노드 색상: 상승=초록, 하락=빨강, 데이터 없음=회색
   const chgFill = d => d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:'#555';
+  const rectW = 52, rectH = 32; // 지표용 사각형 크기
 
-  nodeEls.append('circle').attr('class','node-circle').attr('r',d=>getR(d))
-    .attr('fill',d=>chgFill(d))
-    .attr('stroke','#ffffff33')
-    .attr('stroke-width',d=> isAsset(d) ? 2.5 : 1.5);
-
-  nodeEls.append('text').attr('class','node-label').attr('dy','.35em').text(d=>d.label);
-  nodeEls.append('text').attr('class','node-sub').attr('dy','.35em')
-    .attr('y',d=>getR(d)+12).text(d=>d.sub||'');
+  nodeEls.each(function(d){
+    const el = d3.select(this);
+    if(isAsset(d)){
+      // 자산 = 큰 원
+      el.append('circle').attr('class','node-touch').attr('r',38);
+      el.append('circle').attr('class','node-circle').attr('r',getR(d))
+        .attr('fill',chgFill(d)).attr('stroke','#ffffff33').attr('stroke-width',2.5);
+      el.append('text').attr('class','node-label').attr('dy','.35em').text(d.label);
+      el.append('text').attr('class','node-sub').attr('dy','.35em')
+        .attr('y',getR(d)+14).text(d.sub||'');
+    } else {
+      // 지표 = 라운드 사각형
+      el.append('rect').attr('class','node-touch')
+        .attr('x',-rectW/2-4).attr('y',-rectH/2-4).attr('width',rectW+8).attr('height',rectH+8).attr('fill','transparent');
+      el.append('rect').attr('class','node-rect')
+        .attr('x',-rectW/2).attr('y',-rectH/2).attr('width',rectW).attr('height',rectH)
+        .attr('fill',chgFill(d)).attr('stroke','#ffffff33').attr('stroke-width',1.5);
+      el.append('text').attr('class','node-label').attr('dy','.35em').text(d.label);
+      el.append('text').attr('class','node-sub').attr('dy','.35em')
+        .attr('y',rectH/2+12).text(d.sub||'');
+    }
+  });
 
   // 실시간 값 표시
   nodeEls.filter(d=>d._val).each(function(d){
     const el=d3.select(this);
-    const r=getR(d);
-    const valY = r+26;
+    const valY = isAsset(d) ? getR(d)+28 : rectH/2+26;
     const valColor = d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:'#888';
     const arrow = d._chgDir==='up'?'\u25B2':d._chgDir==='down'?'\u25BC':'';
     el.append('text').attr('class','node-val')
       .attr('y',valY).attr('dy','.35em').attr('text-anchor','middle')
-      .attr('fill',valColor).attr('font-size','10px').attr('font-weight','600')
+      .attr('fill',valColor).attr('font-size','11px').attr('font-weight','600')
       .attr('pointer-events','none')
       .text(d._val);
     if(d._chgText){
@@ -599,7 +611,7 @@ html,body{
     nodeEls.each(function(n){d3.select(this).classed('dimmed',!ids.has(n.id)).classed('highlighted',ids.has(n.id))});
     linkEls.each(function(l){d3.select(this).classed('dimmed',!cLinks.has(l)).classed('highlighted',cLinks.has(l))});
     boxG.selectAll('.cat-group').each(function(dd){d3.select(this).classed('dimmed',!cCats.has(dd.cat))});
-    nodeEls.select('.node-circle').transition().duration(250)
+    nodeEls.filter(d2=>isAsset(d2)).select('.node-circle').transition().duration(250)
       .attr('r',n=>n.id===d.id? getR(n)+4 : getR(n));
     document.getElementById('legend').classList.add('hidden');
     showSheet(d);
@@ -611,7 +623,7 @@ html,body{
     nodeEls.classed('dimmed',false).classed('highlighted',false);
     linkEls.classed('dimmed',false).classed('highlighted',false);
     boxG.selectAll('.cat-group').classed('dimmed',false);
-    nodeEls.select('.node-circle').transition().duration(250).attr('r',n=>getR(n));
+    nodeEls.filter(d=>isAsset(d)).select('.node-circle').transition().duration(250).attr('r',n=>getR(n));
     hideSheet();
     document.getElementById('legend').classList.remove('hidden');
   }
@@ -677,16 +689,17 @@ html,body{
       if(info){
         affectedCats.add(n.category);
         el.classed('dimmed',false).classed('highlighted',true);
-        el.select('.node-circle').transition().duration(400).style('opacity',stepOp[info.step]||.4);
-        el.select('.node-label').transition().duration(400).style('opacity',stepOp[info.step]||.4);
-        el.select('.node-sub').transition().duration(400).style('opacity',(stepOp[info.step]||.4)*.7);
-        const r=getR(n);
+        const op = stepOp[info.step]||.4;
+        el.select('.node-circle,.node-rect').transition().duration(400).style('opacity',op);
+        el.select('.node-label').transition().duration(400).style('opacity',op);
+        el.select('.node-sub').transition().duration(400).style('opacity',op*.7);
+        const r = isAsset(n) ? getR(n) : rectH/2;
         const[arrow,color]=info.sign==='up'?['\u2191',GREEN]:info.sign==='down'?['\u2193',RED]:['?',YELLOW];
-        el.append('text').attr('class','sim-arrow').attr('x',r*.7).attr('y',-r*.6).attr('fill',color)
+        el.append('text').attr('class','sim-arrow').attr('x',r*.8).attr('y',-r*.7).attr('fill',color)
           .style('font-size',info.step===0?'20px':'16px').text(arrow);
       }else{
         el.classed('dimmed',true).classed('highlighted',false);
-        el.select('.node-circle').transition().duration(400).style('opacity',.08);
+        el.select('.node-circle,.node-rect').transition().duration(400).style('opacity',.08);
         el.select('.node-label').transition().duration(400).style('opacity',.08);
         el.select('.node-sub').transition().duration(400).style('opacity',.04);
       }
@@ -740,7 +753,8 @@ html,body{
     nodeEls.each(function(n){
       const el=d3.select(this);
       el.classed('dimmed',false).classed('highlighted',false).selectAll('.sim-arrow').remove();
-      el.select('.node-circle').transition().duration(300).style('opacity',1).attr('r',getR(n));
+      el.select('.node-circle,.node-rect').transition().duration(300).style('opacity',1);
+      if(isAsset(n)) el.select('.node-circle').attr('r',getR(n));
       el.select('.node-label').transition().duration(300).style('opacity',1);
       el.select('.node-sub').transition().duration(300).style('opacity',1);
     });
