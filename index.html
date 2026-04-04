@@ -352,13 +352,13 @@ html,body{
   svg.call(zoomBeh).on('dblclick.zoom',null);
   svg.on('click',e=>{if(e.target===svg.node())deselect()});
 
-  // 초기 뷰: 전체가 보이도록 fit
-  const pad = 60;
-  const scaleX = (W-pad*2)/totalW;
-  const scaleY = (H-pad*2)/totalH;
-  const initScale = Math.min(scaleX, scaleY, 1.5);
-  const initTx = (W - totalW*initScale)/2;
-  const initTy = (H - totalH*initScale)/2;
+  // 초기 뷰: 화면에 꽉 차게 fit (하단 바 80px 고려)
+  const padX = 10, padTop = 10, padBot = 90;
+  const scaleX = (W - padX*2) / totalW;
+  const scaleY = (H - padTop - padBot) / totalH;
+  const initScale = Math.min(scaleX, scaleY);
+  const initTx = (W - totalW*initScale) / 2;
+  const initTy = padTop + ((H - padTop - padBot) - totalH*initScale) / 2;
   svg.call(zoomBeh.transform, d3.zoomIdentity.translate(initTx, initTy).scale(initScale));
 
   // 레이어
