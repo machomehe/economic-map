@@ -273,23 +273,24 @@ html,body{
   const assetExtra = 10;
   const boxPadX = 16;
   const boxPadTop = 32;
-  const boxPadBot = 24;
+  const boxPadBot = 30;
   const boxGap = 14;
   const colGap = 20;
 
   const getR = d => isAsset(d) ? nodeR + assetExtra : (isCore(d) ? nodeR + 4 : nodeR);
 
-  // 박스 크기 계산 — 카테고리별 노드 수에 따라 열/행 자동 결정
+  // 박스 크기 계산 — 노드 원 + 라벨 + 값 텍스트 전체 높이 고려
   const boxInfo = {};
   colDef.forEach(col=>{
     col.cats.forEach(cat=>{
       if(!catNodes[cat]) return;
       const n = catNodes[cat].length;
       const isA = cat.includes('자산');
-      // 자산: 큰 간격, 지표: 작은 간격
-      const spX = isA ? 80 : 64;
-      const spY = isA ? 90 : 72;
-      // 열 수: 지표는 최대 4열, 자산은 최대 3열
+      const r = isA ? nodeR + assetExtra : nodeR;
+      // 노드 전체 높이: 원(r) + sub(12) + val(14) + chg(13) + 여유
+      const nodeH = r * 2 + 45;
+      const spX = isA ? 86 : 66;
+      const spY = nodeH + 8;
       const maxC = isA ? 3 : 4;
       const cols = Math.min(n, maxC);
       const rows = Math.ceil(n / cols);
