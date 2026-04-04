@@ -275,12 +275,11 @@ html,body{
     catCenters[c] = {x:W/2+W*.28*Math.cos(a), y:H/2+H*.28*Math.sin(a)};
   });
 
+  // data.json 좌표 무시 — 카테고리 중심 기반 초기 배치
   nodes.forEach(n => {
-    if(n.x==null||n.y==null){
-      const c = catCenters[n.category]||{x:W/2,y:H/2};
-      n.x = c.x + (Math.random()-.5)*60;
-      n.y = c.y + (Math.random()-.5)*60;
-    }
+    const c = catCenters[n.category]||{x:W/2,y:H/2};
+    n.x = c.x + (Math.random()-.5)*80;
+    n.y = c.y + (Math.random()-.5)*80;
   });
 
   function forceCluster(str){
@@ -298,7 +297,7 @@ html,body{
     .force('charge', d3.forceManyBody().strength(-350))
     .force('center', d3.forceCenter(W/2,H/2).strength(.05))
     .force('collision', d3.forceCollide().radius(d=>isCore(d)?46:40))
-    .force('cluster', forceCluster(.15))
+    .force('cluster', forceCluster(.25))
     .force('x', d3.forceX(W/2).strength(.02))
     .force('y', d3.forceY(H/2).strength(.02))
     .alphaDecay(.05).velocityDecay(.4);
