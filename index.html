@@ -63,9 +63,9 @@ html,body{
 .sh-desc{font-size:13px;color:#bbb;line-height:1.7;margin-bottom:14px}
 .sim-btns{display:flex;gap:10px;margin-bottom:8px}
 .sim-btn{flex:1;padding:12px;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;min-height:48px}
-.sim-up{background:#16a34a22;color:#4ade80;border:1px solid #4ade8033}
+.sim-up{background:#16a34a22;color:#16a34a;border:1px solid #16a34a33}
 .sim-up:active{background:#16a34a44}
-.sim-down{background:#dc262622;color:#f87171;border:1px solid #f8717133}
+.sim-down{background:#dc262622;color:#dc2626;border:1px solid #dc262633}
 .sim-down:active{background:#dc262644}
 .sim-result h4{font-size:13px;color:#888;margin-bottom:8px;font-weight:600}
 .sim-step{margin-bottom:10px}
@@ -129,9 +129,9 @@ html,body{
 </div>
 
 <div id="legend">
-  <div><span class="line-sample" style="background:#4ade80"></span> 비례 (같이 움직임)</div>
-  <div><span class="line-sample" style="background:#f87171"></span> 반비례 (반대로 움직임)</div>
-  <div><span class="line-sample" style="background:#facc15"></span> 조건부</div>
+  <div><span class="line-sample" style="background:#16a34a"></span> 비례 (같이 움직임)</div>
+  <div><span class="line-sample" style="background:#dc2626"></span> 반비례 (반대로 움직임)</div>
+  <div><span class="line-sample" style="background:#ca8a04"></span> 조건부</div>
 </div>
 
 <div id="sim-bar">
@@ -175,7 +175,8 @@ html,body{
   const nodes = (raw.nodes||[]).map(n=>({...n}));
   const links = (raw.links||[]).map(l=>({...l}));
   const catColor = c=>(categories[c]||{}).color||'#666';
-  const linkColor = {'비례':'#4ade80','반비례':'#f87171','조건부':'#facc15'};
+  const GREEN='#16a34a', RED='#dc2626', YELLOW='#ca8a04';
+  const linkColor = {'비례':GREEN,'반비례':RED,'조건부':YELLOW};
   const isCore = n=>n.tags&&n.tags.includes('핵심');
 
   if(!nodes.length){
@@ -421,8 +422,7 @@ html,body{
 
   nodeEls.append('circle').attr('class','node-touch').attr('r',d=>Math.max(22,isCore(d)?34:28));
   // 노드 색상: 상승=빨강, 하락=파랑, 데이터 없으면 카테고리 색
-  const UP='#ef4444', DOWN='#3b82f6';
-  const chgFill = d => d._chgDir==='up'?UP:d._chgDir==='down'?DOWN:catColor(d.category);
+  const chgFill = d => d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:catColor(d.category);
   nodeEls.append('circle').attr('class','node-circle').attr('r',d=>isCore(d)?nodeR+6:nodeR)
     .attr('fill',d=>chgFill(d)).attr('stroke','#ffffff33');
   nodeEls.append('text').attr('class','node-label').attr('dy','.35em').text(d=>d.label);
@@ -434,7 +434,7 @@ html,body{
     const el=d3.select(this);
     const r=isCore(d)?nodeR+6:nodeR;
     const valY = r+26;
-    const valColor = d._chgDir==='up'?UP:d._chgDir==='down'?DOWN:'#888';
+    const valColor = d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:'#888';
     const arrow = d._chgDir==='up'?'\u25B2':d._chgDir==='down'?'\u25BC':'';
     el.append('text').attr('class','node-val')
       .attr('y',valY).attr('dy','.35em').attr('text-anchor','middle')
@@ -602,7 +602,7 @@ html,body{
         el.select('.node-label').transition().duration(400).style('opacity',stepOp[info.step]||.4);
         el.select('.node-sub').transition().duration(400).style('opacity',(stepOp[info.step]||.4)*.7);
         const r=isCore(n)?nodeR+6:nodeR;
-        const[arrow,color]=info.sign==='up'?['\u2191','#4ade80']:info.sign==='down'?['\u2193','#f87171']:['?','#facc15'];
+        const[arrow,color]=info.sign==='up'?['\u2191',GREEN]:info.sign==='down'?['\u2193',RED]:['?',YELLOW];
         el.append('text').attr('class','sim-arrow').attr('x',r*.7).attr('y',-r*.6).attr('fill',color)
           .style('font-size',info.step===0?'20px':'16px').text(arrow);
       }else{
@@ -643,7 +643,7 @@ html,body{
       if(!steps[i].length)return;
       html+=`<div class="sim-step"><div class="sim-step-label">${name}</div><div class="sim-items">`;
       steps[i].forEach(({n,info})=>{
-        const[style,txt]=info.sign==='up'?['color:#4ade80','\u2191']:info.sign==='down'?['color:#f87171','\u2193']:['color:#facc15','?'];
+        const[style,txt]=info.sign==='up'?['color:#16a34a','\u2191']:info.sign==='down'?['color:#dc2626','\u2193']:['color:#ca8a04','?'];
         html+=`<span class="sim-chip" data-id="${n.id}"><span style="${style}">${txt}</span> ${n.label}</span>`;
       });
       html+='</div>';
