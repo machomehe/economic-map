@@ -75,7 +75,7 @@ html,body{
 #sim-exit{padding:6px 14px;border-radius:8px;border:1px solid #555;background:transparent;color:#eee;font-family:inherit;font-size:12px;cursor:pointer;min-height:34px}
 
 /* SVG 요소 */
-.cat-box{rx:12;ry:12}
+.cat-box{rx:12;ry:12;cursor:grab}.cat-box:active{cursor:grabbing}
 .cat-label{font-size:12px;font-weight:700;pointer-events:none}
 .node-circle{stroke-width:1.5;cursor:pointer;transition:opacity .3s}
 .node-label{font-size:11px;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none;transition:opacity .3s}
@@ -358,12 +358,44 @@ html,body{
 
   nodeEls.on('click',(e,d)=>{e.stopPropagation();selectNode(d)});
 
-  // 드래그 (위치 조정)
+  // 노드 드래그 — 박스 안에 가두기
   nodeEls.call(d3.drag()
     .on('start',(e,d)=>{e.sourceEvent.stopPropagation()})
     .on('drag',(e,d)=>{
-      d.x=e.x;d.y=e.y;
+      const info = boxInfo[d.category];
+      if(!info){d.x=e.x;d.y=e.y;}
+      else{
+        const r = isCore(d)?nodeR+6:nodeR;
+        d.x = Math.max(info.x+r+4, Math.min(info.x+info.w-r-4, e.x));
+        d.y = Math.max(info.y+boxPadTop+r, Math.min(info.y+info.h-r-4, e.y));
+      }
       d3.select(e.sourceEvent.target.closest('g')).attr('transform',`translate(${d.x},${d.y})`);
+      updateLinks();
+    })
+  );
+
+  // 박스 드래그 — 내부 노드 전체 이동
+  boxG.selectAll('.cat-group').call(d3.drag()
+    .on('start',function(e){
+      const cat = d3.select(this).datum().cat;
+      d3.select(this).datum().startX = e.x;
+      d3.select(this).datum().startY = e.y;
+      e.sourceEvent.stopPropagation();
+    })
+    .on('drag',function(e){
+      const dd = d3.select(this).datum();
+      const dx = e.x - dd.startX, dy = e.y - dd.startY;
+      dd.startX = e.x; dd.startY = e.y;
+      const info = boxInfo[dd.cat];
+      // 박스 이동
+      info.x += dx; info.y += dy;
+      d3.select(this).select('.cat-box').attr('x',info.x).attr('y',info.y);
+      d3.select(this).select('.cat-label').attr('x',info.x+12).attr('y',info.y+22);
+      // 내부 노드 이동
+      catNodes[dd.cat].forEach(n=>{
+        n.x += dx; n.y += dy;
+      });
+      nodeEls.filter(n=>n.category===dd.cat).attr('transform',n=>`translate(${n.x},${n.y})`);
       updateLinks();
     })
   );
