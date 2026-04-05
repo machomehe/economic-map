@@ -224,95 +224,89 @@ function attachValues() {
 }
 
 /* ================================================================
-   LAYOUT — auto grid: fit boxes into screen aspect ratio
+   LAYOUT — asset-centered vertical layout
+   자산 노드를 세로 중심축에, 지표를 좌우에 배치
    ================================================================ */
 function computeLayout() {
-  boxes = [];
+  boxes = []; // 이 레이아웃에서는 카테고리 박스 사용 안 함
 
-  /* 1) 각 박스 높이 계산 (내용 기반) */
-  const tempBoxes = [];
-  CAT_ORDER.forEach(catName => {
-    const catNds = DATA.nodes.filter(n => n.category === catName && n.level <= currentLevel);
-    if (!catNds.length) {
-      tempBoxes.push({ name:catName, h:0, visible:false, color:DATA.categories[catName].color, nodes:[] });
-      return;
-    }
-    const assetNds = catNds.filter(n => n.isAsset);
-    const indNds = catNds.filter(n => !n.isAsset);
-    let innerY = PAD_TOP;
-    if (assetNds.length) {
-      const cols = Math.min(assetNds.length, MAX_COLS);
-      innerY += Math.ceil(assetNds.length / cols) * SP_Y_AST;
-    }
-    if (indNds.length) {
-      const cols = Math.min(indNds.length, MAX_COLS);
-      innerY += Math.ceil(indNds.length / cols) * SP_Y_IND;
-    }
-    tempBoxes.push({ name:catName, h:innerY+PAD_BOT, visible:true, color:DATA.categories[catName].color, nodes:catNds, assetNds, indNds });
+  const assets = DATA.nodes.filter(n => n.isAsset && n.level <= currentLevel);
+  const indicators = DATA.nodes.filter(n => !n.isAsset && n.level <= currentLevel);
+
+  // 1) 자산 세로 배치 (중앙)
+  const centerX = 170;
+  const assetStartY = 60;
+  const assetGap = 140;
+
+  assets.forEach((n, i) => {
+    n.cx = centerX;
+    n.cy = assetStartY + i * assetGap;
   });
 
-  const visBoxes = tempBoxes.filter(b => b.visible);
-
-  /* 2) 화면 비율에 맞게 열 수 자동 결정 */
-  const screenRatio = W / Math.max(H - 100, 1); // 하단바 고려
-  let numCols;
-  if (visBoxes.length <= 2) numCols = visBoxes.length;
-  else if (screenRatio > 1.2) numCols = 3; // 가로 넓으면 3열
-  else if (screenRatio > 0.6) numCols = 2; // 세로 폰이면 2열
-  else numCols = 1;
-  numCols = Math.min(numCols, visBoxes.length);
-
-  /* 3) 박스를 열에 배분 (높이 균형) */
-  const colHeights = Array(numCols).fill(0);
-  const colAssign = []; // 각 박스가 몇 번 열인지
-  visBoxes.forEach(b => {
-    // 가장 낮은 열에 배치
-    let minCol = 0;
-    for (let c = 1; c < numCols; c++) { if (colHeights[c] < colHeights[minCol]) minCol = c; }
-    colAssign.push(minCol);
-    colHeights[minCol] += b.h + BOX_GAP;
+  // 2) 각 지표가 연결된 자산 목록 구하기
+  const links = DATA.links;
+  indicators.forEach(ind => {
+    const connectedAssets = [];
+    links.forEach(l => {
+      const src = typeof l.source === 'object' ? l.source.id : l.source;
+      const tgt = typeof l.target === 'object' ? l.target.id : l.target;
+      if (src === ind.id) {
+        const target = assets.find(a => a.id === tgt);
+        if (target) connectedAssets.push(target);
+      }
+      if (tgt === ind.id) {
+        const source = assets.find(a => a.id === src);
+        if (source) connectedAssets.push(source);
+      }
+    });
+    ind._connAssets = connectedAssets;
   });
 
-  /* 4) 각 박스 x,y 좌표 계산 */
-  const colYs = Array(numCols).fill(0);
-  visBoxes.forEach((b, i) => {
-    const col = colAssign[i];
-    b.x = col * (BOX_W + BOX_GAP);
-    b.y = colYs[col];
-    colYs[col] += b.h + BOX_GAP;
-  });
+  // 3) 지표를 좌우에 배치
+  let leftSlots = [];
+  let rightSlots = [];
 
-  /* 5) 박스 내 노드 위치 계산 */
-  visBoxes.forEach(b => {
-    let innerY = PAD_TOP;
-    if (b.assetNds && b.assetNds.length) {
-      const cols = Math.min(b.assetNds.length, MAX_COLS);
-      const cw = cols * SP_X_AST;
-      b.assetNds.forEach((n, i) => {
-        const c = i % cols, r = Math.floor(i / cols);
-        n.cx = b.x + (BOX_W - cw) / 2 + SP_X_AST / 2 + c * SP_X_AST + n.dx;
-        n.cy = b.y + innerY + SP_Y_AST / 2 + r * SP_Y_AST + n.dy;
-      });
-      innerY += Math.ceil(b.assetNds.length / cols) * SP_Y_AST;
+  // 연결 자산 수가 많은 지표를 먼저 배치
+  indicators.sort((a, b) => b._connAssets.length - a._connAssets.length);
+
+  const indXOffset = 160;
+  const indYGap = 70;
+
+  let leftCount = 0, rightCount = 0;
+
+  indicators.forEach(ind => {
+    // 연결된 자산들의 y 평균
+    let targetY;
+    if (ind._connAssets.length > 0) {
+      targetY = ind._connAssets.reduce((s, a) => s + a.cy, 0) / ind._connAssets.length;
+    } else {
+      targetY = assetStartY + (assets.length * assetGap) / 2;
     }
-    if (b.indNds && b.indNds.length) {
-      const cols = Math.min(b.indNds.length, MAX_COLS);
-      const cw = cols * SP_X_IND;
-      b.indNds.forEach((n, i) => {
-        const c = i % cols, r = Math.floor(i / cols);
-        n.cx = b.x + (BOX_W - cw) / 2 + SP_X_IND / 2 + c * SP_X_IND + n.dx;
-        n.cy = b.y + innerY + SP_Y_IND / 2 + r * SP_Y_IND + n.dy;
-      });
+
+    // 좌우 균형 맞추기
+    const goLeft = leftCount <= rightCount;
+    const xPos = goLeft ? centerX - indXOffset : centerX + indXOffset;
+
+    // y 위치: targetY 근처에서 겹치지 않는 위치 찾기
+    const slots = goLeft ? leftSlots : rightSlots;
+    let yPos = targetY;
+    for (let tries = 0; tries < 20; tries++) {
+      const conflict = slots.some(s => Math.abs(s - yPos) < indYGap);
+      if (!conflict) break;
+      yPos += indYGap / 2;
     }
-    b.w = BOX_W;
-    boxes.push(b);
+    slots.push(yPos);
+
+    ind.cx = xPos;
+    ind.cy = yPos;
+
+    if (goLeft) leftCount++; else rightCount++;
   });
 
-  /* 비표시 박스도 추가 */
-  tempBoxes.filter(b => !b.visible).forEach(b => { b.w = BOX_W; b.h = 0; boxes.push(b); });
-
-  /* 숨겨진 노드 화면 밖 */
-  DATA.nodes.forEach(n => { if (n.level > currentLevel) { n.cx = -9999; n.cy = -9999; } });
+  // 숨겨진 노드 화면 밖
+  DATA.nodes.forEach(n => {
+    if (n.level > currentLevel) { n.cx = -9999; n.cy = -9999; }
+  });
 }
 
 /* ================================================================
@@ -368,6 +362,8 @@ function updateLinkPositions(animate) {
 /* ── Boxes ── */
 function renderBoxes() {
   gBoxes.selectAll('*').remove();
+  // 자산 중심 레이아웃에서는 카테고리 박스를 그리지 않음
+  if (!boxes.length) return;
 
   boxes.forEach(box => {
     if (!box.visible) return;
@@ -473,29 +469,17 @@ function renderNodes() {
       openSheet(node);
     });
 
-    /* drag in edit mode */
+    /* drag in edit mode — 자유 드래그 (박스 경계 없음) */
     g.call(d3.drag()
       .filter(() => editMode)
       .on('start', function() {
         d3.select(this).raise();
       })
       .on('drag', function(event) {
-        const box = boxes.find(b => b.name === node.category && b.visible);
-        if (!box) return;
-        let nx = node.cx + event.dx;
-        let ny = node.cy + event.dy;
-        /* clamp inside box */
-        const mx = node.isAsset ? (NODE_R + ASSET_EXTRA) : RECT_W/2;
-        const my = node.isAsset ? (NODE_R + ASSET_EXTRA) : RECT_H/2;
-        nx = Math.max(box.x + mx + 2, Math.min(box.x + box.w - mx - 2, nx));
-        ny = Math.max(box.y + my + 2, Math.min(box.y + box.h - my - 2, ny));
-        node.cx = nx; node.cy = ny;
-        d3.select(this).attr('transform', `translate(${nx},${ny})`);
+        node.cx += event.dx;
+        node.cy += event.dy;
+        d3.select(this).attr('transform', `translate(${node.cx},${node.cy})`);
         updateLinkPositions(false);
-      })
-      .on('end', function() {
-        /* store offset for re-layout persistence */
-        /* we recalculate dx/dy from natural position */
       })
     );
   });
@@ -544,14 +528,14 @@ function fitView(dur) {
   const svgW = window.innerWidth;
   const svgH = window.innerHeight - BAR_H;
 
-  const vis = boxes.filter(b => b.visible);
-  if (!vis.length) return;
+  const visNodes = DATA.nodes.filter(n => n.level <= currentLevel);
+  if (!visNodes.length) return;
 
-  const pad = 20;
-  const minX = Math.min(...vis.map(b => b.x)) - pad;
-  const minY = Math.min(...vis.map(b => b.y)) - pad;
-  const maxX = Math.max(...vis.map(b => b.x + b.w)) + pad;
-  const maxY = Math.max(...vis.map(b => b.y + b.h)) + pad + 30;
+  const pad = 50;
+  const minX = Math.min(...visNodes.map(n => n.cx)) - pad - 50;
+  const minY = Math.min(...visNodes.map(n => n.cy)) - pad;
+  const maxX = Math.max(...visNodes.map(n => n.cx)) + pad + 50;
+  const maxY = Math.max(...visNodes.map(n => n.cy)) + pad + 50;
 
   const cw = maxX - minX, ch = maxY - minY;
   if (cw <= 0 || ch <= 0) return;
