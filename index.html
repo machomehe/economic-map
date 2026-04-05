@@ -355,6 +355,12 @@ function rectSide(n, side, margin) {
 const PORTS_PER_SIDE = 5;
 let portCache = {};
 
+function addConn(nodeConns, nodeId, side, link, other, margin) {
+  if (!nodeConns[nodeId]) nodeConns[nodeId] = {};
+  if (!nodeConns[nodeId][side]) nodeConns[nodeId][side] = [];
+  nodeConns[nodeId][side].push({ link, other, margin });
+}
+
 function computePorts() {
   portCache = {};
   const nodeConns = {};
@@ -362,27 +368,37 @@ function computePorts() {
   DATA.links.forEach(link => {
     const s = nodeMap[link.source], t = nodeMap[link.target];
     if (!s || !t || !linkVisible(link)) return;
-    if (!s.isAsset && !t.isAsset) return;
 
-    [{ n: s, other: t, margin: 2 }, { n: t, other: s, margin: 6 }].forEach(({ n, other, margin }) => {
-      if (n.isAsset) return;
-      const side = rectExitSide(n, other);
-      if (!nodeConns[n.id]) nodeConns[n.id] = {};
-      if (!nodeConns[n.id][side]) nodeConns[n.id][side] = [];
-      nodeConns[n.id][side].push({ link, other, margin });
-    });
+    const bothIndicators = !s.isAsset && !t.isAsset;
+
+    if (!bothIndicators) {
+      // 지표↔자산: 방향 기반 변 결정
+      if (!s.isAsset) addConn(nodeConns, s.id, rectExitSide(s, t), link, t, 2);
+      if (!t.isAsset) addConn(nodeConns, t.id, rectExitSide(t, s), link, s, 6);
+    } else {
+      // 지표↔지표: linkPath 라우팅과 동일한 변 결정
+      const sameSide = (s.cx < 180) === (t.cx < 180);
+      if (sameSide) {
+        const outDir = s.cx < 180 ? 'left' : 'right';
+        addConn(nodeConns, s.id, outDir, link, t, 2);
+        addConn(nodeConns, t.id, outDir, link, s, 6);
+      } else {
+        const goUp = s.cy <= t.cy;
+        const dir = goUp ? 'top' : 'bottom';
+        addConn(nodeConns, s.id, dir, link, t, 2);
+        addConn(nodeConns, t.id, dir, link, s, 6);
+      }
+    }
   });
 
   Object.keys(nodeConns).forEach(nodeId => {
     const n = nodeMap[nodeId];
     Object.entries(nodeConns[nodeId]).forEach(([side, items]) => {
-      // 상대 노드 위치 순으로 정렬
       if (side === 'left' || side === 'right') {
         items.sort((a, b) => a.other.cy - b.other.cy);
       } else {
         items.sort((a, b) => a.other.cx - b.other.cx);
       }
-      // 고정 5포트 중 가운데부터 균등 배정
       const portIndices = assignPorts(items.length, PORTS_PER_SIDE);
       items.forEach((c, i) => {
         const key = c.link.source + '|' + c.link.target + '|' + nodeId;
@@ -491,8 +507,8 @@ function linkPath(link) {
     const outX = sLeft
       ? Math.min(s.cx, t.cx) - RECT_W/2 - baseOff
       : Math.max(s.cx, t.cx) + RECT_W/2 + baseOff;
-    const p1 = rectSide(s, outDir, 2);
-    const p2 = rectSide(t, outDir, 6);
+    const p1 = getPort(link, s.id) || rectSide(s, outDir, 2);
+    const p2 = getPort(link, t.id) || rectSide(t, outDir, 6);
     return `M${p1.x},${p1.y} L${outX},${p1.y} L${outX},${p2.y} L${p2.x},${p2.y}`;
   } else {
     // 반대 쪽: 위/아래 우회
@@ -502,8 +518,8 @@ function linkPath(link) {
     const midY = goUp
       ? Math.min(s.cy, t.cy) - margin
       : Math.max(s.cy, t.cy) + margin;
-    const p1 = rectSide(s, goUp ? 'top' : 'bottom', 2);
-    const p2 = rectSide(t, goUp ? 'top' : 'bottom', 6);
+    const p1 = getPort(link, s.id) || rectSide(s, goUp ? 'top' : 'bottom', 2);
+    const p2 = getPort(link, t.id) || rectSide(t, goUp ? 'top' : 'bottom', 6);
     return `M${p1.x},${p1.y} L${p1.x},${midY} L${p2.x},${midY} L${p2.x},${p2.y}`;
   }
 }
