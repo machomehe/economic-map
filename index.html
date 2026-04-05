@@ -18,18 +18,18 @@ html, body {
 
 /* ── SVG ── */
 svg { display:block; width:100%; height:100%; }
-.cat-box { fill:#1a1a24; stroke-width:1.5; }
-.cat-label { fill:#cbd5e1; font-size:13px; font-weight:700; }
+.cat-box { fill:#1a1a24; stroke-width:1; }
+.cat-label { fill:#cbd5e1; font-size:14px; font-weight:700; }
 
 /* ── Node styles ── */
 .node-circle { cursor:pointer; stroke-width:2.5; }
 .node-rect   { cursor:pointer; stroke-width:1.5; }
-.node-label  { fill:#fff; font-size:11px; font-weight:700; text-anchor:middle; pointer-events:none; }
-.node-sub    { fill:#94a3b8; font-size:8.5px; text-anchor:middle; pointer-events:none; }
-.node-value  { font-size:9px; text-anchor:middle; pointer-events:none; }
+.node-label  { fill:#fff; font-size:13px; font-weight:700; text-anchor:middle; pointer-events:none; }
+.node-sub    { fill:#94a3b8; font-size:10px; text-anchor:middle; pointer-events:none; }
+.node-value  { font-size:10.5px; text-anchor:middle; pointer-events:none; }
 
 /* ── Link ── */
-.link-line { fill:none; stroke-width:1.4; opacity:0.45; }
+.link-line { fill:none; stroke-width:1.8; opacity:0.6; }
 
 /* ── Highlight / Dim ── */
 .node-dim  { opacity:0.12 !important; }
@@ -130,13 +130,13 @@ svg { display:block; width:100%; height:100%; }
 
 /* ── Constants ── */
 const CAT_ORDER = ['매크로 지표','현금/예금','채권','주식','부동산','원자재/금'];
-const BOX_W      = 300;
-const SP_X_IND   = 92,  SP_Y_IND = 80;
-const SP_X_AST   = 92,  SP_Y_AST = 100;
+const BOX_W      = 340;
+const SP_X_IND   = 105, SP_Y_IND = 86;
+const SP_X_AST   = 105, SP_Y_AST = 108;
 const MAX_COLS   = 3;
-const PAD_X      = 14,  PAD_TOP = 30, PAD_BOT = 25, BOX_GAP = 14;
-const NODE_R     = 20,  ASSET_EXTRA = 10;
-const RECT_W     = 80,  RECT_H  = 44;
+const PAD_X      = 16,  PAD_TOP = 34, PAD_BOT = 28, BOX_GAP = 16;
+const NODE_R     = 22,  ASSET_EXTRA = 12;
+const RECT_W     = 88,  RECT_H  = 48;
 const BAR_H      = 52;
 
 /* ── State ── */
@@ -162,8 +162,8 @@ const defs  = svg.append('defs');
 });
 
 const gRoot  = svg.append('g');
-const gLinks = gRoot.append('g');
 const gBoxes = gRoot.append('g');
+const gLinks = gRoot.append('g');
 const gNodes = gRoot.append('g');
 
 /* ── Zoom ── */
