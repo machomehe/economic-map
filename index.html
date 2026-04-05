@@ -738,7 +738,7 @@ function runSim(startNode, direction) {
   const affLink = new Set(results.map(r => r.link.id));
 
   gNodes.selectAll('g.node-g').classed('node-dim', d => !affIds.has(d.id));
-  gLinks.selectAll('line.link-line')
+  gLinks.selectAll('path.link-line')
     .classed('link-dim', d => !affLink.has(d.id))
     .classed('link-hl',  d => affLink.has(d.id));
 }
@@ -754,14 +754,14 @@ function highlightNode(node) {
   });
 
   gNodes.selectAll('g.node-g').classed('node-dim', d => !conn.has(d.id));
-  gLinks.selectAll('line.link-line')
+  gLinks.selectAll('path.link-line')
     .classed('link-dim', d => d.source !== node.id && d.target !== node.id)
     .classed('link-hl',  d => d.source === node.id || d.target === node.id);
 }
 
 function clearHighlight() {
   gNodes.selectAll('g.node-g').classed('node-dim', false);
-  gLinks.selectAll('line.link-line').classed('link-dim', false).classed('link-hl', false);
+  gLinks.selectAll('path.link-line').classed('link-dim', false).classed('link-hl', false);
 }
 
 /* ================================================================
@@ -782,7 +782,7 @@ document.getElementById('search-input').addEventListener('input', function() {
   const ids = new Set(matched.map(n => n.id));
 
   gNodes.selectAll('g.node-g').classed('node-dim', d => d.level <= currentLevel && !ids.has(d.id));
-  gLinks.selectAll('line.link-line').classed('link-dim', true).classed('link-hl', false);
+  gLinks.selectAll('path.link-line').classed('link-dim', true).classed('link-hl', false);
 
   /* auto-pan to single result */
   if (matched.length === 1) {
@@ -811,7 +811,7 @@ function applyCategoryFilter(catName) {
       return null;
     });
 
-  gLinks.selectAll('line.link-line')
+  gLinks.selectAll('path.link-line')
     .attr('display', d => {
       if (!linkVisible(d)) return 'none';
       if (catFilter) {
