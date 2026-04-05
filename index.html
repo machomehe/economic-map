@@ -351,6 +351,96 @@ function rectSide(n, side, margin) {
   return { x: n.cx, y: n.cy + hh };
 }
 
+/* ── Port distribution — 같은 변의 선 분산 배치 ── */
+let portCache = {};
+
+function computePorts() {
+  portCache = {};
+  const nodeConns = {};
+
+  DATA.links.forEach(link => {
+    const s = nodeMap[link.source], t = nodeMap[link.target];
+    if (!s || !t || !linkVisible(link)) return;
+    // 지표↔자산 연결만 분산 (지표↔지표는 ㄱ자 라우팅이 별도 처리)
+    if (!s.isAsset && !t.isAsset) return;
+
+    const sSide = exitSide(s, t);
+    const tSide = exitSide(t, s);
+
+    if (!nodeConns[s.id]) nodeConns[s.id] = [];
+    if (!nodeConns[t.id]) nodeConns[t.id] = [];
+    nodeConns[s.id].push({ link, other: t, side: sSide, margin: 2 });
+    nodeConns[t.id].push({ link, other: s, side: tSide, margin: 6 });
+  });
+
+  Object.keys(nodeConns).forEach(nodeId => {
+    const n = nodeMap[nodeId];
+    const conns = nodeConns[nodeId];
+    const bySide = {};
+    conns.forEach(c => {
+      if (!bySide[c.side]) bySide[c.side] = [];
+      bySide[c.side].push(c);
+    });
+
+    Object.entries(bySide).forEach(([side, items]) => {
+      if (side === 'left' || side === 'right') {
+        items.sort((a, b) => a.other.cy - b.other.cy);
+      } else {
+        items.sort((a, b) => a.other.cx - b.other.cx);
+      }
+      items.forEach((c, i) => {
+        const key = c.link.source + '|' + c.link.target + '|' + nodeId;
+        portCache[key] = calcPort(n, side, i, items.length, c.margin);
+      });
+    });
+  });
+}
+
+function exitSide(from, to) {
+  const dx = to.cx - from.cx, dy = to.cy - from.cy;
+  if (from.isAsset) {
+    if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? 'right' : 'left';
+    return dy >= 0 ? 'bottom' : 'top';
+  }
+  const hw = RECT_W / 2, hh = RECT_H / 2;
+  if (dx === 0 && dy === 0) return 'right';
+  const sx = hw / (Math.abs(dx) || 0.001);
+  const sy = hh / (Math.abs(dy) || 0.001);
+  if (sx <= sy) return dx >= 0 ? 'right' : 'left';
+  return dy >= 0 ? 'bottom' : 'top';
+}
+
+function calcPort(n, side, idx, total, margin) {
+  if (n.isAsset) {
+    const r = NODE_R + ASSET_EXTRA + margin;
+    const base = side === 'right' ? 0 : side === 'bottom' ? Math.PI/2
+               : side === 'left' ? Math.PI : -Math.PI/2;
+    const spread = Math.min(Math.PI * 0.7, total * 0.22);
+    const step = total > 1 ? spread / (total - 1) : 0;
+    const angle = base - (total > 1 ? spread / 2 : 0) + idx * step;
+    return { x: n.cx + Math.cos(angle) * r, y: n.cy + Math.sin(angle) * r };
+  }
+  // 사각형: 변을 따라 균등 분산
+  const hw = RECT_W / 2 + margin, hh = RECT_H / 2 + margin;
+  const pad = 4;
+  if (side === 'left' || side === 'right') {
+    const x = side === 'left' ? n.cx - hw : n.cx + hw;
+    const range = RECT_H - 2 * pad;
+    const step = total > 1 ? range / (total - 1) : 0;
+    const y = total > 1 ? n.cy - range / 2 + idx * step : n.cy;
+    return { x, y };
+  }
+  const y = side === 'top' ? n.cy - hh : n.cy + hh;
+  const range = RECT_W - 2 * pad;
+  const step = total > 1 ? range / (total - 1) : 0;
+  const x = total > 1 ? n.cx - range / 2 + idx * step : n.cx;
+  return { x, y };
+}
+
+function getPort(link, nodeId) {
+  return portCache[link.source + '|' + link.target + '|' + nodeId];
+}
+
 let linkIndex = 0;
 
 // 직선이 노드를 관통하는지 체크
@@ -383,16 +473,14 @@ function linkPath(link) {
   if (!bothIndicators) {
     // 지표↔자산: 다른 노드 관통 여부 체크 (margin 넉넉하게)
     const blocking = findBlockingNodes(s, t, 25);
+    const p1 = getPort(link, s.id) || edgePoint(s, t.cx, t.cy, 2);
+    const p2 = getPort(link, t.id) || edgePoint(t, s.cx, s.cy, 6);
 
     if (blocking.length === 0) {
-      const p1 = edgePoint(s, t.cx, t.cy, 2);
-      const p2 = edgePoint(t, s.cx, s.cy, 6);
       return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
     }
 
     // 관통 노드 있으면 곡선 우회 — 넉넉하게 돌아감
-    const p1 = edgePoint(s, t.cx, t.cy, 2);
-    const p2 = edgePoint(t, s.cx, s.cy, 6);
     const sLeft = s.cx < centerX;
     linkIndex++;
     const bendDir = ((sLeft ? 1 : -1) * ((linkIndex % 2) ? 1 : -1));
@@ -437,6 +525,7 @@ function linkPath(link) {
 function renderLinks() {
   gLinks.selectAll('*').remove();
   linkIndex = 0;
+  computePorts();
 
   DATA.links.forEach(link => {
     const s = nodeMap[link.source], t = nodeMap[link.target];
@@ -484,6 +573,7 @@ function linkVisible(l) {
 }
 
 function updateLinkPositions(animate) {
+  computePorts();
   const sel = gLinks.selectAll('path.link-line');
   const s = animate ? sel.transition().duration(400) : sel;
   s.attr('d', d => linkPath(d));
