@@ -263,88 +263,57 @@ html,body{
     catNodes[n.category].push(n);
   });
 
-  // 컬럼 정의
-  const colDef = [
-    { label: '', cats: ['매크로 지표', '현금/예금', '주식'] },
-    { label: '', cats: ['채권', '부동산', '원자재/금'] }
-  ];
+  // 카테고리 순서 (1열 세로 배치)
+  const catOrder = ['매크로 지표','현금/예금','채권','주식','부동산','원자재/금'];
 
   // 치수
   const nodeR = 20;
   const assetExtra = 10;
-  const boxPadX = 12;
+  const boxPadX = 14;
   const boxPadTop = 30;
   const boxPadBot = 25;
-  const boxGap = 12;
-  const colGap = 16;
+  const boxGap = 14;
 
   const getR = d => isAsset(d) ? nodeR + assetExtra : (isCore(d) ? nodeR + 4 : nodeR);
-  // 자산 전용 카테고리: 모든 노드가 isAsset인 카테고리만
-  const assetCatSet = new Set();
-  Object.entries(catNodes).forEach(([cat, ns]) => {
-    if(ns.length && ns.every(n => n.isAsset)) assetCatSet.add(cat);
-  });
+
+  // 고정 너비: 모든 박스 동일 너비 (3열 기준)
+  const spX = 92;
+  const fixedW = boxPadX * 2 + 3 * spX; // = 304px
 
   // 박스 크기 계산
   const boxInfo = {};
-  colDef.forEach(col=>{
-    col.cats.forEach(cat=>{
-      if(!catNodes[cat]) return;
-      const n = catNodes[cat].length;
-      const isA = assetCatSet.has(cat);
-      // 자산: 원(R=30) + sub(14) + val(14) + chg(13) = ~100
-      // 지표: 카드(44h) + val(14) + chg(13) = ~75
-      const spX = isA ? 76 : 92;
-      const spY = isA ? 100 : 80;
-      const maxC = 3; // 모든 카테고리 최대 3열
-      const cols = Math.min(n, maxC);
-      const rows = Math.ceil(n / cols);
-      const w = boxPadX * 2 + cols * spX;
-      const h = boxPadTop + rows * spY + boxPadBot;
-      boxInfo[cat] = { w, h, cols, rows, spX, spY };
-    });
+  catOrder.forEach(cat => {
+    if (!catNodes[cat]) return;
+    const ns = catNodes[cat];
+    const hasAsset = ns.some(n => n.isAsset);
+    const spY = hasAsset ? 100 : 80;
+    const cols = Math.min(ns.length, 3);
+    const rows = Math.ceil(ns.length / cols);
+    const h = boxPadTop + rows * spY + boxPadBot;
+    boxInfo[cat] = { w: fixedW, h, cols, rows, spX, spY };
   });
 
-  // 컬럼 크기 계산
+  // 세로로 쌓기
   const headerSpace = 0;
-  const colInfo = colDef.map(col => {
-    const validCats = col.cats.filter(c => catNodes[c] && boxInfo[c]);
-    let maxW = 0, totalH = 0;
-    validCats.forEach((cat, i) => {
-      if (boxInfo[cat].w > maxW) maxW = boxInfo[cat].w;
-      totalH += boxInfo[cat].h;
-      if (i < validCats.length - 1) totalH += boxGap;
+  let totalH = 0;
+  const validCats = catOrder.filter(c => catNodes[c] && boxInfo[c]);
+  validCats.forEach((cat, i) => {
+    const info = boxInfo[cat];
+    info.x = 0;
+    info.y = totalH;
+    catNodes[cat].forEach((n, ni) => {
+      const c = ni % info.cols;
+      const r = Math.floor(ni / info.cols);
+      n.x = info.x + boxPadX + spX / 2 + c * spX;
+      n.y = info.y + boxPadTop + info.spY / 2 + r * info.spY;
     });
-    return { label: col.label, cats: validCats, width: maxW, height: totalH, x: 0, y: 0, centerX: 0 };
+    totalH += info.h + boxGap;
   });
+  totalH -= boxGap;
+  const totalW = fixedW;
 
-  // 컬럼 가로 배치
-  let cx = 0;
-  colInfo.forEach(col => {
-    col.x = cx;
-    col.y = headerSpace;
-    col.centerX = cx + col.width / 2;
-    cx += col.width + colGap;
-  });
-  const totalW = cx - colGap;
-  const totalH = Math.max(...colInfo.map(c => c.height)) + headerSpace;
-
-  // 박스 및 노드 위치 계산
-  colInfo.forEach(col => {
-    let by = col.y;
-    col.cats.forEach(cat => {
-      const info = boxInfo[cat];
-      info.x = col.x + (col.width - info.w) / 2;
-      info.y = by;
-      catNodes[cat].forEach((n, ni) => {
-        const c = ni % info.cols;
-        const r = Math.floor(ni / info.cols);
-        n.x = info.x + boxPadX + info.spX / 2 + c * info.spX;
-        n.y = info.y + boxPadTop + info.spY / 2 + r * info.spY;
-      });
-      by += info.h + boxGap;
-    });
-  });
+  // colInfo 호환용 (applyLevel에서 사용)
+  const colInfo = [{ label: '', cats: validCats, width: totalW, height: totalH, x: 0, y: 0, centerX: totalW / 2 }];
 
   // ============================================================
   //  SVG + 줌
@@ -384,14 +353,14 @@ html,body{
     const info = boxInfo[cat];
     const c = catColor(cat);
     const g = boxG.append('g').attr('class','cat-group').datum({cat});
-    const isAC = assetCatSet.has(cat);
+    const hasAssets = catNodes[cat] && catNodes[cat].some(n => n.isAsset);
 
     g.append('rect')
       .attr('class','cat-box')
       .attr('x',info.x).attr('y',info.y)
       .attr('width',info.w).attr('height',info.h)
-      .attr('fill',c).attr('fill-opacity', isAC ? .1 : .06)
-      .attr('stroke',c).attr('stroke-opacity', isAC ? .3 : .2);
+      .attr('fill',c).attr('fill-opacity', hasAssets ? .1 : .06)
+      .attr('stroke',c).attr('stroke-opacity', hasAssets ? .3 : .2);
 
     g.append('text')
       .attr('class','cat-label')
@@ -523,73 +492,48 @@ html,body{
       d3.select(this).style('display', (l.source.level<=currentLevel && l.target.level<=currentLevel) ? null : 'none');
     });
 
-    // 2) 레이아웃 재계산 — 보이는 노드만으로 박스 크기/위치 다시 계산
-    colDef.forEach(col=>{
-      col.cats.forEach(cat=>{
-        if(!catNodes[cat]||!boxInfo[cat]) return;
-        const visNodes = catNodes[cat].filter(n=>n.level<=currentLevel);
-        const isA = assetCatSet.has(cat);
-        const spX = isA ? 76 : 92;
-        const spY = isA ? 100 : 80;
-        const cols = Math.min(visNodes.length||1, 3);
-        const rows = Math.max(1, Math.ceil(visNodes.length/cols));
-        const info = boxInfo[cat];
-        info.w = boxPadX*2 + cols*spX;
-        info.h = boxPadTop + rows*spY + boxPadBot;
-        info.cols = cols; info.rows = rows; info.spX = spX; info.spY = spY;
+    // 2) 1열 세로 레이아웃 재계산
+    let by2 = 0;
+    validCats.forEach(cat => {
+      const vis = catNodes[cat] ? catNodes[cat].filter(n => n.level <= currentLevel) : [];
+      const info = boxInfo[cat];
+      if (!vis.length) return;
+      const hasA = vis.some(n => n.isAsset);
+      const sy = hasA ? 100 : 80;
+      const cols = Math.min(vis.length, 3);
+      const rows = Math.ceil(vis.length / cols);
+      info.w = fixedW; info.h = boxPadTop + rows * sy + boxPadBot;
+      info.cols = cols; info.rows = rows; info.spY = sy;
+      info.x = 0; info.y = by2;
+      vis.forEach((n, ni) => {
+        n.x = boxPadX + spX / 2 + (ni % cols) * spX;
+        n.y = by2 + boxPadTop + sy / 2 + Math.floor(ni / cols) * sy;
       });
+      catNodes[cat].filter(n => n.level > currentLevel).forEach(n => { n.x = -9999; n.y = -9999; });
+      by2 += info.h + boxGap;
     });
-
-    // 컬럼 크기 재계산
-    colInfo.forEach(col=>{
-      const vc = col.cats.filter(c=>catNodes[c]&&catNodes[c].some(n=>n.level<=currentLevel));
-      col.width = vc.length ? Math.max(...vc.map(c=>boxInfo[c].w)) : 0;
-      col.height = vc.reduce((s,c,i)=>s+boxInfo[c].h+(i>0?boxGap:0),0);
-    });
-    let cx2=0;
-    colInfo.forEach(col=>{col.x=cx2;col.y=headerSpace;col.centerX=col.x+col.width/2;cx2+=col.width+colGap});
-
-    // 박스 및 노드 위치 재계산
-    colInfo.forEach(col=>{
-      let by=col.y;
-      col.cats.forEach(cat=>{
-        const visNodes = catNodes[cat]?catNodes[cat].filter(n=>n.level<=currentLevel):[];
-        if(!visNodes.length) return;
-        const info=boxInfo[cat];
-        info.x=col.x+(col.width-info.w)/2;
-        info.y=by;
-        visNodes.forEach((n,ni)=>{
-          const c=ni%info.cols, r=Math.floor(ni/info.cols);
-          n.x=info.x+boxPadX+info.spX/2+c*info.spX;
-          n.y=info.y+boxPadTop+info.spY/2+r*info.spY;
-        });
-        // 숨겨진 노드는 화면 밖으로
-        if(catNodes[cat]) catNodes[cat].filter(n=>n.level>currentLevel).forEach(n=>{n.x=-9999;n.y=-9999});
-        by+=info.h+boxGap;
-      });
-    });
+    const newTotalH = Math.max(by2 - boxGap, 1);
 
     // 3) SVG 업데이트
-    nodeEls.attr('transform',d=>`translate(${d.x},${d.y})`);
+    nodeEls.attr('transform', d => `translate(${d.x},${d.y})`);
     updateLinks();
 
     // 4) 박스 업데이트
-    boxG.selectAll('.cat-group').each(function(dd){
-      const info=boxInfo[dd.cat];
-      const hasVis=catNodes[dd.cat]&&catNodes[dd.cat].some(n=>n.level<=currentLevel);
-      d3.select(this).style('display',hasVis?null:'none');
-      if(hasVis&&info){
-        d3.select(this).select('.cat-box').attr('x',info.x).attr('y',info.y).attr('width',info.w).attr('height',info.h);
-        d3.select(this).select('.cat-label').attr('x',info.x+12).attr('y',info.y+20);
+    boxG.selectAll('.cat-group').each(function(dd) {
+      const info = boxInfo[dd.cat];
+      const hasVis = catNodes[dd.cat] && catNodes[dd.cat].some(n => n.level <= currentLevel);
+      d3.select(this).style('display', hasVis ? null : 'none');
+      if (hasVis && info) {
+        d3.select(this).select('.cat-box').attr('x', info.x).attr('y', info.y).attr('width', info.w).attr('height', info.h);
+        d3.select(this).select('.cat-label').attr('x', info.x + 12).attr('y', info.y + 20);
       }
     });
 
     // 5) fit to view
-    const tw2=cx2-colGap, th2=Math.max(...colInfo.map(c=>c.height))+headerSpace;
-    const sx2=(W-padX*2)/tw2, sy2=(H-padTop-padBot)/th2;
-    const sc2=Math.min(sx2,sy2);
-    const tx2=(W-tw2*sc2)/2, ty2=padTop+((H-padTop-padBot)-th2*sc2)/2;
-    svg.transition().duration(400).call(zoomBeh.transform,d3.zoomIdentity.translate(tx2,ty2).scale(sc2));
+    const sx2 = (W - padX * 2) / fixedW, sy2 = (H - padTop - padBot) / newTotalH;
+    const sc2 = Math.min(sx2, sy2);
+    const tx2 = (W - fixedW * sc2) / 2, ty2 = padTop + ((H - padTop - padBot) - newTotalH * sc2) / 2;
+    svg.transition().duration(400).call(zoomBeh.transform, d3.zoomIdentity.translate(tx2, ty2).scale(sc2));
   }
 
   // 초기 레벨 적용
