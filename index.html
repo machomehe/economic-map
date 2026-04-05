@@ -381,8 +381,8 @@ function linkPath(link) {
   const centerX = s.isAsset ? s.cx : (t.isAsset ? t.cx : 180);
 
   if (!bothIndicators) {
-    // 지표↔자산: 직선이 기본, 다른 노드 관통 시 곡선 우회
-    const blocking = findBlockingNodes(s, t, 8);
+    // 지표↔자산: 다른 노드 관통 여부 체크 (margin 넉넉하게)
+    const blocking = findBlockingNodes(s, t, 25);
 
     if (blocking.length === 0) {
       const p1 = edgePoint(s, t.cx, t.cy, 2);
@@ -390,14 +390,13 @@ function linkPath(link) {
       return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
     }
 
-    // 관통하는 노드가 있으면 곡선으로 우회
-    // 우회 방향: 소스가 왼쪽이면 위로, 오른쪽이면 아래로
+    // 관통 노드 있으면 곡선 우회 — 넉넉하게 돌아감
     const p1 = edgePoint(s, t.cx, t.cy, 2);
     const p2 = edgePoint(t, s.cx, s.cy, 6);
     const sLeft = s.cx < centerX;
     linkIndex++;
     const bendDir = ((sLeft ? 1 : -1) * ((linkIndex % 2) ? 1 : -1));
-    const bendAmt = 40 + blocking.length * 20;
+    const bendAmt = 60 + blocking.length * 30;
     const mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
     const dx = p2.x-p1.x, dy = p2.y-p1.y;
     const dist = Math.sqrt(dx*dx+dy*dy) || 1;
