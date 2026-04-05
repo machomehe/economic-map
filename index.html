@@ -29,12 +29,12 @@ svg { display:block; width:100%; height:100%; }
 .node-value  { font-size:10.5px; text-anchor:middle; pointer-events:none; }
 
 /* ── Link ── */
-.link-line { fill:none; stroke-width:1.4; opacity:0.12; }
+.link-line { fill:none; stroke-width:1.6; opacity:0.25; }
 
 /* ── Highlight / Dim ── */
 .node-dim  { opacity:0.08 !important; }
-.link-dim  { opacity:0.03 !important; }
-.link-hl   { opacity:0.85 !important; stroke-width:2.8; }
+.link-dim  { opacity:0.04 !important; }
+.link-hl   { opacity:0.95 !important; stroke-width:3; filter:drop-shadow(0 0 6px var(--glow)); }
 
 /* ── Bottom bar ── */
 #bottom-bar {
@@ -153,7 +153,7 @@ let H = window.innerHeight;
 const svg   = d3.select('#svg');
 /* defs for arrowheads */
 const defs  = svg.append('defs');
-['#16a34a','#dc2626','#ca8a04'].forEach(c => {
+['#16a34a','#dc2626','#ca8a04','#555'].forEach(c => {
   defs.append('marker')
     .attr('id', 'arrow-' + c.replace('#',''))
     .attr('viewBox','0 0 10 10')
@@ -441,19 +441,41 @@ function renderLinks() {
   DATA.links.forEach(link => {
     const s = nodeMap[link.source], t = nodeMap[link.target];
     if (!s || !t) return;
-    const col = linkColor(link);
+    const col = linkLiveColor(link);
+    const isDash = link.type === '반비례';
     gLinks.append('path')
       .datum(link)
       .attr('class','link-line')
       .attr('stroke', col)
+      .style('--glow', col)
       .attr('fill', 'none')
+      .attr('stroke-dasharray', isDash ? '7,4' : null)
       .attr('marker-end', 'url(#arrow-' + col.replace('#','') + ')')
       .attr('d', linkPath(link))
       .attr('display', linkVisible(link) ? null : 'none');
   });
 }
 
-function linkColor(l) {
+// 실시간 영향 색상: 소스 지표의 변화 방향 + 관계 유형으로 결정
+// 예: 기준금리↑ + 반비례 → 주식↓ → 빨강
+// 예: 기준금리↑ + 비례 → 현금↑ → 초록
+function linkLiveColor(l) {
+  const s = nodeMap[l.source];
+  if (!s || !s._dir || s._dir === 'flat') return '#555'; // 데이터 없으면 회색
+
+  const srcUp = s._dir === 'up';
+  const isBirye = l.type === '비례';
+
+  // 소스↑ + 비례 = 타겟↑ = 초록
+  // 소스↑ + 반비례 = 타겟↓ = 빨강
+  // 소스↓ + 비례 = 타겟↓ = 빨강
+  // 소스↓ + 반비례 = 타겟↑ = 초록
+  const targetUp = srcUp === isBirye;
+  return targetUp ? '#16a34a' : '#dc2626';
+}
+
+// 관계 유형 색상 (화살촉용)
+function linkTypeColor(l) {
   if (l.type === '비례')   return '#16a34a';
   if (l.type === '반비례') return '#dc2626';
   return '#ca8a04';
