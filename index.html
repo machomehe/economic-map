@@ -461,15 +461,14 @@ function renderLinks() {
 // 예: 기준금리↑ + 비례 → 현금↑ → 초록
 function linkLiveColor(l) {
   const s = nodeMap[l.source];
-  if (!s || !s._dir || s._dir === 'flat') return '#555'; // 데이터 없으면 회색
-
-  const srcUp = s._dir === 'up';
   const isBirye = l.type === '비례';
 
-  // 소스↑ + 비례 = 타겟↑ = 초록
-  // 소스↑ + 반비례 = 타겟↓ = 빨강
-  // 소스↓ + 비례 = 타겟↓ = 빨강
-  // 소스↓ + 반비례 = 타겟↑ = 초록
+  // 데이터 없으면 관계 유형 색상으로 fallback (비례=초록, 반비례=빨강)
+  if (!s || !s._dir || s._dir === 'flat') {
+    return isBirye ? '#16a34a' : '#dc2626';
+  }
+
+  const srcUp = s._dir === 'up';
   const targetUp = srcUp === isBirye;
   return targetUp ? '#16a34a' : '#dc2626';
 }
