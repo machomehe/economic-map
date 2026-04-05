@@ -351,31 +351,70 @@ function rectSide(n, side, margin) {
   return { x: n.cx, y: n.cy + hh };
 }
 
-let elbowIndex = 0; // 꺾임선마다 다른 offset
+let linkIndex = 0;
+
+// 직선이 노드를 관통하는지 체크
+function hitsNode(x1,y1,x2,y2, node, margin) {
+  // 선분과 노드 중심의 거리 계산
+  const dx=x2-x1, dy=y2-y1;
+  const len2=dx*dx+dy*dy;
+  if(len2===0) return false;
+  let t=((node.cx-x1)*dx+(node.cy-y1)*dy)/len2;
+  t=Math.max(0,Math.min(1,t));
+  const px=x1+t*dx, py=y1+t*dy;
+  const dist=Math.sqrt((node.cx-px)**2+(node.cy-py)**2);
+  const r=node.isAsset ? NODE_R+ASSET_EXTRA+margin : Math.max(RECT_W,RECT_H)/2+margin;
+  return dist < r;
+}
+
+// 경로 위의 노드 찾기 (출발/도착 노드 제외)
+function findBlockingNodes(s, t, margin) {
+  const vis = DATA.nodes.filter(n => n.level <= currentLevel && n.id !== s.id && n.id !== t.id && n.cx > -999);
+  return vis.filter(n => hitsNode(s.cx, s.cy, t.cx, t.cy, n, margin));
+}
 
 function linkPath(link) {
   const s = nodeMap[link.source], t = nodeMap[link.target];
   if (!s || !t) return 'M0,0';
 
   const bothIndicators = !s.isAsset && !t.isAsset;
-  const cx = 180; // 중심축 (자산 위치)
+  const centerX = s.isAsset ? s.cx : (t.isAsset ? t.cx : 180);
 
   if (!bothIndicators) {
-    // 지표↔자산: 직선, 노드 경계 접점
+    // 지표↔자산: 직선이 기본, 다른 노드 관통 시 곡선 우회
+    const blocking = findBlockingNodes(s, t, 8);
+
+    if (blocking.length === 0) {
+      const p1 = edgePoint(s, t.cx, t.cy, 2);
+      const p2 = edgePoint(t, s.cx, s.cy, 6);
+      return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
+    }
+
+    // 관통하는 노드가 있으면 곡선으로 우회
+    // 우회 방향: 소스가 왼쪽이면 위로, 오른쪽이면 아래로
     const p1 = edgePoint(s, t.cx, t.cy, 2);
     const p2 = edgePoint(t, s.cx, s.cy, 6);
-    return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
+    const sLeft = s.cx < centerX;
+    linkIndex++;
+    const bendDir = ((sLeft ? 1 : -1) * ((linkIndex % 2) ? 1 : -1));
+    const bendAmt = 40 + blocking.length * 20;
+    const mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
+    const dx = p2.x-p1.x, dy = p2.y-p1.y;
+    const dist = Math.sqrt(dx*dx+dy*dy) || 1;
+    // 수직 방향으로 bend
+    const cx = mx - (dy/dist) * bendAmt * bendDir;
+    const cy = my + (dx/dist) * bendAmt * bendDir;
+    return `M${p1.x},${p1.y} Q${cx},${cy} ${p2.x},${p2.y}`;
   }
 
   // 지표↔지표
-  const sameSide = (s.cx < cx) === (t.cx < cx);
+  const sameSide = (s.cx < 180) === (t.cx < 180);
 
   if (sameSide) {
-    // 같은 쪽: ㄱ자 꺾임, 각 선마다 offset 다르게
-    const sLeft = s.cx < cx;
+    const sLeft = s.cx < 180;
     const outDir = sLeft ? 'left' : 'right';
-    elbowIndex++;
-    const baseOff = 25 + (elbowIndex % 5) * 12; // 25~73px 범위로 분산
+    linkIndex++;
+    const baseOff = 25 + (linkIndex % 6) * 14;
     const outX = sLeft
       ? Math.min(s.cx, t.cx) - RECT_W/2 - baseOff
       : Math.max(s.cx, t.cx) + RECT_W/2 + baseOff;
@@ -383,19 +422,22 @@ function linkPath(link) {
     const p2 = rectSide(t, outDir, 6);
     return `M${p1.x},${p1.y} L${outX},${p1.y} L${outX},${p2.y} L${p2.x},${p2.y}`;
   } else {
-    // 반대 쪽: 중앙을 통과하는 꺾임선 (자산과 겹치지 않게 위/아래 우회)
-    const topY = Math.min(s.cy, t.cy);
-    const midY = topY - 30 - (elbowIndex % 3) * 15;
-    elbowIndex++;
-    const p1 = rectSide(s, 'top', 2);
-    const p2 = rectSide(t, 'top', 6);
+    // 반대 쪽: 위/아래 우회
+    linkIndex++;
+    const goUp = s.cy <= t.cy;
+    const margin = 30 + (linkIndex % 4) * 18;
+    const midY = goUp
+      ? Math.min(s.cy, t.cy) - margin
+      : Math.max(s.cy, t.cy) + margin;
+    const p1 = rectSide(s, goUp ? 'top' : 'bottom', 2);
+    const p2 = rectSide(t, goUp ? 'top' : 'bottom', 6);
     return `M${p1.x},${p1.y} L${p1.x},${midY} L${p2.x},${midY} L${p2.x},${p2.y}`;
   }
 }
 
 function renderLinks() {
   gLinks.selectAll('*').remove();
-  elbowIndex = 0;
+  linkIndex = 0;
 
   DATA.links.forEach(link => {
     const s = nodeMap[link.source], t = nodeMap[link.target];
