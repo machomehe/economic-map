@@ -2,828 +2,779 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>경제 지표 관계도</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet" media="print" onload="this.media='all'">
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Economic Map</title>
+<script src="d3.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{
-  font-family:'Pretendard Variable',-apple-system,sans-serif;
-  background:#0f0f14;color:#eee;
-  overflow:hidden;width:100%;height:100%;
+/* ── Reset ── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; height:100%; overflow:hidden;
+  background:#0f0f14; color:#e2e8f0;
+  font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
+  touch-action:none;
   -webkit-tap-highlight-color:transparent;
 }
-#canvas{width:100%;height:100%;display:block}
 
-/* 상단 바 */
-#top-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;display:flex;flex-direction:column;gap:8px;z-index:20;pointer-events:none}
-#top-bar>*{pointer-events:auto}
-#top-row{display:flex;align-items:center;gap:8px}
-#search-wrap{position:relative;flex:1;max-width:360px}
-#search{width:100%;padding:10px 14px 10px 36px;border:1px solid #333;border-radius:12px;background:#1a1a24ee;color:#eee;font-size:14px;font-family:inherit;outline:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-#search::placeholder{color:#666}
-#search:focus{border-color:#60a5fa}
-#search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#666;font-size:14px;pointer-events:none}
-#search-results{position:absolute;top:100%;left:0;right:0;background:#1a1a24f0;border:1px solid #333;border-radius:10px;margin-top:4px;max-height:200px;overflow-y:auto;display:none;backdrop-filter:blur(8px)}
-.result-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px;min-height:44px}
-.result-item:last-child{border-bottom:none}
-.result-item:hover,.result-item:active{background:#ffffff10}
-.result-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.result-label{font-weight:600}
-.result-sub{color:#888;font-size:11px;margin-left:4px}
+/* ── SVG ── */
+svg { display:block; width:100%; height:100%; }
+.cat-box { fill:#1a1a24; stroke-width:1.5; }
+.cat-label { fill:#cbd5e1; font-size:13px; font-weight:700; }
 
-/* 필터 + 레벨 */
-#filter-row{display:flex;gap:8px;align-items:center}
-#level-btns{display:flex;gap:4px;flex-shrink:0}
-.level-btn{padding:6px 12px;border-radius:16px;border:1px solid #333;background:#1a1a24dd;color:#aaa;font-size:11px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .2s;min-height:30px}
-.level-btn.active{background:#60a5fa;color:#000;border-color:#60a5fa}
-#filters{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;flex:1}
-#filters::-webkit-scrollbar{display:none}
-/* 수정 버튼 */
-.top-btn{width:40px;height:40px;border:1px solid #333;border-radius:10px;background:#1a1a24ee;color:#aaa;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);flex-shrink:0;transition:all .2s}
-.top-btn.active{border-color:#60a5fa;color:#60a5fa;background:#60a5fa18}
-#edit-banner{position:fixed;bottom:0;left:0;right:0;padding:10px 16px;background:#60a5fa22;border-top:1px solid #60a5fa44;text-align:center;font-size:12px;color:#60a5fa;font-weight:600;z-index:25;display:none}
-#edit-banner.show{display:block}
+/* ── Node styles ── */
+.node-circle { cursor:pointer; stroke-width:2.5; }
+.node-rect   { cursor:pointer; stroke-width:1.5; }
+.node-label  { fill:#fff; font-size:11px; font-weight:700; text-anchor:middle; pointer-events:none; }
+.node-sub    { fill:#94a3b8; font-size:8.5px; text-anchor:middle; pointer-events:none; }
+.node-value  { font-size:9px; text-anchor:middle; pointer-events:none; }
 
-.filter-btn{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #333;background:#1a1a24dd;color:#aaa;font-size:12px;font-family:inherit;font-weight:500;cursor:pointer;transition:all .2s;min-height:34px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.filter-btn.active{border-color:var(--c);color:var(--c);background:var(--bg)}
+/* ── Link ── */
+.link-line { fill:none; stroke-width:1.4; opacity:0.45; }
 
-/* 범례 */
-#legend{position:fixed;bottom:12px;left:12px;font-size:11px;color:#555;z-index:15;display:flex;flex-direction:column;gap:4px;transition:opacity .3s}
-#legend.hidden{opacity:0;pointer-events:none}
-#legend div{display:flex;align-items:center;gap:6px}
-.line-sample{width:24px;height:3px;border-radius:2px}
+/* ── Highlight / Dim ── */
+.node-dim  { opacity:0.12 !important; }
+.link-dim  { opacity:0.04 !important; }
+.link-hl   { opacity:0.95 !important; stroke-width:2.5; }
 
-/* 바텀시트 */
-#sheet{position:fixed;bottom:0;left:0;right:0;background:#1a1a24;border-top:1px solid #333;border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);z-index:30;max-height:55vh;overflow-y:auto;padding:0 20px 24px;-webkit-overflow-scrolling:touch}
-#sheet.show{transform:translateY(0)}
-.handle{width:36px;height:4px;background:#444;border-radius:4px;margin:10px auto 14px}
-.sh-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.sh-cat{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600}
-.sh-title{font-size:18px;font-weight:700}
-.sh-sub{font-size:13px;color:#888;margin-bottom:6px}
-.sh-desc{font-size:13px;color:#bbb;line-height:1.7;margin-bottom:14px}
-.sim-btns{display:flex;gap:10px;margin-bottom:8px}
-.sim-btn{flex:1;padding:12px;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;min-height:48px}
-.sim-up{background:#16a34a22;color:#16a34a;border:1px solid #16a34a33}
-.sim-up:active{background:#16a34a44}
-.sim-down{background:#dc262622;color:#dc2626;border:1px solid #dc262633}
-.sim-down:active{background:#dc262644}
-.sim-result h4{font-size:13px;color:#888;margin-bottom:8px;font-weight:600}
-.sim-step{margin-bottom:10px}
-.sim-step-label{font-size:11px;color:#666;margin-bottom:4px;font-weight:600}
-.sim-items{display:flex;flex-wrap:wrap;gap:6px}
-.sim-chip{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;background:#ffffff08;border:1px solid #ffffff10;cursor:pointer;min-height:32px}
-.sim-note{font-size:10px;color:#f59e0b;margin-top:4px}
+/* ── Bottom bar ── */
+#bottom-bar {
+  position:fixed; bottom:0; left:0; right:0;
+  background:#16161eee; border-top:1px solid #2a2a3a;
+  padding:8px 10px; display:flex; gap:6px; align-items:center;
+  z-index:100; justify-content:center;
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+}
+#bottom-bar button {
+  background:#23233a; color:#e2e8f0; border:1px solid #3a3a5a;
+  border-radius:8px; padding:7px 13px; font-size:12px; cursor:pointer;
+  white-space:nowrap; font-family:inherit; font-weight:600;
+  transition:all .15s;
+}
+#bottom-bar button.active { background:#4f46e5; border-color:#6366f1; color:#fff; }
+#bottom-bar button:active { transform:scale(0.95); }
+#search-input {
+  background:#1a1a2e; color:#e2e8f0; border:1px solid #3a3a5a;
+  border-radius:8px; padding:7px 10px; font-size:12px; width:90px;
+  outline:none; font-family:inherit;
+}
+#search-input:focus { border-color:#6366f1; width:120px; transition:width .2s; }
 
-/* 시뮬레이션 배너 */
-#sim-bar{position:fixed;top:0;left:0;right:0;padding:10px 16px;background:#1a1a24ee;border-bottom:1px solid #333;display:none;align-items:center;justify-content:space-between;z-index:25;backdrop-filter:blur(8px)}
-#sim-bar.show{display:flex}
-#sim-bar-text{font-size:13px;font-weight:600}
-#sim-exit{padding:6px 14px;border-radius:8px;border:1px solid #555;background:transparent;color:#eee;font-family:inherit;font-size:12px;cursor:pointer;min-height:34px}
+/* ── Bottom sheet ── */
+#sheet-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200;
+  display:none; opacity:0; transition:opacity .2s;
+}
+#sheet-overlay.show { display:block; opacity:1; }
+#bottom-sheet {
+  position:fixed; bottom:0; left:0; right:0;
+  background:#1e1e2e; border-top-left-radius:16px; border-top-right-radius:16px;
+  padding:20px 18px 34px; z-index:210;
+  transform:translateY(100%); transition:transform .25s ease;
+  max-height:65vh; overflow-y:auto;
+}
+#bottom-sheet.show { transform:translateY(0); }
+#sheet-handle { width:40px; height:4px; background:#444; border-radius:2px; margin:0 auto 14px; }
+#sheet-title { font-size:18px; font-weight:700; margin-bottom:4px; }
+#sheet-sub { font-size:13px; color:#94a3b8; margin-bottom:10px; }
+#sheet-desc { font-size:13px; color:#cbd5e1; margin-bottom:12px; line-height:1.5; }
+.sheet-btn-row { display:flex; gap:8px; margin-bottom:12px; }
+.sim-btn {
+  flex:1; padding:10px; border-radius:10px; font-size:13px; font-weight:600;
+  border:none; cursor:pointer; font-family:inherit;
+}
+.sim-btn.up   { background:#16a34a22; color:#22c55e; border:1px solid #16a34a55; }
+.sim-btn.down { background:#dc262622; color:#f87171; border:1px solid #dc262655; }
+.sim-btn:active { transform:scale(0.97); }
+#sheet-interp { font-size:12.5px; color:#cbd5e1; line-height:1.6; }
 
-/* SVG 요소 */
-.cat-box{rx:12;ry:12;cursor:grab}.cat-box:active{cursor:grabbing}
-.cat-label{font-size:12px;font-weight:700;pointer-events:none}
-.node-circle{cursor:pointer;transition:opacity .3s}
-.node-rect{cursor:pointer;transition:opacity .3s;rx:8;ry:8}
-.node-label{font-size:13px;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none;transition:opacity .3s}
-.node-sub{font-size:9px;fill:#999;text-anchor:middle;pointer-events:none;transition:opacity .3s}
-.node-touch{fill:transparent;cursor:pointer}
-.link-line{fill:none;opacity:.35;transition:opacity .3s}
-.link-desc{font-size:8px;fill:#666;text-anchor:middle;pointer-events:none;transition:opacity .3s}
-.sim-arrow{font-size:16px;font-weight:800;text-anchor:middle;pointer-events:none;filter:drop-shadow(0 0 4px rgba(0,0,0,.8))}
-
-/* dim/highlight */
-.node-val,.node-chg{transition:opacity .3s}
-.dimmed .node-circle,.dimmed .node-rect,.dimmed .node-label,.dimmed .node-sub,.dimmed .node-val,.dimmed .node-chg{opacity:.08}
-.dimmed .link-line,.dimmed .link-desc{opacity:.03}
-.dimmed .cat-box{opacity:.3}
-.dimmed .cat-label{opacity:.15}
-.highlighted .node-circle,.highlighted .node-label{opacity:1}
-.highlighted .node-sub{opacity:.8}
-.highlighted .link-line{opacity:.7}
-.highlighted .link-desc{opacity:.9}
-
-/* 로딩 */
-#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0f0f14;z-index:100;flex-direction:column;gap:12px;transition:opacity .5s}
-#loading.hide{opacity:0;pointer-events:none}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:480px){.node-label{font-size:10px}.node-sub{font-size:7px}}
+/* ── Category filter chips ── */
+.cat-chip {
+  background:#23233a; color:#aaa; border:1px solid #3a3a5a;
+  border-radius:14px; padding:5px 10px; font-size:11px; cursor:pointer;
+  white-space:nowrap; font-family:inherit; transition:all .15s;
+}
+.cat-chip.active { color:#fff; }
 </style>
 </head>
 <body>
 
-<div id="loading">
-  <div style="width:32px;height:32px;border:3px solid #333;border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite"></div>
-  <div style="color:#666;font-size:13px">관계도 로딩 중...</div>
+<svg id="svg"></svg>
+
+<!-- Bottom bar -->
+<div id="bottom-bar">
+  <input id="search-input" placeholder="검색..." />
+  <button id="btn-lv1" class="active" data-lv="1">핵심</button>
+  <button id="btn-lv2" data-lv="2">기본</button>
+  <button id="btn-lv3" data-lv="3">심화</button>
+  <button id="btn-edit">수정</button>
 </div>
 
-<div id="top-bar">
-  <div id="top-row">
-    <div id="search-wrap">
-      <span id="search-icon">&#x1F50D;</span>
-      <input id="search" type="text" placeholder="지표 검색..." autocomplete="off">
-      <div id="search-results"></div>
-    </div>
-    <div id="level-btns">
-      <button class="level-btn active" data-level="1">핵심</button>
-      <button class="level-btn" data-level="2">기본</button>
-      <button class="level-btn" data-level="3">심화</button>
-    </div>
-    <button class="top-btn" id="edit-btn" title="배치 수정">&#x270F;&#xFE0F;</button>
+<!-- Bottom sheet overlay -->
+<div id="sheet-overlay"></div>
+<div id="bottom-sheet">
+  <div id="sheet-handle"></div>
+  <div id="sheet-title"></div>
+  <div id="sheet-sub"></div>
+  <div id="sheet-desc"></div>
+  <div class="sheet-btn-row">
+    <button class="sim-btn up" id="btn-sim-up">오르면?</button>
+    <button class="sim-btn down" id="btn-sim-down">내리면?</button>
   </div>
-  <div id="filters"></div>
-</div>
-
-<div id="legend">
-  <div><span class="line-sample" style="background:#16a34a"></span> 비례 (같이 움직임)</div>
-  <div><span class="line-sample" style="background:#dc2626"></span> 반비례 (반대로 움직임)</div>
-  <div><span class="line-sample" style="background:#ca8a04"></span> 조건부</div>
-</div>
-
-<div id="sim-bar">
-  <span id="sim-bar-text"></span>
-  <button id="sim-exit">닫기</button>
-</div>
-
-<div id="edit-banner">배치 수정 모드 — 노드와 그룹을 드래그하여 이동</div>
-<svg id="canvas"></svg>
-
-<div id="sheet">
-  <div class="handle"></div>
-  <div class="sh-header"><span class="sh-cat" id="sh-cat"></span><span class="sh-title" id="sh-title"></span></div>
-  <div class="sh-sub" id="sh-sub"></div>
-  <div class="sh-desc" id="sh-desc"></div>
-  <div class="sim-btns" id="sim-btns">
-    <button class="sim-btn sim-up" id="btn-up">&#9650; 오르면?</button>
-    <button class="sim-btn sim-down" id="btn-down">&#9660; 내리면?</button>
-  </div>
-  <div class="sim-result" id="sim-result"></div>
+  <div id="sheet-interp"></div>
 </div>
 
 <script>
-(async function(){
-  'use strict';
+/* ================================================================
+   Economic Map v4 — Complete Rewrite
+   ================================================================ */
 
-  // ============================================================
-  //  데이터 로드
-  // ============================================================
-  let raw;
-  try {
-    const r = await fetch('data/data.json');
-    if (!r.ok) throw new Error(r.status);
-    raw = await r.json();
-  } catch(e) {
-    document.getElementById('loading').innerHTML='<div style="color:#f87171">데이터를 불러올 수 없습니다.</div>';
-    return;
-  }
+/* ── Constants ── */
+const CAT_ORDER = ['매크로 지표','현금/예금','채권','주식','부동산','원자재/금'];
+const BOX_W      = 300;
+const SP_X_IND   = 92,  SP_Y_IND = 80;
+const SP_X_AST   = 92,  SP_Y_AST = 100;
+const MAX_COLS   = 3;
+const PAD_X      = 14,  PAD_TOP = 30, PAD_BOT = 25, BOX_GAP = 14;
+const NODE_R     = 20,  ASSET_EXTRA = 10;
+const RECT_W     = 80,  RECT_H  = 44;
+const BAR_H      = 52;
 
-  const categories = raw.categories || {};
-  const nodes = (raw.nodes||[]).map(n=>({...n}));
-  const links = (raw.links||[]).map(l=>({...l}));
-  const catColor = c=>(categories[c]||{}).color||'#666';
-  const GREEN='#16a34a', RED='#dc2626', YELLOW='#ca8a04';
-  const linkColor = {'비례':GREEN,'반비례':RED,'조건부':YELLOW};
-  const isCore = n=>n.tags&&n.tags.includes('핵심');
-  const isAsset = n=>!!n.isAsset;
+/* ── State ── */
+let DATA, VALS, nodeMap = {};
+let boxes = [];
+let currentLevel = 1;
+let editMode     = false;
+let selectedNode  = null;
+let catFilter     = null;        // null = show all
 
-  if(!nodes.length){
-    document.getElementById('loading').innerHTML='<div style="color:#888">데이터가 비어 있습니다.</div>';
-    return;
-  }
+/* ── D3 setup ── */
+const svg   = d3.select('#svg');
+/* defs for arrowheads */
+const defs  = svg.append('defs');
+['#16a34a','#dc2626','#ca8a04'].forEach(c => {
+  defs.append('marker')
+    .attr('id', 'arrow-' + c.replace('#',''))
+    .attr('viewBox','0 0 10 10')
+    .attr('refX', 28).attr('refY', 5)
+    .attr('markerWidth', 5).attr('markerHeight', 5)
+    .attr('orient','auto-start-reverse')
+    .append('path').attr('d','M0,0 L10,5 L0,10 Z').attr('fill', c);
+});
 
-  // ============================================================
-  //  실시간 값 로드
-  // ============================================================
-  const fredAlias = {'VIXCLS':'^VIX','NASDAQCOM':'^IXIC'};
-  let valuesData = {};
-  try {
-    const vr = await fetch('data/values.json');
-    if(vr.ok){
-      const vj = await vr.json();
-      valuesData = vj.data||{};
+const gRoot  = svg.append('g');
+const gLinks = gRoot.append('g');
+const gBoxes = gRoot.append('g');
+const gNodes = gRoot.append('g');
+
+/* ── Zoom ── */
+const zoomBehavior = d3.zoom()
+  .scaleExtent([0.1, 5])
+  .filter(e => {
+    /* In edit mode, only allow zoom via pinch/wheel, not pan */
+    if (editMode && e.type === 'mousedown') return false;
+    return true;
+  })
+  .on('zoom', e => gRoot.attr('transform', e.transform));
+svg.call(zoomBehavior);
+
+/* ================================================================
+   DATA LOAD
+   ================================================================ */
+Promise.all([
+  fetch('data/data.json').then(r => r.json()),
+  fetch('data/values.json').then(r => r.json()).catch(() => null)
+]).then(([data, vals]) => {
+  DATA = data;
+  VALS = vals;
+  init();
+});
+
+/* ================================================================
+   INIT
+   ================================================================ */
+function init() {
+  DATA.nodes.forEach(n => { n.dx = 0; n.dy = 0; });
+  nodeMap = {};
+  DATA.nodes.forEach(n => nodeMap[n.id] = n);
+
+  attachValues();
+  computeLayout();
+  renderAll();
+  fitView(0);
+  bindEvents();
+}
+
+/* ================================================================
+   FRED values → nodes
+   ================================================================ */
+function attachValues() {
+  if (!VALS || !VALS.data) return;
+  DATA.nodes.forEach(n => {
+    const key = n.dataSource && n.dataSource.fred;
+    if (!key) { n._val = null; n._dir = null; return; }
+    const s = VALS.data[key];
+    if (!s || s.length < 2) { n._val = null; n._dir = null; return; }
+    const cur  = parseFloat(s[0].value);
+    const prev = parseFloat(s[1].value);
+    n._val = cur;
+    n._dir = cur > prev ? 'up' : cur < prev ? 'down' : 'flat';
+  });
+}
+
+/* ================================================================
+   LAYOUT — boxes stacked vertically, nodes in grid inside boxes
+   ================================================================ */
+function computeLayout() {
+  let yOff = 0;
+  boxes = [];
+
+  CAT_ORDER.forEach(catName => {
+    const catNodes = DATA.nodes.filter(n =>
+      n.category === catName && n.level <= currentLevel
+    );
+
+    if (catNodes.length === 0) {
+      boxes.push({ name:catName, x:0, y:yOff, w:BOX_W, h:0, visible:false,
+                    color:DATA.categories[catName].color });
+      return;
     }
-  } catch(e){}
 
-  // 각 노드에 값/변화 부여
-  const fmtMap = {
-    'FEDFUNDS':'%','DFII10':'%','DGS10':'%','T10Y2Y':'%p','BAMLH0A0HYM2':'%',
-    'UNRATE':'%','CPIAUCSL':'idx','DTWEXBGS':'idx','DEXKOUS':'₩','DCOILWTICO':'$',
-    'VIXCLS':'','NASDAQCOM':',','SP500':',','A191RL1Q225SBEA':'%','RSAFS':'M$'
-  };
+    /* Split into asset nodes and indicator nodes */
+    const assetNodes = catNodes.filter(n => n.isAsset);
+    const indNodes   = catNodes.filter(n => !n.isAsset);
 
-  function fmtVal(v, series){
-    const f=fmtMap[series]||'';
-    if(f==='%') return v.toFixed(2)+'%';
-    if(f==='%p') return (v>=0?'+':'')+v.toFixed(2)+'%p';
-    if(f==='$') return '$'+v.toFixed(1);
-    if(f==='₩') return v.toFixed(0)+'원';
-    if(f==='idx') return v.toFixed(1);
-    if(f===',') return v.toLocaleString('en',{maximumFractionDigits:0});
-    if(f==='M$') return (v/1000).toFixed(0)+'B$';
-    return v.toFixed(2);
-  }
+    /* Calculate height for each group */
+    let contentH = 0;
+    let innerY = PAD_TOP; // y cursor inside the box
 
-  nodes.forEach(n=>{
-    const fred = (n.dataSource||{}).fred||'';
-    let series = fred;
-    if(!valuesData[series]){
-      for(const[fid,yid]of Object.entries(fredAlias)){
-        if(yid===fred && valuesData[fid]){series=fid;break;}
-      }
+    /* Layout asset nodes first */
+    if (assetNodes.length > 0) {
+      const cols = Math.min(assetNodes.length, MAX_COLS);
+      const rows = Math.ceil(assetNodes.length / cols);
+      const cw = cols * SP_X_AST;
+      assetNodes.forEach((n, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const startX = (BOX_W - cw) / 2 + SP_X_AST / 2;
+        n.cx = startX + col * SP_X_AST + n.dx;
+        n.cy = innerY + SP_Y_AST / 2 + row * SP_Y_AST + n.dy;
+      });
+      innerY += rows * SP_Y_AST;
     }
-    const obs = valuesData[series];
-    if(obs && obs.length>=2){
-      const cur = parseFloat(obs[0].value);
-      const prev = parseFloat(obs[1].value);
-      const chg = cur-prev;
-      const pct = prev?((chg/Math.abs(prev))*100):0;
-      n._val = fmtVal(cur, series);
-      n._chgDir = chg>0?'up':chg<0?'down':'flat';
-      n._chgText = (chg>0?'+':'')+(Math.abs(pct)>=1?pct.toFixed(1)+'%':chg.toFixed(2));
-      n._date = obs[0].date;
-    } else if(obs && obs.length===1){
-      const cur = parseFloat(obs[0].value);
-      n._val = fmtVal(cur, series);
-      n._chgDir = 'flat';
-      n._chgText = '';
+
+    /* Layout indicator nodes after assets */
+    if (indNodes.length > 0) {
+      const cols = Math.min(indNodes.length, MAX_COLS);
+      const rows = Math.ceil(indNodes.length / cols);
+      const cw = cols * SP_X_IND;
+      indNodes.forEach((n, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const startX = (BOX_W - cw) / 2 + SP_X_IND / 2;
+        n.cx = startX + col * SP_X_IND + n.dx;
+        n.cy = innerY + SP_Y_IND / 2 + row * SP_Y_IND + n.dy;
+      });
+      innerY += rows * SP_Y_IND;
     }
+
+    const boxH = innerY + PAD_BOT;
+    const box = {
+      name:catName, x:0, y:yOff, w:BOX_W, h:boxH, visible:true,
+      color:DATA.categories[catName].color
+    };
+    boxes.push(box);
+
+    /* offset node positions by box.y (they were relative to 0) */
+    catNodes.forEach(n => { n.cx += box.x; n.cy += box.y; });
+
+    yOff += boxH + BOX_GAP;
   });
 
-  // ============================================================
-  //  컬럼 기반 레이아웃 계산
-  // ============================================================
-  // 카테고리별 노드 그룹
-  const catNodes = {};
-  nodes.forEach(n=>{
-    if(!catNodes[n.category]) catNodes[n.category]=[];
-    catNodes[n.category].push(n);
+  /* hide nodes beyond current level */
+  DATA.nodes.forEach(n => {
+    if (n.level > currentLevel) { n.cx = -9999; n.cy = -9999; }
   });
+}
 
-  // 카테고리 순서 (1열 세로 배치)
-  const catOrder = ['매크로 지표','현금/예금','채권','주식','부동산','원자재/금'];
+/* ================================================================
+   RENDER — full draw
+   ================================================================ */
+function renderAll() {
+  renderLinks();
+  renderBoxes();
+  renderNodes();
+}
 
-  // 치수
-  const nodeR = 20;
-  const assetExtra = 10;
-  const boxPadX = 14;
-  const boxPadTop = 30;
-  const boxPadBot = 25;
-  const boxGap = 14;
+/* ── Links ── */
+function renderLinks() {
+  gLinks.selectAll('*').remove();
 
-  const getR = d => isAsset(d) ? nodeR + assetExtra : (isCore(d) ? nodeR + 4 : nodeR);
-
-  // 고정 너비: 모든 박스 동일 너비 (3열 기준)
-  const spX = 92;
-  const fixedW = boxPadX * 2 + 3 * spX; // = 304px
-
-  // 박스 크기 계산
-  const boxInfo = {};
-  catOrder.forEach(cat => {
-    if (!catNodes[cat]) return;
-    const ns = catNodes[cat];
-    const hasAsset = ns.some(n => n.isAsset);
-    const spY = hasAsset ? 100 : 80;
-    const cols = Math.min(ns.length, 3);
-    const rows = Math.ceil(ns.length / cols);
-    const h = boxPadTop + rows * spY + boxPadBot;
-    boxInfo[cat] = { w: fixedW, h, cols, rows, spX, spY };
+  DATA.links.forEach(link => {
+    const s = nodeMap[link.source], t = nodeMap[link.target];
+    if (!s || !t) return;
+    const col = linkColor(link);
+    gLinks.append('line')
+      .datum(link)
+      .attr('class','link-line')
+      .attr('stroke', col)
+      .attr('marker-end', 'url(#arrow-' + col.replace('#','') + ')')
+      .attr('x1', s.cx).attr('y1', s.cy)
+      .attr('x2', t.cx).attr('y2', t.cy)
+      .attr('display', linkVisible(link) ? null : 'none');
   });
+}
 
-  // 세로로 쌓기
-  const headerSpace = 0;
-  let totalH = 0;
-  const validCats = catOrder.filter(c => catNodes[c] && boxInfo[c]);
-  validCats.forEach((cat, i) => {
-    const info = boxInfo[cat];
-    info.x = 0;
-    info.y = totalH;
-    catNodes[cat].forEach((n, ni) => {
-      const c = ni % info.cols;
-      const r = Math.floor(ni / info.cols);
-      n.x = info.x + boxPadX + spX / 2 + c * spX;
-      n.y = info.y + boxPadTop + info.spY / 2 + r * info.spY;
-    });
-    totalH += info.h + boxGap;
-  });
-  totalH -= boxGap;
-  const totalW = fixedW;
+function linkColor(l) {
+  if (l.type === '비례')   return '#16a34a';
+  if (l.type === '반비례') return '#dc2626';
+  return '#ca8a04';
+}
 
-  // colInfo 호환용 (applyLevel에서 사용)
-  const colInfo = [{ label: '', cats: validCats, width: totalW, height: totalH, x: 0, y: 0, centerX: totalW / 2 }];
+function linkVisible(l) {
+  const s = nodeMap[l.source], t = nodeMap[l.target];
+  return s.level <= currentLevel && t.level <= currentLevel;
+}
 
-  // ============================================================
-  //  SVG + 줌
-  // ============================================================
-  let W=innerWidth, H=innerHeight;
-  const svg = d3.select('#canvas').attr('width',W).attr('height',H);
-  const zoomG = svg.append('g');
+function updateLinkPositions(animate) {
+  const sel = gLinks.selectAll('line.link-line');
+  const s = animate ? sel.transition().duration(400) : sel;
+  s.attr('x1', d => nodeMap[d.source].cx)
+   .attr('y1', d => nodeMap[d.source].cy)
+   .attr('x2', d => nodeMap[d.target].cx)
+   .attr('y2', d => nodeMap[d.target].cy);
 
-  const zoomBeh = d3.zoom().scaleExtent([0.3,4]).on('zoom',e=>zoomG.attr('transform',e.transform));
-  svg.call(zoomBeh).on('dblclick.zoom',null);
-  svg.on('click',e=>{if(e.target===svg.node())deselect()});
+  sel.attr('display', d => linkVisible(d) ? null : 'none');
+}
 
-  // 초기 뷰: 화면에 꽉 차게 fit (하단 바 80px 고려)
-  const padX = 10, padTop = 10, padBot = 90;
-  const scaleX = (W - padX*2) / totalW;
-  const scaleY = (H - padTop - padBot) / totalH;
-  const initScale = Math.min(scaleX, scaleY);
-  const initTx = (W - totalW*initScale) / 2;
-  const initTy = padTop + ((H - padTop - padBot) - totalH*initScale) / 2;
-  svg.call(zoomBeh.transform, d3.zoomIdentity.translate(initTx, initTy).scale(initScale));
+/* ── Boxes ── */
+function renderBoxes() {
+  gBoxes.selectAll('*').remove();
 
-  // 레이어
-  const boxG = zoomG.append('g');
-  const linkGrp = zoomG.append('g');
-  const nodeGrp = zoomG.append('g');
-
-  // ============================================================
-  //  컬럼 헤더 (제거됨 — 단일 구조)
-  // ============================================================
-
-  // ============================================================
-  //  카테고리 박스 그리기
-  // ============================================================
-  const allCats = colInfo.flatMap(col=>col.cats);
-
-  allCats.forEach(cat=>{
-    const info = boxInfo[cat];
-    const c = catColor(cat);
-    const g = boxG.append('g').attr('class','cat-group').datum({cat});
-    const hasAssets = catNodes[cat] && catNodes[cat].some(n => n.isAsset);
+  boxes.forEach(box => {
+    if (!box.visible) return;
+    const g = gBoxes.append('g').datum(box);
 
     g.append('rect')
       .attr('class','cat-box')
-      .attr('x',info.x).attr('y',info.y)
-      .attr('width',info.w).attr('height',info.h)
-      .attr('fill',c).attr('fill-opacity', hasAssets ? .1 : .06)
-      .attr('stroke',c).attr('stroke-opacity', hasAssets ? .3 : .2);
+      .attr('x', box.x).attr('y', box.y)
+      .attr('width', box.w).attr('height', box.h)
+      .attr('rx', 10)
+      .attr('stroke', box.color);
 
     g.append('text')
       .attr('class','cat-label')
-      .attr('x',info.x+12).attr('y',info.y+22)
-      .attr('fill',c).attr('fill-opacity',.7)
-      .text(cat);
-  });
+      .attr('x', box.x + 12).attr('y', box.y + 18)
+      .text(box.name);
 
-  // ============================================================
-  //  링크 그리기
-  // ============================================================
-  const nodeMap = {};
-  nodes.forEach(n=>{nodeMap[n.id]=n});
-  links.forEach(l=>{
-    if(typeof l.source==='string') l.source=nodeMap[l.source];
-    if(typeof l.target==='string') l.target=nodeMap[l.target];
-  });
-
-  const linkEls = linkGrp.selectAll('g').data(links).join('g');
-  const linkPaths = linkEls.append('path').attr('class','link-line')
-    .attr('stroke',d=>linkColor[d.type]||'#666')
-    .attr('stroke-width',d=>Math.max(1,(d.strength||1)*.8));
-  const linkDescs = linkEls.append('text').attr('class','link-desc');
-
-  // 링크 경로 계산 (곡선)
-  function updateLinks(){
-    linkPaths.attr('d',d=>{
-      const sx=d.source.x,sy=d.source.y,tx=d.target.x,ty=d.target.y;
-      const mx=(sx+tx)/2,my=(sy+ty)/2,dx=tx-sx,dy=ty-sy;
-      const bend = Math.min(Math.sqrt(dx*dx+dy*dy)*0.2, 40);
-      const cx=mx-dy/Math.sqrt(dx*dx+dy*dy+1)*bend;
-      const cy=my+dx/Math.sqrt(dx*dx+dy*dy+1)*bend;
-      return `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`;
-    });
-    linkDescs
-      .attr('x',d=>{
-        const s=d.source,t=d.target,dx=t.x-s.x,dy=t.y-s.y;
-        const dist=Math.sqrt(dx*dx+dy*dy+1);
-        const bend=Math.min(dist*.2,40);
-        const cx=(s.x+t.x)/2-dy/dist*bend;
-        return(s.x+2*cx+t.x)/4;
+    /* box drag in edit mode */
+    g.call(d3.drag()
+      .filter(() => editMode)
+      .on('drag', function(event) {
+        const dx = event.dx, dy = event.dy;
+        box.x += dx; box.y += dy;
+        /* move contained nodes */
+        DATA.nodes.filter(n => n.category === box.name && n.level <= currentLevel)
+          .forEach(n => { n.cx += dx; n.cy += dy; });
+        refreshPositions();
       })
-      .attr('y',d=>{
-        const s=d.source,t=d.target,dx=t.x-s.x,dy=t.y-s.y;
-        const dist=Math.sqrt(dx*dx+dy*dy+1);
-        const bend=Math.min(dist*.2,40);
-        const cy=(s.y+t.y)/2+dx/dist*bend;
-        return(s.y+2*cy+t.y)/4;
-      })
-      .text(d=>d.description||d.type||'');
-  }
-  updateLinks();
+    );
+  });
+}
 
-  // ============================================================
-  //  노드 그리기
-  // ============================================================
-  const nodeEls = nodeGrp.selectAll('g').data(nodes).join('g')
-    .attr('transform',d=>`translate(${d.x},${d.y})`);
+function updateBoxPositions(animate) {
+  const gs = gBoxes.selectAll('g').data(boxes.filter(b => b.visible), d => d.name);
+  gs.each(function(box) {
+    const g = d3.select(this);
+    const r = animate ? g.select('rect').transition().duration(400) : g.select('rect');
+    r.attr('x', box.x).attr('y', box.y)
+     .attr('width', box.w).attr('height', box.h);
+    const t = animate ? g.select('text').transition().duration(400) : g.select('text');
+    t.attr('x', box.x + 12).attr('y', box.y + 18);
+  });
+}
 
-  // 노드 색상: 상승=초록, 하락=빨강, 데이터 없음=회색
-  const chgFill = d => d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:'#555';
-  const rectW = 80, rectH = 44; // 지표용 카드 박스
+/* ── Nodes ── */
+function renderNodes() {
+  gNodes.selectAll('*').remove();
 
-  nodeEls.each(function(d){
-    const el = d3.select(this);
-    if(isAsset(d)){
-      // 자산 = 큰 원
-      el.append('circle').attr('class','node-touch').attr('r',38);
-      el.append('circle').attr('class','node-circle').attr('r',getR(d))
-        .attr('fill',chgFill(d)).attr('stroke','#ffffff33').attr('stroke-width',2.5);
-      el.append('text').attr('class','node-label').attr('dy','.35em').text(d.label);
-      el.append('text').attr('class','node-sub').attr('dy','.35em')
-        .attr('y',getR(d)+14).text(d.sub||'');
+  DATA.nodes.forEach(node => {
+    const g = gNodes.append('g')
+      .datum(node)
+      .attr('class','node-g')
+      .attr('transform', `translate(${node.cx},${node.cy})`)
+      .attr('display', node.level <= currentLevel ? null : 'none');
+
+    if (node.isAsset) {
+      /* big circle */
+      g.append('circle')
+        .attr('class','node-circle')
+        .attr('r', NODE_R + ASSET_EXTRA)
+        .attr('fill', nodeFill(node))
+        .attr('stroke', nodeStroke(node));
+
+      g.append('text').attr('class','node-label')
+        .attr('y', 1).text(node.label);
+
+      g.append('text').attr('class','node-sub')
+        .attr('y', NODE_R + ASSET_EXTRA + 15)
+        .attr('font-size','9px')
+        .text(node.sub);
+
+      g.append('text').attr('class','node-value')
+        .attr('y', NODE_R + ASSET_EXTRA + 27)
+        .text(valueText(node))
+        .attr('fill', valueColor(node));
+
     } else {
-      // 지표 = 카드형 사각 박스 (이름+부제 박스 안에)
-      el.append('rect').attr('class','node-touch')
-        .attr('x',-rectW/2-4).attr('y',-rectH/2-4).attr('width',rectW+8).attr('height',rectH+8).attr('fill','transparent');
-      el.append('rect').attr('class','node-rect')
-        .attr('x',-rectW/2).attr('y',-rectH/2).attr('width',rectW).attr('height',rectH)
-        .attr('fill',chgFill(d)).attr('stroke','#ffffff33').attr('stroke-width',1.5);
-      // 이름: 박스 상단
-      el.append('text').attr('class','node-label').attr('y',-4).attr('dy','.35em').text(d.label);
-      // 부제: 박스 하단
-      el.append('text').attr('class','node-sub').attr('y',12).attr('dy','.35em').text(d.sub||'');
+      /* rounded rect */
+      g.append('rect')
+        .attr('class','node-rect')
+        .attr('x', -RECT_W/2).attr('y', -RECT_H/2)
+        .attr('width', RECT_W).attr('height', RECT_H)
+        .attr('rx', 8)
+        .attr('fill', nodeFill(node))
+        .attr('stroke', nodeStroke(node));
+
+      g.append('text').attr('class','node-label')
+        .attr('y', -4).text(node.label);
+
+      g.append('text').attr('class','node-sub')
+        .attr('y', 12).text(node.sub);
+
+      g.append('text').attr('class','node-value')
+        .attr('y', RECT_H/2 + 14)
+        .text(valueText(node))
+        .attr('fill', valueColor(node));
     }
+
+    /* click → sheet */
+    g.on('click', function(e) {
+      e.stopPropagation();
+      if (editMode) return;
+      openSheet(node);
+    });
+
+    /* drag in edit mode */
+    g.call(d3.drag()
+      .filter(() => editMode)
+      .on('start', function() {
+        d3.select(this).raise();
+      })
+      .on('drag', function(event) {
+        const box = boxes.find(b => b.name === node.category && b.visible);
+        if (!box) return;
+        let nx = node.cx + event.dx;
+        let ny = node.cy + event.dy;
+        /* clamp inside box */
+        const mx = node.isAsset ? (NODE_R + ASSET_EXTRA) : RECT_W/2;
+        const my = node.isAsset ? (NODE_R + ASSET_EXTRA) : RECT_H/2;
+        nx = Math.max(box.x + mx + 2, Math.min(box.x + box.w - mx - 2, nx));
+        ny = Math.max(box.y + my + 2, Math.min(box.y + box.h - my - 2, ny));
+        node.cx = nx; node.cy = ny;
+        d3.select(this).attr('transform', `translate(${nx},${ny})`);
+        updateLinkPositions(false);
+      })
+      .on('end', function() {
+        /* store offset for re-layout persistence */
+        /* we recalculate dx/dy from natural position */
+      })
+    );
+  });
+}
+
+function refreshPositions() {
+  gNodes.selectAll('g.node-g')
+    .attr('transform', d => `translate(${d.cx},${d.cy})`);
+  gBoxes.selectAll('g').each(function(box) {
+    d3.select(this).select('rect')
+      .attr('x', box.x).attr('y', box.y)
+      .attr('width', box.w).attr('height', box.h);
+    d3.select(this).select('text')
+      .attr('x', box.x + 12).attr('y', box.y + 18);
+  });
+  updateLinkPositions(false);
+}
+
+/* ── Node appearance helpers ── */
+function nodeFill(n) {
+  if (!n._dir || n._dir === 'flat') return '#2a2a3a';
+  return n._dir === 'up' ? '#16a34a1a' : '#dc26261a';
+}
+function nodeStroke(n) {
+  if (!n._dir || n._dir === 'flat') return '#555';
+  return n._dir === 'up' ? '#16a34a' : '#dc2626';
+}
+function valueColor(n) {
+  if (!n._dir || n._dir === 'flat') return '#555';
+  return n._dir === 'up' ? '#16a34a' : '#dc2626';
+}
+function valueText(n) {
+  if (n._val == null) return '';
+  const arrow = n._dir === 'up' ? '\u25B2' : n._dir === 'down' ? '\u25BC' : '';
+  let v = n._val;
+  if (v >= 10000)   v = (v / 1000).toFixed(1) + 'K';
+  else if (v >= 100) v = v.toFixed(1);
+  else               v = v.toFixed(2);
+  return v + ' ' + arrow;
+}
+
+/* ================================================================
+   FIT VIEW
+   ================================================================ */
+function fitView(dur) {
+  const svgW = window.innerWidth;
+  const svgH = window.innerHeight - BAR_H;
+
+  const vis = boxes.filter(b => b.visible);
+  if (!vis.length) return;
+
+  const pad = 20;
+  const minX = Math.min(...vis.map(b => b.x)) - pad;
+  const minY = Math.min(...vis.map(b => b.y)) - pad;
+  const maxX = Math.max(...vis.map(b => b.x + b.w)) + pad;
+  const maxY = Math.max(...vis.map(b => b.y + b.h)) + pad + 30;
+
+  const cw = maxX - minX, ch = maxY - minY;
+  if (cw <= 0 || ch <= 0) return;
+
+  const scale = Math.min(svgW / cw, svgH / ch, 2.0);
+  const tx = (svgW - cw * scale) / 2 - minX * scale;
+  const ty = (svgH - ch * scale) / 2 - minY * scale;
+  const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+
+  if (dur > 0) svg.transition().duration(dur).call(zoomBehavior.transform, t);
+  else         svg.call(zoomBehavior.transform, t);
+}
+
+/* ================================================================
+   APPLY LEVEL (핵심 함수)
+   ================================================================ */
+function applyLevel(lv) {
+  currentLevel = lv;
+
+  /* reset drag offsets */
+  DATA.nodes.forEach(n => { n.dx = 0; n.dy = 0; });
+
+  /* 1. recompute layout: visible nodes → box heights → stack y */
+  computeLayout();
+
+  /* 2. re-render everything (simple & correct) */
+  renderAll();
+
+  /* 3. fit view with animation */
+  fitView(400);
+
+  /* 4. update button UI */
+  document.querySelectorAll('#bottom-bar button[data-lv]').forEach(b => {
+    b.classList.toggle('active', +b.dataset.lv === lv);
   });
 
-  // 실시간 값 표시
-  nodeEls.filter(d=>d._val).each(function(d){
-    const el=d3.select(this);
-    const valY = isAsset(d) ? getR(d)+28 : rectH/2+14;
-    const valColor = d._chgDir==='up'?GREEN:d._chgDir==='down'?RED:'#888';
-    const arrow = d._chgDir==='up'?'\u25B2':d._chgDir==='down'?'\u25BC':'';
-    el.append('text').attr('class','node-val')
-      .attr('y',valY).attr('dy','.35em').attr('text-anchor','middle')
-      .attr('fill',valColor).attr('font-size','11px').attr('font-weight','600')
-      .attr('pointer-events','none')
-      .text(d._val);
-    if(d._chgText){
-      el.append('text').attr('class','node-chg')
-        .attr('y',valY+13).attr('dy','.35em').attr('text-anchor','middle')
-        .attr('fill',valColor).attr('font-size','9px').attr('font-weight','600')
-        .attr('pointer-events','none')
-        .text(arrow+' '+d._chgText);
-    }
-  });
+  /* close sheet if open */
+  closeSheet();
+}
 
-  nodeEls.on('click',(e,d)=>{e.stopPropagation();selectNode(d)});
+/* ================================================================
+   BOTTOM SHEET
+   ================================================================ */
+function openSheet(node) {
+  selectedNode = node;
+  highlightNode(node);
 
-  // ============================================================
-  //  레벨 토글
-  // ============================================================
-  let currentLevel = 1;
-  document.querySelectorAll('.level-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      currentLevel = parseInt(btn.dataset.level);
-      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      applyLevel();
+  document.getElementById('sheet-title').textContent = node.label;
+  document.getElementById('sheet-sub').textContent = node.sub + (node._val != null ? '  |  ' + valueText(node) : '');
+  document.getElementById('sheet-desc').textContent = node.description || '';
+  document.getElementById('sheet-interp').innerHTML = '';
+
+  document.getElementById('sheet-overlay').classList.add('show');
+  document.getElementById('bottom-sheet').classList.add('show');
+}
+
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('show');
+  document.getElementById('bottom-sheet').classList.remove('show');
+  clearHighlight();
+  selectedNode = null;
+}
+
+document.getElementById('sheet-overlay').addEventListener('click', closeSheet);
+svg.on('click.sheet', () => { if (!editMode) closeSheet(); });
+
+/* ── Sim buttons ── */
+document.getElementById('btn-sim-up').addEventListener('click', () => {
+  if (selectedNode) runSim(selectedNode, 'up');
+});
+document.getElementById('btn-sim-down').addEventListener('click', () => {
+  if (selectedNode) runSim(selectedNode, 'down');
+});
+
+/* ================================================================
+   BFS SIMULATION — "오르면? / 내리면?"
+   ================================================================ */
+function runSim(startNode, direction) {
+  const visited = new Set([startNode.id]);
+  const queue   = [{ id: startNode.id, dir: direction }];
+  const results = [];
+
+  while (queue.length) {
+    const cur = queue.shift();
+
+    DATA.links.forEach(link => {
+      if (link.source !== cur.id) return;
+      const tgt = nodeMap[link.target];
+      if (!tgt || tgt.level > currentLevel) return;
+      if (visited.has(link.target)) return;
+      visited.add(link.target);
+
+      let rDir;
+      if (link.type === '비례')        rDir = cur.dir;
+      else if (link.type === '반비례') rDir = (cur.dir === 'up' ? 'down' : 'up');
+      else                             rDir = 'cond';
+
+      results.push({ node: tgt, dir: rDir, link });
+      queue.push({ id: link.target, dir: rDir });
     });
-  });
-
-  function applyLevel(){
-    // 1) 노드/링크 표시/숨기기
-    nodeEls.each(function(d){
-      d3.select(this).style('display', d.level<=currentLevel ? null : 'none');
-    });
-    linkEls.each(function(l){
-      d3.select(this).style('display', (l.source.level<=currentLevel && l.target.level<=currentLevel) ? null : 'none');
-    });
-
-    // 2) 1열 세로 레이아웃 재계산
-    let by2 = 0;
-    validCats.forEach(cat => {
-      const vis = catNodes[cat] ? catNodes[cat].filter(n => n.level <= currentLevel) : [];
-      const info = boxInfo[cat];
-      if (!vis.length) return;
-      const hasA = vis.some(n => n.isAsset);
-      const sy = hasA ? 100 : 80;
-      const cols = Math.min(vis.length, 3);
-      const rows = Math.ceil(vis.length / cols);
-      info.w = fixedW; info.h = boxPadTop + rows * sy + boxPadBot;
-      info.cols = cols; info.rows = rows; info.spY = sy;
-      info.x = 0; info.y = by2;
-      vis.forEach((n, ni) => {
-        n.x = boxPadX + spX / 2 + (ni % cols) * spX;
-        n.y = by2 + boxPadTop + sy / 2 + Math.floor(ni / cols) * sy;
-      });
-      catNodes[cat].filter(n => n.level > currentLevel).forEach(n => { n.x = -9999; n.y = -9999; });
-      by2 += info.h + boxGap;
-    });
-    const newTotalH = Math.max(by2 - boxGap, 1);
-
-    // 3) SVG 업데이트
-    nodeEls.attr('transform', d => `translate(${d.x},${d.y})`);
-    updateLinks();
-
-    // 4) 박스 업데이트
-    boxG.selectAll('.cat-group').each(function(dd) {
-      const info = boxInfo[dd.cat];
-      const hasVis = catNodes[dd.cat] && catNodes[dd.cat].some(n => n.level <= currentLevel);
-      d3.select(this).style('display', hasVis ? null : 'none');
-      if (hasVis && info) {
-        d3.select(this).select('.cat-box').attr('x', info.x).attr('y', info.y).attr('width', info.w).attr('height', info.h);
-        d3.select(this).select('.cat-label').attr('x', info.x + 12).attr('y', info.y + 20);
-      }
-    });
-
-    // 5) fit to view
-    const sx2 = (W - padX * 2) / fixedW, sy2 = (H - padTop - padBot) / newTotalH;
-    const sc2 = Math.min(sx2, sy2);
-    const tx2 = (W - fixedW * sc2) / 2, ty2 = padTop + ((H - padTop - padBot) - newTotalH * sc2) / 2;
-    svg.transition().duration(400).call(zoomBeh.transform, d3.zoomIdentity.translate(tx2, ty2).scale(sc2));
   }
 
-  // 초기 레벨 적용
-  applyLevel();
+  /* display in sheet */
+  const dirLabel = direction === 'up' ? '상승' : '하락';
+  let html = `<div style="font-weight:700;margin-bottom:8px;font-size:13px;">
+    ${startNode.label} ${dirLabel} 시 연쇄 효과:</div>`;
 
-  // ============================================================
-  //  수정 모드
-  // ============================================================
-  let editMode = false;
-  const editBtn = document.getElementById('edit-btn');
-  const editBanner = document.getElementById('edit-banner');
-  editBtn.addEventListener('click',()=>{
-    editMode=!editMode;
-    editBtn.classList.toggle('active',editMode);
-    editBanner.classList.toggle('show',editMode);
+  if (!results.length) {
+    html += '<div style="color:#64748b;">영향받는 노드 없음</div>';
+  } else {
+    results.forEach(r => {
+      const icon = r.dir === 'up'
+        ? '<span style="color:#16a34a">&#9650; 상승</span>'
+        : r.dir === 'down'
+          ? '<span style="color:#dc2626">&#9660; 하락</span>'
+          : '<span style="color:#ca8a04">&#9670; 조건부</span>';
+      html += `<div style="padding:4px 0;border-bottom:1px solid #ffffff08;">
+        <b>${r.node.label}</b> ${icon}
+        <span style="color:#64748b;font-size:11px;margin-left:4px;">${r.link.description}</span>
+      </div>`;
+    });
+  }
+  document.getElementById('sheet-interp').innerHTML = html;
+
+  /* highlight simulation path */
+  const affIds  = new Set([startNode.id, ...results.map(r => r.node.id)]);
+  const affLink = new Set(results.map(r => r.link.id));
+
+  gNodes.selectAll('g.node-g').classed('node-dim', d => !affIds.has(d.id));
+  gLinks.selectAll('line.link-line')
+    .classed('link-dim', d => !affLink.has(d.id))
+    .classed('link-hl',  d => affLink.has(d.id));
+}
+
+/* ================================================================
+   HIGHLIGHT / DIM
+   ================================================================ */
+function highlightNode(node) {
+  const conn = new Set([node.id]);
+  DATA.links.forEach(l => {
+    if (l.source === node.id) conn.add(l.target);
+    if (l.target === node.id) conn.add(l.source);
   });
 
-  // 노드 드래그 — 수정 모드에서만 + 박스 안에 가두기
-  nodeEls.call(d3.drag()
-    .filter(()=>editMode)
-    .on('start',(e,d)=>{e.sourceEvent.stopPropagation()})
-    .on('drag',(e,d)=>{
-      const info = boxInfo[d.category];
-      if(!info){d.x=e.x;d.y=e.y;}
-      else{
-        const r = getR(d);
-        d.x = Math.max(info.x+r+4, Math.min(info.x+info.w-r-4, e.x));
-        d.y = Math.max(info.y+boxPadTop+r, Math.min(info.y+info.h-r-4, e.y));
-      }
-      d3.select(e.sourceEvent.target.closest('g')).attr('transform',`translate(${d.x},${d.y})`);
-      updateLinks();
-    })
+  gNodes.selectAll('g.node-g').classed('node-dim', d => !conn.has(d.id));
+  gLinks.selectAll('line.link-line')
+    .classed('link-dim', d => d.source !== node.id && d.target !== node.id)
+    .classed('link-hl',  d => d.source === node.id || d.target === node.id);
+}
+
+function clearHighlight() {
+  gNodes.selectAll('g.node-g').classed('node-dim', false);
+  gLinks.selectAll('line.link-line').classed('link-dim', false).classed('link-hl', false);
+}
+
+/* ================================================================
+   SEARCH
+   ================================================================ */
+document.getElementById('search-input').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  if (!q) { clearHighlight(); return; }
+
+  const matched = DATA.nodes.filter(n =>
+    n.level <= currentLevel && (
+      n.label.toLowerCase().includes(q) ||
+      n.sub.toLowerCase().includes(q) ||
+      (n.description && n.description.toLowerCase().includes(q)) ||
+      (n.tags && n.tags.some(t => t.toLowerCase().includes(q)))
+    )
   );
+  const ids = new Set(matched.map(n => n.id));
 
-  // 박스 드래그 — 수정 모드에서만 + 내부 노드 전체 이동
-  boxG.selectAll('.cat-group').call(d3.drag()
-    .filter(()=>editMode)
-    .on('start',function(e){
-      d3.select(this).datum().startX = e.x;
-      d3.select(this).datum().startY = e.y;
-      e.sourceEvent.stopPropagation();
-    })
-    .on('drag',function(e){
-      const dd = d3.select(this).datum();
-      const dx = e.x - dd.startX, dy = e.y - dd.startY;
-      dd.startX = e.x; dd.startY = e.y;
-      const info = boxInfo[dd.cat];
-      info.x += dx; info.y += dy;
-      d3.select(this).select('.cat-box').attr('x',info.x).attr('y',info.y);
-      d3.select(this).select('.cat-label').attr('x',info.x+12).attr('y',info.y+22);
-      catNodes[dd.cat].forEach(n=>{n.x+=dx;n.y+=dy});
-      nodeEls.filter(n=>n.category===dd.cat).attr('transform',n=>`translate(${n.x},${n.y})`);
-      updateLinks();
-    })
-  );
+  gNodes.selectAll('g.node-g').classed('node-dim', d => d.level <= currentLevel && !ids.has(d.id));
+  gLinks.selectAll('line.link-line').classed('link-dim', true).classed('link-hl', false);
 
-  // 로딩 해제
-  setTimeout(()=>document.getElementById('loading').classList.add('hide'),400);
+  /* auto-pan to single result */
+  if (matched.length === 1) {
+    const n = matched[0];
+    const svgW = window.innerWidth, svgH = window.innerHeight - BAR_H;
+    const sc = 1.2;
+    const t = d3.zoomIdentity.translate(svgW/2 - n.cx*sc, svgH/2 - n.cy*sc).scale(sc);
+    svg.transition().duration(350).call(zoomBehavior.transform, t);
+  }
+});
 
-  // ============================================================
-  //  선택 / 하이라이트
-  // ============================================================
-  let selected=null, simMode=false;
+/* ================================================================
+   CATEGORY FILTER
+   ================================================================ */
+function applyCategoryFilter(catName) {
+  if (catFilter === catName) {
+    catFilter = null; // toggle off
+  } else {
+    catFilter = catName;
+  }
 
-  function selectNode(d){
-    if(simMode)return;
-    selected=d;
-    const ids=new Set([d.id]), cLinks=new Set(), cCats=new Set([d.category]);
-    links.forEach(l=>{
-      const s=l.source.id,t=l.target.id;
-      if(s===d.id||t===d.id){ids.add(s);ids.add(t);cLinks.add(l);
-        cCats.add(nodes.find(n=>n.id===s).category);cCats.add(nodes.find(n=>n.id===t).category);}
+  gNodes.selectAll('g.node-g')
+    .attr('display', d => {
+      if (d.level > currentLevel) return 'none';
+      if (catFilter && d.category !== catFilter) return 'none';
+      return null;
     });
-    nodeEls.each(function(n){d3.select(this).classed('dimmed',!ids.has(n.id)).classed('highlighted',ids.has(n.id))});
-    linkEls.each(function(l){d3.select(this).classed('dimmed',!cLinks.has(l)).classed('highlighted',cLinks.has(l))});
-    boxG.selectAll('.cat-group').each(function(dd){d3.select(this).classed('dimmed',!cCats.has(dd.cat))});
-    nodeEls.filter(d2=>isAsset(d2)).select('.node-circle').transition().duration(250)
-      .attr('r',n=>n.id===d.id? getR(n)+4 : getR(n));
-    document.getElementById('legend').classList.add('hidden');
-    showSheet(d);
-  }
 
-  function deselect(){
-    if(simMode){exitSim();return}
-    selected=null;
-    nodeEls.classed('dimmed',false).classed('highlighted',false);
-    linkEls.classed('dimmed',false).classed('highlighted',false);
-    boxG.selectAll('.cat-group').classed('dimmed',false);
-    nodeEls.filter(d=>isAsset(d)).select('.node-circle').transition().duration(250).attr('r',n=>getR(n));
-    hideSheet();
-    document.getElementById('legend').classList.remove('hidden');
-  }
-
-  // ============================================================
-  //  바텀시트
-  // ============================================================
-  const sheet=document.getElementById('sheet');
-  function showSheet(d){
-    const c=catColor(d.category);
-    document.getElementById('sh-cat').textContent=d.category||'';
-    document.getElementById('sh-cat').style.cssText=`background:${c}22;color:${c}`;
-    document.getElementById('sh-title').textContent=d.label;
-    document.getElementById('sh-sub').textContent=d.sub||'';
-    document.getElementById('sh-desc').textContent=d.description||'';
-    document.getElementById('sim-result').innerHTML='';
-    document.getElementById('sim-btns').style.display='flex';
-    sheet.classList.add('show');
-  }
-  function hideSheet(){sheet.classList.remove('show')}
-  let touchY=0;
-  sheet.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY},{passive:true});
-  sheet.addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-touchY>60)deselect()},{passive:true});
-
-  // ============================================================
-  //  시뮬레이션 ("오르면?/내리면?") — 레벨 필터링 적용
-  // ============================================================
-  document.getElementById('btn-up').addEventListener('click',()=>runSim('up'));
-  document.getElementById('btn-down').addEventListener('click',()=>runSim('down'));
-  document.getElementById('sim-exit').addEventListener('click',exitSim);
-
-  function runSim(dir){
-    if(!selected)return;
-    simMode=true;
-    const start=selected;
-    const visited=new Map();visited.set(start.id,{sign:dir,step:0});
-    const queue=[{id:start.id,sign:dir,step:0}];
-    const adj=new Map();
-    links.forEach(l=>{
-      const s=l.source.id,t=l.target.id;
-      if(!adj.has(s))adj.set(s,[]);if(!adj.has(t))adj.set(t,[]);
-      adj.get(s).push({to:t,type:l.type});adj.get(t).push({to:s,type:l.type});
-    });
-    while(queue.length){
-      const{id,sign,step}=queue.shift();
-      if(step>=3)continue;
-      for(const nb of(adj.get(id)||[])){
-        if(visited.has(nb.to))continue;
-        // 숨겨진 노드(레벨 초과) 스킵
-        const targetNode = nodes.find(n=>n.id===nb.to);
-        if(targetNode && targetNode.level > currentLevel) continue;
-        const next=nb.type==='비례'?sign:nb.type==='반비례'?(sign==='up'?'down':'up'):'unknown';
-        visited.set(nb.to,{sign:next,step:step+1});
-        queue.push({id:nb.to,sign:next,step:step+1});
+  gLinks.selectAll('line.link-line')
+    .attr('display', d => {
+      if (!linkVisible(d)) return 'none';
+      if (catFilter) {
+        const s = nodeMap[d.source], t = nodeMap[d.target];
+        if (s.category !== catFilter && t.category !== catFilter) return 'none';
       }
-    }
+      return null;
+    });
 
-    const stepOp={0:1,1:1,2:.7,3:.4};
-    const affectedCats=new Set();
-    nodeEls.each(function(n){
-      const el=d3.select(this),info=visited.get(n.id);
-      el.selectAll('.sim-arrow').remove();
-      if(info){
-        affectedCats.add(n.category);
-        el.classed('dimmed',false).classed('highlighted',true);
-        const op = stepOp[info.step]||.4;
-        el.select('.node-circle,.node-rect').transition().duration(400).style('opacity',op);
-        el.select('.node-label').transition().duration(400).style('opacity',op);
-        el.select('.node-sub').transition().duration(400).style('opacity',op*.7);
-        const r = isAsset(n) ? getR(n) : rectH/2;
-        const[arrow,color]=info.sign==='up'?['\u2191',GREEN]:info.sign==='down'?['\u2193',RED]:['?',YELLOW];
-        el.append('text').attr('class','sim-arrow').attr('x',r*.8).attr('y',-r*.7).attr('fill',color)
-          .style('font-size',info.step===0?'20px':'16px').text(arrow);
-      }else{
-        el.classed('dimmed',true).classed('highlighted',false);
-        el.select('.node-circle,.node-rect').transition().duration(400).style('opacity',.08);
-        el.select('.node-label').transition().duration(400).style('opacity',.08);
-        el.select('.node-sub').transition().duration(400).style('opacity',.04);
-      }
-    });
-    linkEls.each(function(l){
-      const el=d3.select(this),s=l.source.id,t=l.target.id;
-      if(visited.has(s)&&visited.has(t)){
-        const ms=Math.max(visited.get(s).step,visited.get(t).step);
-        el.classed('dimmed',false).classed('highlighted',true);
-        el.select('.link-line').transition().duration(400).style('opacity',ms<=1?.8:ms===2?.5:.3);
-      }else{
-        el.classed('dimmed',true).classed('highlighted',false);
-        el.select('.link-line').transition().duration(400).style('opacity',.03);
-      }
-    });
-    boxG.selectAll('.cat-group').each(function(dd){d3.select(this).classed('dimmed',!affectedCats.has(dd.cat))});
-
-    showSimResult(visited,start);
-    document.getElementById('sim-bar-text').textContent=`"${start.label}" ${dir==='up'?'상승':'하락'} 시 연쇄 효과`;
-    document.getElementById('sim-bar').classList.add('show');
-    document.getElementById('top-bar').style.display='none';
-  }
-
-  function showSimResult(visited,start){
-    const res=document.getElementById('sim-result');
-    const steps=[[],[],[]];
-    visited.forEach((info,nid)=>{
-      if(nid===start.id)return;
-      if(info.step>=1&&info.step<=3){const n=nodes.find(nd=>nd.id===nid);if(n)steps[info.step-1].push({n,info})}
-    });
-    let html='<h4>연쇄 효과 분석</h4>';
-    ['1단계 (직접 영향)','2단계 (간접 영향)','3단계 (파급 영향)'].forEach((name,i)=>{
-      if(!steps[i].length)return;
-      html+=`<div class="sim-step"><div class="sim-step-label">${name}</div><div class="sim-items">`;
-      steps[i].forEach(({n,info})=>{
-        const[style,txt]=info.sign==='up'?['color:#16a34a','\u2191']:info.sign==='down'?['color:#dc2626','\u2193']:['color:#ca8a04','?'];
-        html+=`<span class="sim-chip" data-id="${n.id}"><span style="${style}">${txt}</span> ${n.label}</span>`;
-      });
-      html+='</div>';
-      if(i===2)html+='<div class="sim-note">\u26A0 3단계 효과는 참고용입니다.</div>';
-      html+='</div>';
-    });
-    res.innerHTML=html;
-    res.querySelectorAll('.sim-chip[data-id]').forEach(el=>{
-      el.addEventListener('click',()=>{const nd=nodes.find(n=>n.id===el.dataset.id);if(nd)focusNode(nd)});
-    });
-  }
-
-  function exitSim(){
-    simMode=false;
-    nodeEls.each(function(n){
-      const el=d3.select(this);
-      el.classed('dimmed',false).classed('highlighted',false).selectAll('.sim-arrow').remove();
-      el.select('.node-circle,.node-rect').transition().duration(300).style('opacity',1);
-      if(isAsset(n)) el.select('.node-circle').attr('r',getR(n));
-      el.select('.node-label').transition().duration(300).style('opacity',1);
-      el.select('.node-sub').transition().duration(300).style('opacity',1);
-    });
-    linkEls.each(function(){d3.select(this).classed('dimmed',false).classed('highlighted',false);d3.select(this).select('.link-line').transition().duration(300).style('opacity',.35)});
-    boxG.selectAll('.cat-group').classed('dimmed',false);
-    hideSheet();
-    document.getElementById('sim-bar').classList.remove('show');
-    document.getElementById('top-bar').style.display='';
-    document.getElementById('legend').classList.remove('hidden');
-    selected=null;
-    // 레벨 필터 재적용
-    applyLevel();
-  }
-
-  // ============================================================
-  //  검색 — 숨겨진 노드 제외
-  // ============================================================
-  const searchIn=document.getElementById('search'),searchRes=document.getElementById('search-results');
-  searchIn.addEventListener('input',()=>{
-    const q=searchIn.value.trim().toLowerCase();
-    if(!q){searchRes.style.display='none';return}
-    const m=nodes.filter(n=>{
-      if(n.level > currentLevel) return false;
-      return n.label.toLowerCase().includes(q)||(n.sub&&n.sub.toLowerCase().includes(q))||(n.category&&n.category.toLowerCase().includes(q));
-    }).slice(0,8);
-    if(!m.length){searchRes.style.display='none';return}
-    searchRes.innerHTML=m.map(n=>`<div class="result-item" data-id="${n.id}"><span class="result-dot" style="background:${catColor(n.category)}"></span><span class="result-label">${n.label}</span><span class="result-sub">${n.sub||''}</span></div>`).join('');
-    searchRes.style.display='block';
-    searchRes.querySelectorAll('.result-item').forEach(el=>{
-      el.addEventListener('click',()=>{const nd=nodes.find(n=>n.id===el.dataset.id);if(nd){searchIn.value='';searchRes.style.display='none';focusNode(nd);selectNode(nd)}});
-    });
+  gBoxes.selectAll('g').each(function(box) {
+    const show = !catFilter || box.name === catFilter;
+    d3.select(this).attr('display', show && box.visible ? null : 'none');
   });
-  searchIn.addEventListener('blur',()=>setTimeout(()=>{searchRes.style.display='none'},200));
+}
 
-  function focusNode(d){
-    const s=1.8;
-    svg.transition().duration(600).call(zoomBeh.transform,d3.zoomIdentity.translate(W/2-d.x*s,H/2-d.y*s).scale(s));
-  }
+/* ================================================================
+   EVENTS
+   ================================================================ */
+function bindEvents() {
+  /* Level buttons */
+  document.getElementById('btn-lv1').addEventListener('click', () => applyLevel(1));
+  document.getElementById('btn-lv2').addEventListener('click', () => applyLevel(2));
+  document.getElementById('btn-lv3').addEventListener('click', () => applyLevel(3));
 
-  // ============================================================
-  //  카테고리 필터
-  // ============================================================
-  const filterBox=document.getElementById('filters'),activeFilters=new Set();
-  allCats.forEach(cat=>{
-    const btn=document.createElement('button');
-    btn.className='filter-btn';btn.textContent=cat;
-    const c=catColor(cat);btn.style.setProperty('--c',c);btn.style.setProperty('--bg',c+'22');
-    btn.addEventListener('click',()=>{
-      if(activeFilters.has(cat)){activeFilters.delete(cat);btn.classList.remove('active')}
-      else{activeFilters.add(cat);btn.classList.add('active')}
-      if(!activeFilters.size){
-        nodeEls.classed('dimmed',false);linkEls.classed('dimmed',false);boxG.selectAll('.cat-group').classed('dimmed',false);return;
-      }
-      nodeEls.each(function(n){d3.select(this).classed('dimmed',!activeFilters.has(n.category))});
-      linkEls.each(function(l){
-        d3.select(this).classed('dimmed',!(activeFilters.has(l.source.category)&&activeFilters.has(l.target.category)));
-      });
-      boxG.selectAll('.cat-group').each(function(dd){d3.select(this).classed('dimmed',!activeFilters.has(dd.cat))});
-    });
-    filterBox.appendChild(btn);
+  /* Edit mode */
+  document.getElementById('btn-edit').addEventListener('click', function() {
+    editMode = !editMode;
+    this.classList.toggle('active', editMode);
+    this.textContent = editMode ? '완료' : '수정';
   });
 
-  // ============================================================
-  //  리사이즈
-  // ============================================================
-  addEventListener('resize',()=>{
-    W=innerWidth;H=innerHeight;svg.attr('width',W).attr('height',H);
-  });
+  /* Resize */
+  window.addEventListener('resize', () => fitView(200));
 
-})();
+  /* ESC to close sheet */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSheet();
+  });
+}
 </script>
 </body>
 </html>
