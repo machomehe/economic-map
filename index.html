@@ -463,10 +463,8 @@ function linkLiveColor(l) {
   const s = nodeMap[l.source];
   const isBirye = l.type === '비례';
 
-  // 데이터 없으면 관계 유형 색상으로 fallback (비례=초록, 반비례=빨강)
-  if (!s || !s._dir || s._dir === 'flat') {
-    return isBirye ? '#16a34a' : '#dc2626';
-  }
+  // 데이터 없으면 영향 방향 알 수 없으므로 회색
+  if (!s || !s._dir || s._dir === 'flat') return '#555';
 
   const srcUp = s._dir === 'up';
   const targetUp = srcUp === isBirye;
