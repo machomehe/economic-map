@@ -319,31 +319,64 @@ function renderAll() {
 }
 
 /* ── Links ── */
-function nodeRadius(n) {
-  if (n.isAsset) return NODE_R + ASSET_EXTRA;
-  return Math.max(RECT_W, RECT_H) / 2;
+// 노드 경계점 계산: 원(자산)은 원 경계, 사각형(지표)은 사각형 경계
+function edgePoint(n, tx, ty, margin) {
+  const dx = tx - n.cx, dy = ty - n.cy;
+  if (n.isAsset) {
+    // 원: 방향 벡터로 경계점
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const r = NODE_R + ASSET_EXTRA + margin;
+    return { x: n.cx + dx/dist * r, y: n.cy + dy/dist * r };
+  } else {
+    // 사각형: 변과의 교차점
+    const hw = RECT_W/2 + margin, hh = RECT_H/2 + margin;
+    if (dx === 0 && dy === 0) return { x: n.cx + hw, y: n.cy };
+    const sx = hw / (Math.abs(dx) || 1), sy = hh / (Math.abs(dy) || 1);
+    const s = Math.min(sx, sy);
+    return { x: n.cx + dx * s, y: n.cy + dy * s };
+  }
+}
+
+// 사각형의 특정 변에서 나가는 점 (방향: 'left','right','top','bottom')
+function rectSide(n, side, margin) {
+  const hw = RECT_W/2 + margin, hh = RECT_H/2 + margin;
+  if (side === 'left')   return { x: n.cx - hw, y: n.cy };
+  if (side === 'right')  return { x: n.cx + hw, y: n.cy };
+  if (side === 'top')    return { x: n.cx, y: n.cy - hh };
+  return { x: n.cx, y: n.cy + hh };
 }
 
 function linkPath(link) {
   const s = nodeMap[link.source], t = nodeMap[link.target];
   if (!s || !t) return 'M0,0';
-  const dx = t.cx - s.cx, dy = t.cy - s.cy;
-  const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-  const ux = dx/dist, uy = dy/dist; // 단위 벡터
 
-  // 노드 경계에서 시작/끝 (원 또는 사각형 반지름)
-  const rS = nodeRadius(s) + 4;
-  const rT = nodeRadius(t) + 8; // 화살표 여유
-  const x1 = s.cx + ux * rS, y1 = s.cy + uy * rS;
-  const x2 = t.cx - ux * rT, y2 = t.cy - uy * rT;
+  const sIsAsset = s.isAsset, tIsAsset = t.isAsset;
+  const bothIndicators = !sIsAsset && !tIsAsset;
 
-  // 곡선 정도: 거리에 비례, 최소 20 최대 60
-  const bend = Math.min(Math.max(dist * 0.15, 20), 60);
-  // 수직 방향으로 휘기 (좌→우는 위로, 우→좌는 아래로)
-  const cx = (x1+x2)/2 - uy * bend;
-  const cy = (y1+y2)/2 + ux * bend;
+  if (!bothIndicators) {
+    // 지표↔자산: 직선, 노드 경계에서 시작/끝
+    const p1 = edgePoint(s, t.cx, t.cy, 2);
+    const p2 = edgePoint(t, s.cx, s.cy, 6);
+    return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
+  }
 
-  return `M${x1},${y1} Q${cx},${cy} ${x2},${y2}`;
+  // 지표↔지표: ㄱ자 꺾임 (오른쪽으로 나가서 세로로 이동 후 들어감)
+  const sameSide = (s.cx < 170) === (t.cx < 170); // 같은 쪽인지
+  const sLeft = s.cx < 170; // 소스가 왼쪽인지
+
+  if (sameSide) {
+    // 같은 쪽: 바깥으로 나가서 세로 이동 후 돌아옴
+    const outDir = sLeft ? 'left' : 'right';
+    const outX = sLeft ? Math.min(s.cx, t.cx) - RECT_W/2 - 30 : Math.max(s.cx, t.cx) + RECT_W/2 + 30;
+    const p1 = rectSide(s, outDir, 2);
+    const p2 = rectSide(t, outDir, 6);
+    return `M${p1.x},${p1.y} L${outX},${p1.y} L${outX},${p2.y} L${p2.x},${p2.y}`;
+  } else {
+    // 반대 쪽: 서로를 향해 직선
+    const p1 = edgePoint(s, t.cx, t.cy, 2);
+    const p2 = edgePoint(t, s.cx, s.cy, 6);
+    return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
+  }
 }
 
 function renderLinks() {
