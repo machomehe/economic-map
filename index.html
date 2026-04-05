@@ -94,6 +94,56 @@ svg { display:block; width:100%; height:100%; }
   white-space:nowrap; font-family:inherit; transition:all .15s;
 }
 .cat-chip.active { color:#fff; }
+
+/* ── Legend ── */
+#legend-box {
+  position:fixed; top:10px; left:10px; z-index:90;
+  background:#16161ecc; border:1px solid #2a2a3a; border-radius:10px;
+  padding:8px 10px; font-size:11px; color:#94a3b8;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  user-select:none; max-width:170px;
+}
+#legend-toggle {
+  background:none; border:none; color:#94a3b8; cursor:pointer;
+  font-size:11px; float:right; padding:0 2px; font-family:inherit;
+}
+#legend-items { margin-top:4px; }
+.legend-row { display:flex; align-items:center; gap:6px; padding:2px 0; }
+.legend-line {
+  width:22px; height:0; border-top:2px solid; flex-shrink:0;
+}
+.legend-shape {
+  width:12px; height:12px; flex-shrink:0; border:1.5px solid #94a3b8;
+}
+.legend-shape.circle { border-radius:50%; }
+.legend-shape.rect   { border-radius:2px; }
+
+/* ── Onboarding ── */
+#onboard-overlay {
+  position:fixed; inset:0; z-index:500;
+  background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center;
+  backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+}
+#onboard-card {
+  background:#1e1e2e; border:1px solid #2a2a3a; border-radius:16px;
+  padding:28px 24px 20px; max-width:340px; width:90%; color:#e2e8f0;
+  text-align:center;
+}
+#onboard-card h3 { font-size:15px; margin-bottom:14px; font-weight:700; }
+#onboard-step { font-size:13px; line-height:1.7; color:#cbd5e1; min-height:48px; }
+#onboard-dots { margin:16px 0 14px; display:flex; justify-content:center; gap:6px; }
+.ob-dot {
+  width:7px; height:7px; border-radius:50%; background:#3a3a5a;
+}
+.ob-dot.active { background:#6366f1; }
+#onboard-btns { display:flex; gap:8px; justify-content:center; }
+#onboard-btns button {
+  padding:8px 18px; border-radius:8px; font-size:12px; font-weight:600;
+  cursor:pointer; font-family:inherit; border:1px solid #3a3a5a;
+  transition:all .15s;
+}
+#ob-skip { background:transparent; color:#64748b; }
+#ob-next { background:#4f46e5; color:#fff; border-color:#6366f1; }
 </style>
 </head>
 <body>
@@ -121,6 +171,34 @@ svg { display:block; width:100%; height:100%; }
     <button class="sim-btn down" id="btn-sim-down">내리면?</button>
   </div>
   <div id="sheet-interp"></div>
+</div>
+
+<!-- Legend -->
+<div id="legend-box">
+  <span style="font-weight:700;color:#cbd5e1;">범례</span>
+  <button id="legend-toggle"></button>
+  <div id="legend-items">
+    <div class="legend-row"><span class="legend-line" style="border-color:#16a34a;"></span>상승 영향</div>
+    <div class="legend-row"><span class="legend-line" style="border-color:#dc2626;"></span>하락 영향</div>
+    <div class="legend-row"><span class="legend-line" style="border-color:#94a3b8;border-top-style:dashed;"></span>반비례 관계</div>
+    <div class="legend-row"><span class="legend-line" style="border-color:#94a3b8;"></span>비례 관계</div>
+    <div class="legend-row"><span class="legend-line" style="border-color:#555;"></span>데이터 없음</div>
+    <div class="legend-row"><span class="legend-shape circle"></span>자산</div>
+    <div class="legend-row"><span class="legend-shape rect"></span>지표</div>
+  </div>
+</div>
+
+<!-- Onboarding -->
+<div id="onboard-overlay">
+  <div id="onboard-card">
+    <h3>Economic Map 시작하기</h3>
+    <div id="onboard-step"></div>
+    <div id="onboard-dots"></div>
+    <div id="onboard-btns">
+      <button id="ob-skip">건너뛰기</button>
+      <button id="ob-next">다음</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -211,15 +289,26 @@ function init() {
    ================================================================ */
 function attachValues() {
   if (!VALS || !VALS.data) return;
+  const YOY_SERIES = ['CPIAUCSL'];
   DATA.nodes.forEach(n => {
     const key = n.dataSource && n.dataSource.fred;
-    if (!key) { n._val = null; n._dir = null; return; }
+    if (!key) { n._val = null; n._dir = null; n._isYoY = false; return; }
     const s = VALS.data[key];
-    if (!s || s.length < 2) { n._val = null; n._dir = null; return; }
+    if (!s || s.length < 2) { n._val = null; n._dir = null; n._isYoY = false; return; }
     const cur  = parseFloat(s[0].value);
     const prev = parseFloat(s[1].value);
-    n._val = cur;
-    n._dir = cur > prev ? 'up' : cur < prev ? 'down' : 'flat';
+    if (YOY_SERIES.includes(key)) {
+      // YoY% 변환: 12개월 전 값 사용, 없으면 가장 오래된 값 사용
+      const oldIdx = s.length >= 13 ? 12 : s.length - 1;
+      const old = parseFloat(s[oldIdx].value);
+      n._val = old !== 0 ? ((cur - old) / old * 100) : null;
+      n._dir = n._val != null ? (n._val > 0 ? 'up' : n._val < 0 ? 'down' : 'flat') : null;
+      n._isYoY = true;
+    } else {
+      n._val = cur;
+      n._dir = cur > prev ? 'up' : cur < prev ? 'down' : 'flat';
+      n._isYoY = false;
+    }
   });
 }
 
@@ -739,6 +828,7 @@ function valueColor(n) {
 function valueText(n) {
   if (n._val == null) return '';
   const arrow = n._dir === 'up' ? '\u25B2' : n._dir === 'down' ? '\u25BC' : '';
+  if (n._isYoY) return n._val.toFixed(1) + '% ' + arrow;
   let v = n._val;
   if (v >= 10000)   v = (v / 1000).toFixed(1) + 'K';
   else if (v >= 100) v = v.toFixed(1);
@@ -1003,6 +1093,69 @@ function bindEvents() {
     if (e.key === 'Escape') closeSheet();
   });
 }
+
+/* ================================================================
+   LEGEND
+   ================================================================ */
+(function initLegend() {
+  const box = document.getElementById('legend-box');
+  const items = document.getElementById('legend-items');
+  const btn = document.getElementById('legend-toggle');
+  const KEY = 'economic-map-legend-collapsed';
+  let collapsed = localStorage.getItem(KEY) === '1';
+
+  function render() {
+    items.style.display = collapsed ? 'none' : 'block';
+    btn.textContent = collapsed ? '\u25BC' : '\u25B2';
+  }
+  btn.addEventListener('click', () => {
+    collapsed = !collapsed;
+    localStorage.setItem(KEY, collapsed ? '1' : '0');
+    render();
+  });
+  render();
+})();
+
+/* ================================================================
+   ONBOARDING
+   ================================================================ */
+(function initOnboarding() {
+  const overlay = document.getElementById('onboard-overlay');
+  if (localStorage.getItem('economic-map-onboarded') === '1') { overlay.remove(); return; }
+
+  const steps = [
+    '노드를 탭하면 상세 정보를\n볼 수 있어요',
+    "'오르면?/내리면?' 버튼으로\n연쇄 효과를 확인하세요",
+    "하단의 핵심/기본/심화로\n복잡도를 조절하세요"
+  ];
+  let cur = 0;
+
+  const stepEl  = document.getElementById('onboard-step');
+  const dotsEl  = document.getElementById('onboard-dots');
+  const nextBtn = document.getElementById('ob-next');
+  const skipBtn = document.getElementById('ob-skip');
+
+  function show() {
+    stepEl.textContent = steps[cur];
+    dotsEl.innerHTML = steps.map((_, i) =>
+      '<span class="ob-dot' + (i === cur ? ' active' : '') + '"></span>'
+    ).join('');
+    nextBtn.textContent = cur === steps.length - 1 ? '시작하기' : '다음';
+  }
+
+  function finish() {
+    localStorage.setItem('economic-map-onboarded', '1');
+    overlay.remove();
+  }
+
+  nextBtn.addEventListener('click', () => {
+    if (cur >= steps.length - 1) { finish(); return; }
+    cur++;
+    show();
+  });
+  skipBtn.addEventListener('click', finish);
+  show();
+})();
 </script>
 </body>
 </html>

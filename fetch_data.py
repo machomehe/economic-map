@@ -22,7 +22,13 @@ SERIES_IDS = [
     'NASDAQCOM',        # us_nasdaq: 나스닥 (성장주)
     'DTWEXBGS',         # us_dollar: 달러인덱스
     'VIXCLS',           # us_vix: VIX
-    # us_gold: FRED 시리즈 비활성 — 추후 대체 소스 추가
+    'CSUSHPISA',        # us_realestate: Case-Shiller 주택가격지수
+    'GOLDAMGBD228NLBM', # us_commodity: 금 가격
+    'M2SL',             # us_m2: M2 통화량
+    'UMCSENT',          # us_sentiment: 미시간대 소비자심리지수
+    'WALCL',            # us_liquidity: 연준 총자산 (글로벌 유동성 대용)
+    'GFDEBTN',          # us_fiscal: 미국 국가부채
+    'CD3M',             # us_cash: 3개월 CD 금리 (현금/예금 수익률 대용)
     'RSAFS',            # kr_consumption: 소비 (소매판매, US proxy)
     'DEXKOUS',          # kr_won: 원/달러 환율
 ]
