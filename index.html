@@ -351,7 +351,8 @@ function rectSide(n, side, margin) {
   return { x: n.cx, y: n.cy + hh };
 }
 
-/* ── Port distribution — 사각형 노드의 같은 변 선 분산 배치 ── */
+/* ── 고정 5포트 시스템 — 사각형 각 변에 5개 고정 연결점 ── */
+const PORTS_PER_SIDE = 5;
 let portCache = {};
 
 function computePorts() {
@@ -361,11 +362,10 @@ function computePorts() {
   DATA.links.forEach(link => {
     const s = nodeMap[link.source], t = nodeMap[link.target];
     if (!s || !t || !linkVisible(link)) return;
-    if (!s.isAsset && !t.isAsset) return; // 지표↔자산만
+    if (!s.isAsset && !t.isAsset) return;
 
-    // 사각형 노드만 분산 (원은 기존 edgePoint 유지)
     [{ n: s, other: t, margin: 2 }, { n: t, other: s, margin: 6 }].forEach(({ n, other, margin }) => {
-      if (n.isAsset) return; // 원은 건너뜀
+      if (n.isAsset) return;
       const side = rectExitSide(n, other);
       if (!nodeConns[n.id]) nodeConns[n.id] = {};
       if (!nodeConns[n.id][side]) nodeConns[n.id][side] = [];
@@ -376,17 +376,26 @@ function computePorts() {
   Object.keys(nodeConns).forEach(nodeId => {
     const n = nodeMap[nodeId];
     Object.entries(nodeConns[nodeId]).forEach(([side, items]) => {
+      // 상대 노드 위치 순으로 정렬
       if (side === 'left' || side === 'right') {
         items.sort((a, b) => a.other.cy - b.other.cy);
       } else {
         items.sort((a, b) => a.other.cx - b.other.cx);
       }
+      // 고정 5포트 중 가운데부터 균등 배정
+      const portIndices = assignPorts(items.length, PORTS_PER_SIDE);
       items.forEach((c, i) => {
         const key = c.link.source + '|' + c.link.target + '|' + nodeId;
-        portCache[key] = rectPort(n, side, i, items.length, c.margin);
+        portCache[key] = fixedPort(n, side, portIndices[i], c.margin);
       });
     });
   });
+}
+
+// N개 연결을 totalPorts개 슬롯에 가운데 정렬 배정
+function assignPorts(count, totalPorts) {
+  const start = Math.floor((totalPorts - count) / 2);
+  return Array.from({ length: count }, (_, i) => start + i);
 }
 
 function rectExitSide(from, to) {
@@ -399,20 +408,17 @@ function rectExitSide(from, to) {
   return dy >= 0 ? 'bottom' : 'top';
 }
 
-function rectPort(n, side, idx, total, margin) {
+// 고정 포트 좌표 계산: 변을 5등분한 위치
+function fixedPort(n, side, portIdx, margin) {
   const hw = RECT_W / 2 + margin, hh = RECT_H / 2 + margin;
-  const pad = 4;
+  const t = (portIdx + 1) / (PORTS_PER_SIDE + 1); // 균등 분할 (양 끝 여백 포함)
   if (side === 'left' || side === 'right') {
     const x = side === 'left' ? n.cx - hw : n.cx + hw;
-    const range = RECT_H - 2 * pad;
-    const step = total > 1 ? range / (total - 1) : 0;
-    const y = total > 1 ? n.cy - range / 2 + idx * step : n.cy;
+    const y = n.cy - hh + t * 2 * hh;
     return { x, y };
   }
   const y = side === 'top' ? n.cy - hh : n.cy + hh;
-  const range = RECT_W - 2 * pad;
-  const step = total > 1 ? range / (total - 1) : 0;
-  const x = total > 1 ? n.cx - range / 2 + idx * step : n.cx;
+  const x = n.cx - hw + t * 2 * hw;
   return { x, y };
 }
 
