@@ -224,89 +224,94 @@ function attachValues() {
 }
 
 /* ================================================================
-   LAYOUT — asset-centered vertical layout
-   자산 노드를 세로 중심축에, 지표를 좌우에 배치
+   LAYOUT — asset-centered, fixed positions
+   최초 1회 계산 후 고정. 레벨 변경은 보이기/숨기기만.
    ================================================================ */
-function computeLayout() {
-  boxes = []; // 이 레이아웃에서는 카테고리 박스 사용 안 함
+let layoutDone = false;
 
-  const assets = DATA.nodes.filter(n => n.isAsset && n.level <= currentLevel);
-  const indicators = DATA.nodes.filter(n => !n.isAsset && n.level <= currentLevel);
+function computeLayout() {
+  boxes = [];
+
+  if (layoutDone) {
+    // 레벨 변경 시: 위치 그대로, 보이기/숨기기만
+    DATA.nodes.forEach(n => {
+      if (n.level > currentLevel) { n.cx = -9999; n.cy = -9999; }
+      else { n.cx = n._fixedX; n.cy = n._fixedY; }
+    });
+    return;
+  }
+
+  const allAssets = DATA.nodes.filter(n => n.isAsset);
+  const allIndicators = DATA.nodes.filter(n => !n.isAsset);
 
   // 1) 자산 세로 배치 (중앙)
-  const centerX = 170;
-  const assetStartY = 60;
-  const assetGap = 140;
+  const centerX = 180;
+  const assetStartY = 70;
+  const assetGap = 150;
 
-  assets.forEach((n, i) => {
-    n.cx = centerX;
-    n.cy = assetStartY + i * assetGap;
+  allAssets.forEach((n, i) => {
+    n._fixedX = n.cx = centerX;
+    n._fixedY = n.cy = assetStartY + i * assetGap;
   });
 
-  // 2) 각 지표가 연결된 자산 목록 구하기
-  const links = DATA.links;
-  indicators.forEach(ind => {
-    const connectedAssets = [];
-    links.forEach(l => {
+  // 2) 각 지표의 연결 자산 파악
+  allIndicators.forEach(ind => {
+    const conn = [];
+    DATA.links.forEach(l => {
       const src = typeof l.source === 'object' ? l.source.id : l.source;
       const tgt = typeof l.target === 'object' ? l.target.id : l.target;
-      if (src === ind.id) {
-        const target = assets.find(a => a.id === tgt);
-        if (target) connectedAssets.push(target);
-      }
-      if (tgt === ind.id) {
-        const source = assets.find(a => a.id === src);
-        if (source) connectedAssets.push(source);
-      }
+      if (src === ind.id) { const a = allAssets.find(n=>n.id===tgt); if(a) conn.push(a); }
+      if (tgt === ind.id) { const a = allAssets.find(n=>n.id===src); if(a) conn.push(a); }
     });
-    ind._connAssets = connectedAssets;
+    ind._connAssets = conn;
   });
 
-  // 3) 지표를 좌우에 배치
-  let leftSlots = [];
-  let rightSlots = [];
+  // 3) 고정 좌표 배치: 좌우 교대, y는 연결 자산 평균
+  // 좌측/우측 각각 y좌표 목록 관리
+  const leftYs = [], rightYs = [];
+  const xLeft = centerX - 170, xRight = centerX + 170;
+  const minGap = 76; // 최소 세로 간격
 
-  // 연결 자산 수가 많은 지표를 먼저 배치
-  indicators.sort((a, b) => b._connAssets.length - a._connAssets.length);
+  // 연결 자산 수 많은 순으로 먼저 배치 (좋은 자리 선점)
+  const sorted = [...allIndicators].sort((a,b) => b._connAssets.length - a._connAssets.length);
 
-  const indXOffset = 160;
-  const indYGap = 70;
-
-  let leftCount = 0, rightCount = 0;
-
-  indicators.forEach(ind => {
-    // 연결된 자산들의 y 평균
+  sorted.forEach(ind => {
+    // 목표 y
     let targetY;
     if (ind._connAssets.length > 0) {
-      targetY = ind._connAssets.reduce((s, a) => s + a.cy, 0) / ind._connAssets.length;
+      targetY = ind._connAssets.reduce((s,a) => s + a._fixedY, 0) / ind._connAssets.length;
     } else {
-      targetY = assetStartY + (assets.length * assetGap) / 2;
+      targetY = assetStartY + allAssets.length * assetGap / 2;
     }
 
-    // 좌우 균형 맞추기
-    const goLeft = leftCount <= rightCount;
-    const xPos = goLeft ? centerX - indXOffset : centerX + indXOffset;
+    // 좌우 중 비어있는 쪽 선택
+    const goLeft = leftYs.length <= rightYs.length;
+    const slots = goLeft ? leftYs : rightYs;
+    const xPos = goLeft ? xLeft : xRight;
 
-    // y 위치: targetY 근처에서 겹치지 않는 위치 찾기
-    const slots = goLeft ? leftSlots : rightSlots;
+    // 겹치지 않는 y 찾기: targetY에서 위아래로 탐색
     let yPos = targetY;
-    for (let tries = 0; tries < 20; tries++) {
-      const conflict = slots.some(s => Math.abs(s - yPos) < indYGap);
+    let dir = 1, step = 0;
+    for (let i = 0; i < 40; i++) {
+      const conflict = slots.some(s => Math.abs(s - yPos) < minGap);
       if (!conflict) break;
-      yPos += indYGap / 2;
+      step++;
+      yPos = targetY + dir * step * (minGap / 2);
+      dir = -dir; // 위아래 번갈아
+      if (dir > 0) step++; // 한 쪽 더 멀리
     }
     slots.push(yPos);
 
-    ind.cx = xPos;
-    ind.cy = yPos;
-
-    if (goLeft) leftCount++; else rightCount++;
+    ind._fixedX = ind.cx = xPos;
+    ind._fixedY = ind.cy = yPos;
   });
 
-  // 숨겨진 노드 화면 밖
+  // 숨겨진 노드
   DATA.nodes.forEach(n => {
     if (n.level > currentLevel) { n.cx = -9999; n.cy = -9999; }
   });
+
+  layoutDone = true;
 }
 
 /* ================================================================
@@ -346,41 +351,51 @@ function rectSide(n, side, margin) {
   return { x: n.cx, y: n.cy + hh };
 }
 
+let elbowIndex = 0; // 꺾임선마다 다른 offset
+
 function linkPath(link) {
   const s = nodeMap[link.source], t = nodeMap[link.target];
   if (!s || !t) return 'M0,0';
 
-  const sIsAsset = s.isAsset, tIsAsset = t.isAsset;
-  const bothIndicators = !sIsAsset && !tIsAsset;
+  const bothIndicators = !s.isAsset && !t.isAsset;
+  const cx = 180; // 중심축 (자산 위치)
 
   if (!bothIndicators) {
-    // 지표↔자산: 직선, 노드 경계에서 시작/끝
+    // 지표↔자산: 직선, 노드 경계 접점
     const p1 = edgePoint(s, t.cx, t.cy, 2);
     const p2 = edgePoint(t, s.cx, s.cy, 6);
     return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
   }
 
-  // 지표↔지표: ㄱ자 꺾임 (오른쪽으로 나가서 세로로 이동 후 들어감)
-  const sameSide = (s.cx < 170) === (t.cx < 170); // 같은 쪽인지
-  const sLeft = s.cx < 170; // 소스가 왼쪽인지
+  // 지표↔지표
+  const sameSide = (s.cx < cx) === (t.cx < cx);
 
   if (sameSide) {
-    // 같은 쪽: 바깥으로 나가서 세로 이동 후 돌아옴
+    // 같은 쪽: ㄱ자 꺾임, 각 선마다 offset 다르게
+    const sLeft = s.cx < cx;
     const outDir = sLeft ? 'left' : 'right';
-    const outX = sLeft ? Math.min(s.cx, t.cx) - RECT_W/2 - 30 : Math.max(s.cx, t.cx) + RECT_W/2 + 30;
+    elbowIndex++;
+    const baseOff = 25 + (elbowIndex % 5) * 12; // 25~73px 범위로 분산
+    const outX = sLeft
+      ? Math.min(s.cx, t.cx) - RECT_W/2 - baseOff
+      : Math.max(s.cx, t.cx) + RECT_W/2 + baseOff;
     const p1 = rectSide(s, outDir, 2);
     const p2 = rectSide(t, outDir, 6);
     return `M${p1.x},${p1.y} L${outX},${p1.y} L${outX},${p2.y} L${p2.x},${p2.y}`;
   } else {
-    // 반대 쪽: 서로를 향해 직선
-    const p1 = edgePoint(s, t.cx, t.cy, 2);
-    const p2 = edgePoint(t, s.cx, s.cy, 6);
-    return `M${p1.x},${p1.y} L${p2.x},${p2.y}`;
+    // 반대 쪽: 중앙을 통과하는 꺾임선 (자산과 겹치지 않게 위/아래 우회)
+    const topY = Math.min(s.cy, t.cy);
+    const midY = topY - 30 - (elbowIndex % 3) * 15;
+    elbowIndex++;
+    const p1 = rectSide(s, 'top', 2);
+    const p2 = rectSide(t, 'top', 6);
+    return `M${p1.x},${p1.y} L${p1.x},${midY} L${p2.x},${midY} L${p2.x},${p2.y}`;
   }
 }
 
 function renderLinks() {
   gLinks.selectAll('*').remove();
+  elbowIndex = 0;
 
   DATA.links.forEach(link => {
     const s = nodeMap[link.source], t = nodeMap[link.target];
@@ -534,6 +549,8 @@ function renderNodes() {
       .on('drag', function(event) {
         node.cx += event.dx;
         node.cy += event.dy;
+        node._fixedX = node.cx;
+        node._fixedY = node.cy;
         d3.select(this).attr('transform', `translate(${node.cx},${node.cy})`);
         updateLinkPositions(false);
       })
