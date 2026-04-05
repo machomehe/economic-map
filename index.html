@@ -222,78 +222,95 @@ function attachValues() {
 }
 
 /* ================================================================
-   LAYOUT — boxes stacked vertically, nodes in grid inside boxes
+   LAYOUT — auto grid: fit boxes into screen aspect ratio
    ================================================================ */
 function computeLayout() {
-  let yOff = 0;
   boxes = [];
 
+  /* 1) 각 박스 높이 계산 (내용 기반) */
+  const tempBoxes = [];
   CAT_ORDER.forEach(catName => {
-    const catNodes = DATA.nodes.filter(n =>
-      n.category === catName && n.level <= currentLevel
-    );
-
-    if (catNodes.length === 0) {
-      boxes.push({ name:catName, x:0, y:yOff, w:BOX_W, h:0, visible:false,
-                    color:DATA.categories[catName].color });
+    const catNds = DATA.nodes.filter(n => n.category === catName && n.level <= currentLevel);
+    if (!catNds.length) {
+      tempBoxes.push({ name:catName, h:0, visible:false, color:DATA.categories[catName].color, nodes:[] });
       return;
     }
+    const assetNds = catNds.filter(n => n.isAsset);
+    const indNds = catNds.filter(n => !n.isAsset);
+    let innerY = PAD_TOP;
+    if (assetNds.length) {
+      const cols = Math.min(assetNds.length, MAX_COLS);
+      innerY += Math.ceil(assetNds.length / cols) * SP_Y_AST;
+    }
+    if (indNds.length) {
+      const cols = Math.min(indNds.length, MAX_COLS);
+      innerY += Math.ceil(indNds.length / cols) * SP_Y_IND;
+    }
+    tempBoxes.push({ name:catName, h:innerY+PAD_BOT, visible:true, color:DATA.categories[catName].color, nodes:catNds, assetNds, indNds });
+  });
 
-    /* Split into asset nodes and indicator nodes */
-    const assetNodes = catNodes.filter(n => n.isAsset);
-    const indNodes   = catNodes.filter(n => !n.isAsset);
+  const visBoxes = tempBoxes.filter(b => b.visible);
 
-    /* Calculate height for each group */
-    let contentH = 0;
-    let innerY = PAD_TOP; // y cursor inside the box
+  /* 2) 화면 비율에 맞게 열 수 자동 결정 */
+  const screenRatio = W / Math.max(H - 100, 1); // 하단바 고려
+  let numCols;
+  if (visBoxes.length <= 2) numCols = visBoxes.length;
+  else if (screenRatio > 1.2) numCols = 3; // 가로 넓으면 3열
+  else if (screenRatio > 0.6) numCols = 2; // 세로 폰이면 2열
+  else numCols = 1;
+  numCols = Math.min(numCols, visBoxes.length);
 
-    /* Layout asset nodes first */
-    if (assetNodes.length > 0) {
-      const cols = Math.min(assetNodes.length, MAX_COLS);
-      const rows = Math.ceil(assetNodes.length / cols);
+  /* 3) 박스를 열에 배분 (높이 균형) */
+  const colHeights = Array(numCols).fill(0);
+  const colAssign = []; // 각 박스가 몇 번 열인지
+  visBoxes.forEach(b => {
+    // 가장 낮은 열에 배치
+    let minCol = 0;
+    for (let c = 1; c < numCols; c++) { if (colHeights[c] < colHeights[minCol]) minCol = c; }
+    colAssign.push(minCol);
+    colHeights[minCol] += b.h + BOX_GAP;
+  });
+
+  /* 4) 각 박스 x,y 좌표 계산 */
+  const colYs = Array(numCols).fill(0);
+  visBoxes.forEach((b, i) => {
+    const col = colAssign[i];
+    b.x = col * (BOX_W + BOX_GAP);
+    b.y = colYs[col];
+    colYs[col] += b.h + BOX_GAP;
+  });
+
+  /* 5) 박스 내 노드 위치 계산 */
+  visBoxes.forEach(b => {
+    let innerY = PAD_TOP;
+    if (b.assetNds && b.assetNds.length) {
+      const cols = Math.min(b.assetNds.length, MAX_COLS);
       const cw = cols * SP_X_AST;
-      assetNodes.forEach((n, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        const startX = (BOX_W - cw) / 2 + SP_X_AST / 2;
-        n.cx = startX + col * SP_X_AST + n.dx;
-        n.cy = innerY + SP_Y_AST / 2 + row * SP_Y_AST + n.dy;
+      b.assetNds.forEach((n, i) => {
+        const c = i % cols, r = Math.floor(i / cols);
+        n.cx = b.x + (BOX_W - cw) / 2 + SP_X_AST / 2 + c * SP_X_AST + n.dx;
+        n.cy = b.y + innerY + SP_Y_AST / 2 + r * SP_Y_AST + n.dy;
       });
-      innerY += rows * SP_Y_AST;
+      innerY += Math.ceil(b.assetNds.length / cols) * SP_Y_AST;
     }
-
-    /* Layout indicator nodes after assets */
-    if (indNodes.length > 0) {
-      const cols = Math.min(indNodes.length, MAX_COLS);
-      const rows = Math.ceil(indNodes.length / cols);
+    if (b.indNds && b.indNds.length) {
+      const cols = Math.min(b.indNds.length, MAX_COLS);
       const cw = cols * SP_X_IND;
-      indNodes.forEach((n, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        const startX = (BOX_W - cw) / 2 + SP_X_IND / 2;
-        n.cx = startX + col * SP_X_IND + n.dx;
-        n.cy = innerY + SP_Y_IND / 2 + row * SP_Y_IND + n.dy;
+      b.indNds.forEach((n, i) => {
+        const c = i % cols, r = Math.floor(i / cols);
+        n.cx = b.x + (BOX_W - cw) / 2 + SP_X_IND / 2 + c * SP_X_IND + n.dx;
+        n.cy = b.y + innerY + SP_Y_IND / 2 + r * SP_Y_IND + n.dy;
       });
-      innerY += rows * SP_Y_IND;
     }
-
-    const boxH = innerY + PAD_BOT;
-    const box = {
-      name:catName, x:0, y:yOff, w:BOX_W, h:boxH, visible:true,
-      color:DATA.categories[catName].color
-    };
-    boxes.push(box);
-
-    /* offset node positions by box.y (they were relative to 0) */
-    catNodes.forEach(n => { n.cx += box.x; n.cy += box.y; });
-
-    yOff += boxH + BOX_GAP;
+    b.w = BOX_W;
+    boxes.push(b);
   });
 
-  /* hide nodes beyond current level */
-  DATA.nodes.forEach(n => {
-    if (n.level > currentLevel) { n.cx = -9999; n.cy = -9999; }
-  });
+  /* 비표시 박스도 추가 */
+  tempBoxes.filter(b => !b.visible).forEach(b => { b.w = BOX_W; b.h = 0; boxes.push(b); });
+
+  /* 숨겨진 노드 화면 밖 */
+  DATA.nodes.forEach(n => { if (n.level > currentLevel) { n.cx = -9999; n.cy = -9999; } });
 }
 
 /* ================================================================
