@@ -146,6 +146,8 @@ let currentLevel = 1;
 let editMode     = false;
 let selectedNode  = null;
 let catFilter     = null;        // null = show all
+let W = window.innerWidth;
+let H = window.innerHeight;
 
 /* ── D3 setup ── */
 const svg   = d3.select('#svg');
@@ -785,7 +787,7 @@ function bindEvents() {
   });
 
   /* Resize */
-  window.addEventListener('resize', () => fitView(200));
+  window.addEventListener('resize', () => { W = innerWidth; H = innerHeight; fitView(200); });
 
   /* ESC to close sheet */
   document.addEventListener('keydown', e => {
