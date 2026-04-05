@@ -265,8 +265,8 @@ html,body{
 
   // 컬럼 정의
   const colDef = [
-    { label: '미국', cats: ['미국·지표', '미국·자산', '미국·리스크'] },
-    { label: '한국', cats: ['한국·지표', '한국·자산'] }
+    { label: '', cats: ['매크로 지표', '현금/예금', '주식'] },
+    { label: '', cats: ['채권', '부동산', '원자재/금'] }
   ];
 
   // 치수
@@ -279,6 +279,11 @@ html,body{
   const colGap = 16;
 
   const getR = d => isAsset(d) ? nodeR + assetExtra : (isCore(d) ? nodeR + 4 : nodeR);
+  // 자산 전용 카테고리: 모든 노드가 isAsset인 카테고리만
+  const assetCatSet = new Set();
+  Object.entries(catNodes).forEach(([cat, ns]) => {
+    if(ns.length && ns.every(n => n.isAsset)) assetCatSet.add(cat);
+  });
 
   // 박스 크기 계산
   const boxInfo = {};
@@ -286,7 +291,7 @@ html,body{
     col.cats.forEach(cat=>{
       if(!catNodes[cat]) return;
       const n = catNodes[cat].length;
-      const isA = cat.includes('자산');
+      const isA = assetCatSet.has(cat);
       // 자산: 원(R=30) + sub(14) + val(14) + chg(13) = ~100
       // 지표: 카드(44h) + val(14) + chg(13) = ~75
       const spX = isA ? 76 : 92;
@@ -301,7 +306,7 @@ html,body{
   });
 
   // 컬럼 크기 계산
-  const headerSpace = 28;
+  const headerSpace = 0;
   const colInfo = colDef.map(col => {
     const validCats = col.cats.filter(c => catNodes[c] && boxInfo[c]);
     let maxW = 0, totalH = 0;
@@ -367,25 +372,13 @@ html,body{
   const nodeGrp = zoomG.append('g');
 
   // ============================================================
-  //  컬럼 헤더
+  //  컬럼 헤더 (제거됨 — 단일 구조)
   // ============================================================
-  colInfo.forEach(col=>{
-    zoomG.append('text')
-      .attr('class','col-header')
-      .attr('x', col.centerX)
-      .attr('y', col.y - 8)
-      .attr('text-anchor', 'middle')
-      .attr('fill', '#888')
-      .attr('font-size', '14px')
-      .attr('font-weight', '700')
-      .text(col.label);
-  });
 
   // ============================================================
   //  카테고리 박스 그리기
   // ============================================================
   const allCats = colInfo.flatMap(col=>col.cats);
-  const assetCatSet = new Set(['미국·자산','한국·자산']);
 
   allCats.forEach(cat=>{
     const info = boxInfo[cat];
@@ -535,7 +528,7 @@ html,body{
       col.cats.forEach(cat=>{
         if(!catNodes[cat]||!boxInfo[cat]) return;
         const visNodes = catNodes[cat].filter(n=>n.level<=currentLevel);
-        const isA = cat.includes('자산');
+        const isA = assetCatSet.has(cat);
         const spX = isA ? 76 : 92;
         const spY = isA ? 100 : 80;
         const cols = Math.min(visNodes.length||1, 3);
@@ -591,10 +584,7 @@ html,body{
       }
     });
 
-    // 5) 컬럼 헤더 위치 업데이트
-    zoomG.selectAll('.col-header').data(colInfo).attr('x',d=>d.centerX).attr('y',d=>d.y-8);
-
-    // 6) fit to view
+    // 5) fit to view
     const tw2=cx2-colGap, th2=Math.max(...colInfo.map(c=>c.height))+headerSpace;
     const sx2=(W-padX*2)/tw2, sy2=(H-padTop-padBot)/th2;
     const sc2=Math.min(sx2,sy2);
