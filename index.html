@@ -30,11 +30,23 @@ svg { display:block; width:100%; height:100%; }
 
 /* ── Link ── */
 .link-line { fill:none; stroke-width:1.6; opacity:0.25; }
+.link-hit  { fill:none; stroke:transparent; stroke-width:14; pointer-events:stroke; cursor:pointer; }
 
 /* ── Highlight / Dim ── */
 .node-dim  { opacity:0.08 !important; }
 .link-dim  { opacity:0.04 !important; }
-.link-hl   { opacity:0.95 !important; stroke-width:3; filter:drop-shadow(0 0 6px var(--glow)); }
+.link-hl   { opacity:0.95 !important; filter:drop-shadow(0 0 6px var(--glow)); }
+
+/* ── Toast ── */
+#link-toast {
+  position:fixed; bottom:70px; left:50%; transform:translateX(-50%);
+  background:#1e1e2eee; color:#e2e8f0; border:1px solid #3a3a5a;
+  border-radius:12px; padding:12px 18px; font-size:12.5px; line-height:1.6;
+  z-index:300; max-width:90vw; text-align:center;
+  opacity:0; pointer-events:none; transition:opacity .25s;
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+}
+#link-toast.show { opacity:1; pointer-events:auto; }
 
 /* ── Bottom bar ── */
 #bottom-bar {
@@ -170,6 +182,7 @@ svg { display:block; width:100%; height:100%; }
     <button class="sim-btn up" id="btn-sim-up">오르면?</button>
     <button class="sim-btn down" id="btn-sim-down">내리면?</button>
   </div>
+  <div id="sheet-spark"></div>
   <div id="sheet-interp"></div>
 </div>
 
@@ -187,6 +200,9 @@ svg { display:block; width:100%; height:100%; }
     <div class="legend-row"><span class="legend-shape rect"></span>지표</div>
   </div>
 </div>
+
+<!-- Link toast -->
+<div id="link-toast"></div>
 
 <!-- Onboarding -->
 <div id="onboard-overlay">
@@ -410,6 +426,7 @@ function renderAll() {
   renderLinks();
   renderBoxes();
   renderNodes();
+  addHoverEvents();
 }
 
 /* ── Links ── */
@@ -613,6 +630,14 @@ function linkPath(link) {
   }
 }
 
+/* strength → stroke-width 매핑 */
+function strengthWidth(s) {
+  if (s <= 2) return 1;
+  if (s === 3) return 1.6;
+  if (s === 4) return 2.2;
+  return 3; // 5
+}
+
 function renderLinks() {
   gLinks.selectAll('*').remove();
   linkIndex = 0;
@@ -623,16 +648,31 @@ function renderLinks() {
     if (!s || !t) return;
     const col = linkLiveColor(link);
     const isDash = link.type === '반비례';
+    const sw = strengthWidth(link.strength || 3);
+    const d = linkPath(link);
+    const vis = linkVisible(link) ? null : 'none';
+
+    /* 투명 히트 영역 (클릭 쉽도록 두꺼움) */
+    gLinks.append('path')
+      .datum(link)
+      .attr('class','link-hit')
+      .attr('d', d)
+      .attr('display', vis)
+      .on('click', function(e) { e.stopPropagation(); showLinkToast(link); });
+
+    /* 실제 보이는 선 */
     gLinks.append('path')
       .datum(link)
       .attr('class','link-line')
       .attr('stroke', col)
       .style('--glow', col)
       .attr('fill', 'none')
+      .attr('stroke-width', sw)
       .attr('stroke-dasharray', isDash ? '7,4' : null)
       .attr('marker-end', 'url(#arrow-' + col.replace('#','') + ')')
-      .attr('d', linkPath(link))
-      .attr('display', linkVisible(link) ? null : 'none');
+      .attr('d', d)
+      .attr('display', vis)
+      .style('pointer-events', 'none');
   });
 }
 
@@ -669,6 +709,11 @@ function updateLinkPositions(animate) {
   const s = animate ? sel.transition().duration(400) : sel;
   s.attr('d', d => linkPath(d));
   sel.attr('display', d => linkVisible(d) ? null : 'none');
+
+  const hitSel = gLinks.selectAll('path.link-hit');
+  const h = animate ? hitSel.transition().duration(400) : hitSel;
+  h.attr('d', d => linkPath(d));
+  hitSel.attr('display', d => linkVisible(d) ? null : 'none');
 }
 
 /* ── Boxes ── */
@@ -896,6 +941,7 @@ function applyLevel(lv) {
    ================================================================ */
 function openSheet(node) {
   selectedNode = node;
+  hoverActive = false;
   highlightNode(node);
 
   document.getElementById('sheet-title').textContent = node.label;
@@ -905,13 +951,18 @@ function openSheet(node) {
 
   document.getElementById('sheet-overlay').classList.add('show');
   document.getElementById('bottom-sheet').classList.add('show');
+
+  /* 스파크라인 (FRED 데이터 있으면) */
+  setTimeout(() => renderSparkline(node), 50);
 }
 
 function closeSheet() {
   document.getElementById('sheet-overlay').classList.remove('show');
   document.getElementById('bottom-sheet').classList.remove('show');
+  document.getElementById('sheet-spark').innerHTML = '';
   clearHighlight();
   selectedNode = null;
+  hoverActive = false;
 }
 
 document.getElementById('sheet-overlay').addEventListener('click', closeSheet);
@@ -982,7 +1033,11 @@ function runSim(startNode, direction) {
   gNodes.selectAll('g.node-g').classed('node-dim', d => !affIds.has(d.id));
   gLinks.selectAll('path.link-line')
     .classed('link-dim', d => !affLink.has(d.id))
-    .classed('link-hl',  d => affLink.has(d.id));
+    .classed('link-hl',  d => affLink.has(d.id))
+    .attr('stroke-width', d => {
+      const base = strengthWidth(d.strength || 3);
+      return affLink.has(d.id) ? base + 1 : base;
+    });
 }
 
 /* ================================================================
@@ -998,12 +1053,18 @@ function highlightNode(node) {
   gNodes.selectAll('g.node-g').classed('node-dim', d => !conn.has(d.id));
   gLinks.selectAll('path.link-line')
     .classed('link-dim', d => d.source !== node.id && d.target !== node.id)
-    .classed('link-hl',  d => d.source === node.id || d.target === node.id);
+    .classed('link-hl',  d => d.source === node.id || d.target === node.id)
+    .attr('stroke-width', d => {
+      const base = strengthWidth(d.strength || 3);
+      return (d.source === node.id || d.target === node.id) ? base + 1 : base;
+    });
 }
 
 function clearHighlight() {
   gNodes.selectAll('g.node-g').classed('node-dim', false);
-  gLinks.selectAll('path.link-line').classed('link-dim', false).classed('link-hl', false);
+  gLinks.selectAll('path.link-line')
+    .classed('link-dim', false).classed('link-hl', false)
+    .attr('stroke-width', d => strengthWidth(d.strength || 3));
 }
 
 /* ================================================================
@@ -1053,7 +1114,7 @@ function applyCategoryFilter(catName) {
       return null;
     });
 
-  gLinks.selectAll('path.link-line')
+  gLinks.selectAll('path.link-line, path.link-hit')
     .attr('display', d => {
       if (!linkVisible(d)) return 'none';
       if (catFilter) {
@@ -1092,6 +1153,133 @@ function bindEvents() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeSheet();
   });
+}
+
+/* ================================================================
+   TASK 2-2: HOVER EFFECT
+   ================================================================ */
+let hoverActive = false;
+
+function addHoverEvents() {
+  gNodes.selectAll('g.node-g')
+    .on('mouseenter', function(e, d) {
+      if (editMode || selectedNode) return;
+      hoverActive = true;
+      highlightNode(d);
+    })
+    .on('mouseleave', function() {
+      if (editMode || selectedNode) return;
+      if (!hoverActive) return;
+      hoverActive = false;
+      clearHighlight();
+    });
+}
+
+/* ================================================================
+   TASK 2-3: LINK TOAST
+   ================================================================ */
+let toastTimer = null;
+
+function showLinkToast(link) {
+  const srcNode = nodeMap[link.source];
+  const tgtNode = nodeMap[link.target];
+  if (!srcNode || !tgtNode) return;
+
+  const el = document.getElementById('link-toast');
+  const typeLabel = link.type === '비례'
+    ? '<span style="color:#16a34a">비례 ▲▲</span>'
+    : '<span style="color:#dc2626">반비례 ▲▼</span>';
+
+  el.innerHTML = `<div style="font-weight:700;margin-bottom:4px;">${srcNode.label} → ${tgtNode.label}</div>` +
+    `<div style="margin-bottom:4px;">${typeLabel}</div>` +
+    `<div style="color:#94a3b8;">${link.description || ''}</div>`;
+
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 3000);
+}
+
+/* ================================================================
+   TASK 2-4: SPARKLINE
+   ================================================================ */
+function renderSparkline(node) {
+  const container = document.getElementById('sheet-spark');
+  container.innerHTML = '';
+
+  if (!VALS || !VALS.data || !node.dataSource || !node.dataSource.fred) return;
+  const series = VALS.data[node.dataSource.fred];
+  if (!series || series.length < 2) return;
+
+  /* 최근 포인트 (오래된 순서로 정렬) */
+  const pts = series.slice().reverse();
+  const vals = pts.map(p => parseFloat(p.value));
+  const minV = Math.min(...vals), maxV = Math.max(...vals);
+  const range = maxV - minV || 1;
+
+  const W = container.clientWidth || 300;
+  const H = 48;
+  const padL = 36, padR = 36, padY = 6;
+  const plotW = W - padL - padR;
+  const plotH = H - padY * 2;
+
+  const first = vals[0], last = vals[vals.length - 1];
+  const isUp = last >= first;
+  const lineColor = isUp ? '#16a34a' : '#dc2626';
+
+  /* SVG */
+  const svgNs = 'http://www.w3.org/2000/svg';
+  const svgEl = document.createElementNS(svgNs, 'svg');
+  svgEl.setAttribute('width', '100%');
+  svgEl.setAttribute('height', H);
+  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svgEl.setAttribute('preserveAspectRatio', 'none');
+  svgEl.style.display = 'block';
+  svgEl.style.margin = '8px 0';
+
+  /* 라인 path */
+  let d = '';
+  vals.forEach((v, i) => {
+    const x = padL + (i / (vals.length - 1)) * plotW;
+    const y = padY + plotH - ((v - minV) / range) * plotH;
+    d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+  });
+
+  const path = document.createElementNS(svgNs, 'path');
+  path.setAttribute('d', d);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', lineColor);
+  path.setAttribute('stroke-width', '1.8');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  svgEl.appendChild(path);
+
+  /* 시작 값 라벨 */
+  const fmtVal = (v) => {
+    if (Math.abs(v) >= 10000) return (v/1000).toFixed(1) + 'K';
+    if (Math.abs(v) >= 100)   return v.toFixed(1);
+    return v.toFixed(2);
+  };
+
+  const txtStart = document.createElementNS(svgNs, 'text');
+  txtStart.setAttribute('x', padL - 4);
+  txtStart.setAttribute('y', padY + plotH - ((first - minV) / range) * plotH + 4);
+  txtStart.setAttribute('text-anchor', 'end');
+  txtStart.setAttribute('fill', '#64748b');
+  txtStart.setAttribute('font-size', '9px');
+  txtStart.textContent = fmtVal(first);
+  svgEl.appendChild(txtStart);
+
+  const txtEnd = document.createElementNS(svgNs, 'text');
+  txtEnd.setAttribute('x', padL + plotW + 4);
+  txtEnd.setAttribute('y', padY + plotH - ((last - minV) / range) * plotH + 4);
+  txtEnd.setAttribute('text-anchor', 'start');
+  txtEnd.setAttribute('fill', lineColor);
+  txtEnd.setAttribute('font-size', '9px');
+  txtEnd.setAttribute('font-weight', '700');
+  txtEnd.textContent = fmtVal(last);
+  svgEl.appendChild(txtEnd);
+
+  container.appendChild(svgEl);
 }
 
 /* ================================================================
