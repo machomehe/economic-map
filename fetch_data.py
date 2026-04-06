@@ -31,6 +31,8 @@ SERIES_IDS = [
     'CD3M',             # us_cash: 3개월 CD 금리 (현금/예금 수익률 대용)
     'RSAFS',            # kr_consumption: 소비 (소매판매, US proxy)
     'DEXKOUS',          # kr_won: 원/달러 환율
+    'USEPUINDXD',       # us_tariff: 경제정책 불확실성 (Economic Policy Uncertainty Index)
+    'OVXCLS',           # us_war: 원유변동성지수 (OVX, 지정학 리스크 프록시)
 ]
 
 def fetch_series(series_id):
