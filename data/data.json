@@ -86,7 +86,7 @@
         "down": "위험자산 선호. 금리 인하로 예금 매력 감소."
       },
       "dataSource": {
-        "fred": "CD3M"
+        "fred": "DFF"
       },
       "tags": [
         "핵심"

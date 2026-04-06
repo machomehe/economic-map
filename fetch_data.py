@@ -28,7 +28,7 @@ SERIES_IDS = [
     'UMCSENT',          # us_sentiment: 미시간대 소비자심리지수
     'WALCL',            # us_liquidity: 연준 총자산 (글로벌 유동성 대용)
     'GFDEBTN',          # us_fiscal: 미국 국가부채
-    'CD3M',             # us_cash: 3개월 CD 금리 (현금/예금 수익률 대용)
+    'DFF',              # us_cash: 실효 연방기금금리 (현금/예금 수익률 대용)
     'RSAFS',            # kr_consumption: 소비 (소매판매, US proxy)
     'DEXKOUS',          # kr_won: 원/달러 환율
     'USEPUINDXD',       # us_tariff: 경제정책 불확실성 (Economic Policy Uncertainty Index)
@@ -41,7 +41,7 @@ def fetch_series(series_id):
         'api_key': FRED_API_KEY,
         'file_type': 'json',
         'sort_order': 'desc',
-        'limit': 10,
+        'limit': 30,
     })
     url = 'https://api.stlouisfed.org/fred/series/observations?' + params
     try:
