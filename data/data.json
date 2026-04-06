@@ -315,7 +315,7 @@
         "down": "달러 강세, 실질금리 상승, 위험선호 확산으로 실물자산 매력 감소."
       },
       "dataSource": {
-        "fred": "GOLDAMGBD228NLBM"
+        "fred": "GOLDPMGBD228NLBM"
       },
       "tags": [
         "핵심"
