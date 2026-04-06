@@ -106,6 +106,7 @@ svg { display:block; width:100%; height:100%; }
   white-space:nowrap; font-family:inherit; transition:all .15s;
 }
 .cat-chip.active { color:#fff; }
+#cat-chips { display:flex; gap:4px; flex-wrap:wrap; }
 
 /* ── Legend ── */
 #legend-box {
@@ -156,6 +157,31 @@ svg { display:block; width:100%; height:100%; }
 }
 #ob-skip { background:transparent; color:#64748b; }
 #ob-next { background:#4f46e5; color:#fff; border-color:#6366f1; }
+
+/* ── Responsive: Medium screens ── */
+@media (max-width: 768px) {
+  #bottom-bar { padding:6px 8px; gap:5px; }
+  #bottom-bar button { padding:8px 11px; font-size:11.5px; min-height:44px; min-width:44px; }
+  #search-input { width:80px; font-size:11.5px; padding:8px 8px; min-height:44px; }
+  #search-input:focus { width:110px; }
+  #legend-box { font-size:10.5px; padding:6px 8px; max-width:150px; }
+  .legend-row { font-size:10.5px; }
+  .cat-chip { padding:6px 10px; font-size:10.5px; min-height:44px; display:inline-flex; align-items:center; }
+}
+
+/* ── Responsive: Small screens ── */
+@media (max-width: 480px) {
+  #bottom-bar { padding:5px 6px; gap:4px; flex-wrap:wrap; }
+  #bottom-bar button { padding:8px 8px; font-size:10.5px; min-height:44px; min-width:44px; }
+  #search-input { width:64px; font-size:10.5px; padding:8px 6px; min-height:44px; }
+  #search-input:focus { width:90px; }
+  #legend-box { font-size:9.5px; padding:5px 7px; max-width:130px; }
+  .legend-row { font-size:9.5px; }
+  .cat-chip { padding:6px 8px; font-size:10px; min-height:44px; display:inline-flex; align-items:center; }
+  #bottom-sheet { padding:16px 14px 28px; }
+  #sheet-title { font-size:16px; }
+  #sheet-desc { font-size:12px; }
+}
 </style>
 </head>
 <body>
@@ -169,6 +195,9 @@ svg { display:block; width:100%; height:100%; }
   <button id="btn-lv2" data-lv="2">기본</button>
   <button id="btn-lv3" data-lv="3">심화</button>
   <button id="btn-edit">수정</button>
+  <button id="btn-reset" style="display:none;">초기화</button>
+  <span style="width:1px;height:20px;background:#3a3a5a;flex-shrink:0;"></span>
+  <span id="cat-chips"></span>
 </div>
 
 <!-- Bottom sheet overlay -->
@@ -286,6 +315,44 @@ Promise.all([
 });
 
 /* ================================================================
+   POSITION PERSISTENCE (localStorage)
+   ================================================================ */
+const POS_KEY = 'economic-map-positions';
+
+function savePositions() {
+  const pos = {};
+  DATA.nodes.forEach(n => {
+    pos[n.id] = { x: n._fixedX, y: n._fixedY };
+  });
+  localStorage.setItem(POS_KEY, JSON.stringify(pos));
+}
+
+function loadPositions() {
+  const raw = localStorage.getItem(POS_KEY);
+  if (!raw) return false;
+  try {
+    const pos = JSON.parse(raw);
+    let applied = false;
+    DATA.nodes.forEach(n => {
+      if (pos[n.id]) {
+        n._fixedX = n.cx = pos[n.id].x;
+        n._fixedY = n.cy = pos[n.id].y;
+        applied = true;
+      }
+    });
+    return applied;
+  } catch(e) { return false; }
+}
+
+function resetPositions() {
+  localStorage.removeItem(POS_KEY);
+  layoutDone = false;
+  computeLayout();
+  renderAll();
+  fitView(400);
+}
+
+/* ================================================================
    INIT
    ================================================================ */
 function init() {
@@ -295,9 +362,16 @@ function init() {
 
   attachValues();
   computeLayout();
+  /* restore saved positions after initial layout */
+  loadPositions();
+  /* re-hide nodes beyond current level after restore */
+  DATA.nodes.forEach(n => {
+    if (n.level > currentLevel) { n.cx = -9999; n.cy = -9999; }
+  });
   renderAll();
   fitView(0);
   bindEvents();
+  renderCatChips();
 }
 
 /* ================================================================
@@ -840,6 +914,9 @@ function renderNodes() {
         d3.select(this).attr('transform', `translate(${node.cx},${node.cy})`);
         updateLinkPositions(false);
       })
+      .on('end', function() {
+        savePositions();
+      })
     );
   });
 }
@@ -949,6 +1026,19 @@ function openSheet(node) {
   document.getElementById('sheet-desc').textContent = node.description || '';
   document.getElementById('sheet-interp').innerHTML = '';
 
+  /* FRED 출처 링크 */
+  let sourceEl = document.getElementById('sheet-source');
+  if (!sourceEl) {
+    sourceEl = document.createElement('div');
+    sourceEl.id = 'sheet-source';
+    document.getElementById('bottom-sheet').appendChild(sourceEl);
+  }
+  sourceEl.innerHTML = '';
+  if (node.dataSource && node.dataSource.fred) {
+    const fredId = node.dataSource.fred;
+    sourceEl.innerHTML = `<a href="https://fred.stlouisfed.org/series/${fredId}" target="_blank" rel="noopener" style="color:#64748b;font-size:11px;text-decoration:underline;display:inline-block;margin-top:8px;">출처: FRED - ${fredId}</a>`;
+  }
+
   document.getElementById('sheet-overlay').classList.add('show');
   document.getElementById('bottom-sheet').classList.add('show');
 
@@ -1013,14 +1103,25 @@ function runSim(startNode, direction) {
     html += '<div style="color:#64748b;">영향받는 노드 없음</div>';
   } else {
     results.forEach(r => {
-      const icon = r.dir === 'up'
-        ? '<span style="color:#16a34a">&#9650; 상승</span>'
-        : r.dir === 'down'
-          ? '<span style="color:#dc2626">&#9660; 하락</span>'
-          : '<span style="color:#ca8a04">&#9670; 조건부</span>';
+      const str = r.link.strength || 3;
+      let icon;
+      if (r.dir === 'up') {
+        if (str >= 5)      icon = '<span style="color:#16a34a;font-weight:700">&#9650;&#9650; 강하게 상승</span>';
+        else if (str >= 3) icon = '<span style="color:#16a34a">&#9650; 상승</span>';
+        else               icon = '<span style="color:#16a34a;opacity:0.7">&#9650; 약하게 상승</span>';
+      } else if (r.dir === 'down') {
+        if (str >= 5)      icon = '<span style="color:#dc2626;font-weight:700">&#9660;&#9660; 강하게 하락</span>';
+        else if (str >= 3) icon = '<span style="color:#dc2626">&#9660; 하락</span>';
+        else               icon = '<span style="color:#dc2626;opacity:0.7">&#9660; 약하게 하락</span>';
+      } else {
+        icon = '<span style="color:#ca8a04">&#9670; 조건부</span>';
+      }
+      const barW = str * 20;
+      const barColor = r.dir === 'up' ? '#16a34a' : r.dir === 'down' ? '#dc2626' : '#ca8a04';
       html += `<div style="padding:4px 0;border-bottom:1px solid #ffffff08;">
         <b>${r.node.label}</b> ${icon}
         <span style="color:#64748b;font-size:11px;margin-left:4px;">${r.link.description}</span>
+        <div style="margin-top:2px;height:3px;width:${barW}%;max-width:100%;background:${barColor};border-radius:2px;opacity:0.4;"></div>
       </div>`;
     });
   }
@@ -1131,6 +1232,32 @@ function applyCategoryFilter(catName) {
 }
 
 /* ================================================================
+   CATEGORY FILTER CHIPS
+   ================================================================ */
+function renderCatChips() {
+  const container = document.getElementById('cat-chips');
+  container.innerHTML = '';
+  const cats = DATA.categories;
+  Object.keys(cats).forEach(catName => {
+    const chip = document.createElement('span');
+    chip.className = 'cat-chip';
+    chip.textContent = catName;
+    chip.style.borderColor = cats[catName].color;
+    chip.addEventListener('click', () => {
+      applyCategoryFilter(catName);
+      /* update chip active state */
+      container.querySelectorAll('.cat-chip').forEach(c => {
+        const isActive = c.textContent === catFilter;
+        c.classList.toggle('active', isActive);
+        c.style.background = isActive ? cats[c.textContent].color + '33' : '#23233a';
+        c.style.color = isActive ? '#fff' : '#aaa';
+      });
+    });
+    container.appendChild(chip);
+  });
+}
+
+/* ================================================================
    EVENTS
    ================================================================ */
 function bindEvents() {
@@ -1144,6 +1271,14 @@ function bindEvents() {
     editMode = !editMode;
     this.classList.toggle('active', editMode);
     this.textContent = editMode ? '완료' : '수정';
+    document.getElementById('btn-reset').style.display = editMode ? '' : 'none';
+  });
+
+  /* Reset positions */
+  document.getElementById('btn-reset').addEventListener('click', function() {
+    if (confirm('노드 위치를 초기 상태로 되돌릴까요?')) {
+      resetPositions();
+    }
   });
 
   /* Resize */
