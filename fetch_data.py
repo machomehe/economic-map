@@ -23,7 +23,7 @@ SERIES_IDS = [
     'DTWEXBGS',         # us_dollar: 달러인덱스
     'VIXCLS',           # us_vix: VIX
     'CSUSHPISA',        # us_realestate: Case-Shiller 주택가격지수
-    'GOLDPMGBD228NLBM', # us_commodity: 금 가격 (PM Fix)
+    'PPIACO',           # us_commodity: 생산자물가 원자재지수 (All Commodities)
     'M2SL',             # us_m2: M2 통화량
     'UMCSENT',          # us_sentiment: 미시간대 소비자심리지수
     'WALCL',            # us_liquidity: 연준 총자산 (글로벌 유동성 대용)
