@@ -33,6 +33,9 @@ SERIES_IDS = [
     'DEXKOUS',          # kr_won: 원/달러 환율
     'USEPUINDXD',       # us_tariff: 경제정책 불확실성 (Economic Policy Uncertainty Index)
     'OVXCLS',           # us_war: 원유변동성지수 (OVX, 지정학 리스크 프록시)
+    'PAYEMS',           # us_nfp: 비농업고용
+    'CIVPART',          # us_lfpr: 경제활동참가율
+    'NAPM',             # us_pmi: 제조업 PMI (ISM Manufacturing)
 ]
 
 def fetch_series(series_id):

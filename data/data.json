@@ -1,6 +1,6 @@
 {
-  "version": "4.0",
-  "lastUpdated": "2026-04-05",
+  "version": "4.1",
+  "lastUpdated": "2026-04-06",
   "categories": {
     "자산": {
       "color": "#fbbf24"
@@ -371,6 +371,72 @@
         "fred": "OVXCLS"
       },
       "tags": []
+    },
+    {
+      "id": "us_nfp",
+      "label": "비농업고용",
+      "sub": "Nonfarm Payrolls",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "매월 첫째 금요일 발표. 고용→소비→GDP 핵심 연결고리.",
+      "interpretation": {
+        "up": "고용 강세. 소비↑, GDP↑, 긴축 명분↑. 주식 단기 호재",
+        "down": "고용 둔화. 소비↓, 경기침체 우려, 완화 기대↑"
+      },
+      "dataSource": {
+        "fred": "PAYEMS"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_lfpr",
+      "label": "경제활동참가율",
+      "sub": "Labor Force Participation",
+      "category": "매크로 지표",
+      "level": 3,
+      "isAsset": false,
+      "description": "생산가능인구 중 경제활동 비율. 노동시장 구조적 건강도.",
+      "interpretation": {
+        "up": "노동시장 참여 확대. 노동공급↑, 임금 상승 압력 완화",
+        "down": "노동시장 이탈 증가. 고령화·구직 포기, 실업률 착시 가능"
+      },
+      "dataSource": {
+        "fred": "CIVPART"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_pmi",
+      "label": "제조업 PMI",
+      "sub": "ISM Manufacturing",
+      "category": "시장 지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "50 이상 확장, 미만 수축. GDP 선행지표.",
+      "interpretation": {
+        "up": "제조업 확장. 신규주문·생산↑, 경기 회복 신호",
+        "down": "제조업 수축. 재고 축소, 경기 둔화 신호"
+      },
+      "dataSource": {
+        "fred": "NAPM"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_pmi_svc",
+      "label": "서비스업 PMI",
+      "sub": "ISM Services",
+      "category": "시장 지표",
+      "level": 3,
+      "isAsset": false,
+      "description": "GDP의 70% 차지. 서비스업 경기 판단 핵심.",
+      "interpretation": {
+        "up": "서비스업 확장. 소비·고용↑, 내수 경기 호조",
+        "down": "서비스업 수축. 소비 둔화, 고용 위축 우려"
+      },
+      "dataSource": {},
+      "tags": []
     }
   ],
   "links": [
@@ -613,6 +679,94 @@
       "type": "반비례",
       "strength": 3,
       "description": "관세↑ → 기업비용↑ → 주식↓"
+    },
+    {
+      "id": "us_nfp-us_unemployment",
+      "source": "us_nfp",
+      "target": "us_unemployment",
+      "type": "반비례",
+      "strength": 4,
+      "description": "고용↑ → 실업률↓"
+    },
+    {
+      "id": "us_nfp-us_gdp",
+      "source": "us_nfp",
+      "target": "us_gdp",
+      "type": "비례",
+      "strength": 4,
+      "description": "고용↑ → 소비↑ → GDP↑"
+    },
+    {
+      "id": "us_nfp-us_rate",
+      "source": "us_nfp",
+      "target": "us_rate",
+      "type": "비례",
+      "strength": 3,
+      "description": "고용 강세 → 긴축 유지 명분"
+    },
+    {
+      "id": "us_nfp-us_stocks",
+      "source": "us_nfp",
+      "target": "us_stocks",
+      "type": "비례",
+      "strength": 3,
+      "description": "고용↑ → 소비 기대↑ → 주식↑"
+    },
+    {
+      "id": "us_lfpr-us_nfp",
+      "source": "us_lfpr",
+      "target": "us_nfp",
+      "type": "비례",
+      "strength": 3,
+      "description": "참가율↑ → 노동공급↑ → 고용 가능 인원↑"
+    },
+    {
+      "id": "us_lfpr-us_unemployment",
+      "source": "us_lfpr",
+      "target": "us_unemployment",
+      "type": "비례",
+      "strength": 2,
+      "description": "참가율↑ → 구직자 유입 → 단기 실업률↑"
+    },
+    {
+      "id": "us_pmi-us_gdp",
+      "source": "us_pmi",
+      "target": "us_gdp",
+      "type": "비례",
+      "strength": 4,
+      "description": "제조업 확장 → GDP 선행"
+    },
+    {
+      "id": "us_pmi-us_stocks",
+      "source": "us_pmi",
+      "target": "us_stocks",
+      "type": "비례",
+      "strength": 3,
+      "description": "제조업 경기↑ → 기업실적 기대↑ → 주식↑"
+    },
+    {
+      "id": "us_pmi_svc-us_gdp",
+      "source": "us_pmi_svc",
+      "target": "us_gdp",
+      "type": "비례",
+      "strength": 4,
+      "description": "서비스업(GDP 70%) 확장 → GDP↑"
+    },
+    {
+      "id": "us_pmi_svc-us_stocks",
+      "source": "us_pmi_svc",
+      "target": "us_stocks",
+      "type": "비례",
+      "strength": 3,
+      "description": "서비스업 경기↑ → 주식↑"
+    },
+    {
+      "id": "us_pmi_svc-us_nfp",
+      "source": "us_pmi_svc",
+      "target": "us_nfp",
+      "type": "비례",
+      "strength": 3,
+      "description": "서비스업 확장 → 고용↑"
     }
   ]
 }
