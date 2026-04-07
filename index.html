@@ -223,13 +223,9 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 
 /* ── Responsive: Small screens ── */
 @media (max-width: 480px) {
-  #bottom-bar { padding:5px 6px; gap:3px; flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; }
-  #bottom-bar button { padding:8px 8px; font-size:0; min-height:44px; min-width:44px; }
-  #bottom-bar button::before { content:attr(data-icon); font-size:16px; }
-  #bottom-bar button.active::before { font-size:16px; }
-  #search-input { width:44px; font-size:10.5px; padding:8px 6px; min-height:44px; }
-  #search-input:focus { width:120px; }
-  #search-input::placeholder { font-size:12px; }
+  #bottom-bar { padding:5px 6px; gap:4px; flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; -webkit-overflow-scrolling:touch; }
+  #bottom-bar button { padding:7px 10px; font-size:11px; min-height:44px; white-space:nowrap; }
+  #search-input { width:60px; font-size:11px; padding:7px 6px; min-height:44px; }
   #legend-box { font-size:9.5px; padding:5px 7px; max-width:130px; }
   .legend-row { font-size:9.5px; }
   #cat-chips { display:none; }
@@ -287,13 +283,13 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 <!-- Bottom bar -->
 <nav id="bottom-bar" aria-label="맵 제어 도구모음">
   <input id="search-input" placeholder="검색..." aria-label="경제 지표 검색" />
-  <button id="btn-lv1" class="active" data-lv="1" data-icon="1">핵심</button>
-  <button id="btn-lv2" data-lv="2" data-icon="2">기본</button>
-  <button id="btn-lv3" data-lv="3" data-icon="3">심화</button>
-  <button id="btn-edit" aria-pressed="false" data-icon="&#9998;">수정</button>
-  <button id="btn-reset" style="display:none;" data-icon="&#8634;">초기화</button>
-  <button id="btn-multi-sim" title="복합 시나리오" data-icon="&#9878;">복합</button>
-  <button id="btn-export" title="현재 맵을 PNG로 저장" data-icon="&#8681;">PNG</button>
+  <button id="btn-lv1" class="active" data-lv="1">핵심</button>
+  <button id="btn-lv2" data-lv="2">기본</button>
+  <button id="btn-lv3" data-lv="3">심화</button>
+  <button id="btn-edit" aria-pressed="false">수정</button>
+  <button id="btn-reset" style="display:none;">초기화</button>
+  <button id="btn-multi-sim" title="복합 시나리오">복합</button>
+  <button id="btn-export" title="현재 맵을 PNG로 저장">PNG</button>
   <span style="width:1px;height:20px;background:#3a3a5a;flex-shrink:0;"></span>
   <span id="cat-chips"></span>
 </div>
