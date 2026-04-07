@@ -1,5 +1,5 @@
 /* Service Worker — Economic Map 오프라인 캐시 */
-const CACHE_NAME = 'economic-map-v4';
+const CACHE_NAME = 'economic-map-v5';
 const STATIC_ASSETS = [
   './',
   './index.html',
