@@ -110,7 +110,7 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
   border-radius:8px; padding:7px 10px; font-size:12px; width:90px;
   outline:none; font-family:inherit;
 }
-#search-input:focus { border-color:var(--accent-light); width:120px; transition:width .2s; outline:2px solid var(--accent-light); outline-offset:2px; }
+#search-input:focus { border-color:var(--accent-light); outline:2px solid var(--accent-light); outline-offset:2px; }
 #bottom-bar button:focus-visible, .cat-chip:focus-visible { outline:2px solid var(--accent-light); outline-offset:2px; }
 
 /* ── Bottom sheet ── */
@@ -131,7 +131,7 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 #bottom-sheet.snap-30 { max-height:30vh; }
 #bottom-sheet.snap-50 { max-height:50vh; }
 #bottom-sheet.snap-90 { max-height:90vh; }
-#sheet-handle { width:40px; height:4px; background:#444; border-radius:2px; margin:0 auto 14px; cursor:grab; touch-action:none; }
+#sheet-handle { width:48px; height:8px; background:#555; border-radius:4px; margin:0 auto 14px; cursor:grab; touch-action:none; padding:10px 0; background-clip:content-box; }
 #sheet-title { font-size:18px; font-weight:700; margin-bottom:4px; }
 #sheet-sub { font-size:13px; color:var(--text-muted); margin-bottom:10px; }
 #sheet-desc { font-size:13px; color:var(--text-secondary); margin-bottom:12px; line-height:1.5; }
@@ -209,24 +209,57 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
   #bottom-bar { padding:6px 8px; gap:5px; }
   #bottom-bar button { padding:8px 11px; font-size:11.5px; min-height:44px; min-width:44px; }
   #search-input { width:80px; font-size:11.5px; padding:8px 8px; min-height:44px; }
-  #search-input:focus { width:110px; }
   #legend-box { font-size:10.5px; padding:6px 8px; max-width:150px; }
   .legend-row { font-size:10.5px; }
   .cat-chip { padding:6px 10px; font-size:10.5px; min-height:44px; display:inline-flex; align-items:center; }
 }
 
+/* ── Responsive: Large phones / small tablets ── */
+@media (max-width: 600px) {
+  #bottom-bar button { padding:8px 10px; font-size:11px; min-height:44px; }
+  #search-input { width:70px; font-size:11px; min-height:44px; }
+  .cat-chip { padding:6px 9px; font-size:10px; min-height:44px; display:inline-flex; align-items:center; }
+}
+
 /* ── Responsive: Small screens ── */
 @media (max-width: 480px) {
-  #bottom-bar { padding:5px 6px; gap:4px; flex-wrap:wrap; }
-  #bottom-bar button { padding:8px 8px; font-size:10.5px; min-height:44px; min-width:44px; }
-  #search-input { width:64px; font-size:10.5px; padding:8px 6px; min-height:44px; }
-  #search-input:focus { width:90px; }
+  #bottom-bar { padding:5px 6px; gap:3px; flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; }
+  #bottom-bar button { padding:8px 8px; font-size:0; min-height:44px; min-width:44px; }
+  #bottom-bar button::before { content:attr(data-icon); font-size:16px; }
+  #bottom-bar button.active::before { font-size:16px; }
+  #search-input { width:44px; font-size:10.5px; padding:8px 6px; min-height:44px; }
+  #search-input:focus { width:120px; }
+  #search-input::placeholder { font-size:12px; }
   #legend-box { font-size:9.5px; padding:5px 7px; max-width:130px; }
   .legend-row { font-size:9.5px; }
-  .cat-chip { padding:6px 8px; font-size:10px; min-height:44px; display:inline-flex; align-items:center; }
+  #cat-chips { display:none; }
   #bottom-sheet { padding:16px 14px 28px; }
   #sheet-title { font-size:16px; }
   #sheet-desc { font-size:12px; }
+}
+
+/* ── Responsive: Very small phones ── */
+@media (max-width: 360px) {
+  #bottom-bar { padding:4px 4px; gap:3px; }
+  #bottom-bar button { padding:6px 6px; font-size:9.5px; min-height:40px; min-width:40px; }
+  #search-input { width:50px; font-size:9.5px; min-height:40px; }
+  #search-input:focus { width:70px; }
+  #legend-box { display:none; }
+  .cat-chip { padding:5px 6px; font-size:9px; min-height:40px; }
+  #bottom-sheet { padding:12px 10px 24px; }
+  #sheet-title { font-size:15px; }
+  #sheet-desc { font-size:11.5px; }
+}
+
+/* ── Responsive: Landscape orientation ── */
+@media (orientation: landscape) and (max-height: 500px) {
+  #bottom-bar { padding:4px 8px; }
+  #bottom-bar button { padding:5px 10px; font-size:11px; min-height:36px; }
+  #search-input { min-height:36px; }
+  .cat-chip { min-height:36px; }
+  #bottom-sheet { max-height:80vh; }
+  #legend-box { top:6px; left:6px; max-width:120px; font-size:9px; }
+  #disclaimer { display:none; }
 }
 </style>
 </head>
@@ -254,13 +287,13 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 <!-- Bottom bar -->
 <nav id="bottom-bar" aria-label="맵 제어 도구모음">
   <input id="search-input" placeholder="검색..." aria-label="경제 지표 검색" />
-  <button id="btn-lv1" class="active" data-lv="1">핵심</button>
-  <button id="btn-lv2" data-lv="2">기본</button>
-  <button id="btn-lv3" data-lv="3">심화</button>
-  <button id="btn-edit" aria-pressed="false">수정</button>
-  <button id="btn-reset" style="display:none;">초기화</button>
-  <button id="btn-multi-sim" title="복합 시나리오: 여러 지표 동시 변동 시뮬레이션">복합</button>
-  <button id="btn-export" title="현재 맵을 PNG로 저장">PNG</button>
+  <button id="btn-lv1" class="active" data-lv="1" data-icon="1">핵심</button>
+  <button id="btn-lv2" data-lv="2" data-icon="2">기본</button>
+  <button id="btn-lv3" data-lv="3" data-icon="3">심화</button>
+  <button id="btn-edit" aria-pressed="false" data-icon="&#9998;">수정</button>
+  <button id="btn-reset" style="display:none;" data-icon="&#8634;">초기화</button>
+  <button id="btn-multi-sim" title="복합 시나리오" data-icon="&#9878;">복합</button>
+  <button id="btn-export" title="현재 맵을 PNG로 저장" data-icon="&#8681;">PNG</button>
   <span style="width:1px;height:20px;background:#3a3a5a;flex-shrink:0;"></span>
   <span id="cat-chips"></span>
 </div>
@@ -372,14 +405,37 @@ const gLinks = gRoot.append('g');
 const gNodes = gRoot.append('g');
 
 /* ── Zoom ── */
+let currentZoom = 1;
+function onZoom(e) {
+  gRoot.attr('transform', e.transform);
+  const z = e.transform.k;
+  if (Math.abs(z - currentZoom) < 0.05) return;
+  currentZoom = z;
+  /* 화살표 줌 역보정: 화면상 ~6px 유지 */
+  const mSize = Math.max(4, Math.min(8, 6 / z));
+  defs.selectAll('marker').attr('markerWidth', mSize).attr('markerHeight', mSize);
+  /* 링크: 줌아웃 시 opacity 보강 */
+  gLinks.selectAll('path.link-line').style('opacity', z < 0.6 ? 0.7 : z < 1.0 ? 0.5 : 0.4);
+  /* 링크 히트 영역: 줌아웃 시 확대 */
+  gLinks.selectAll('path.link-hit').attr('stroke-width', Math.max(14, 14 / z));
+  /* 프로그레시브 디테일: 줌 < 0.4이면 sub/value 숨김 */
+  gNodes.selectAll('.node-sub, .node-value').attr('display', z < 0.4 ? 'none' : null);
+  /* 텍스트 최소 가독성: 줌 < 0.5일 때 역보정 */
+  if (z < 0.5) {
+    gNodes.selectAll('.node-label').attr('font-size', (11 / z) + 'px');
+  } else {
+    gNodes.selectAll('g.node-g').each(function(d) {
+      d3.select(this).select('.node-label').attr('font-size', (13 * levelScale(d.level)) + 'px');
+    });
+  }
+}
 const zoomBehavior = d3.zoom()
-  .scaleExtent([0.1, 5])
+  .scaleExtent([0.2, 4])
   .filter(e => {
-    /* In edit mode, only allow zoom via pinch/wheel, not pan */
     if (editMode && e.type === 'mousedown') return false;
     return true;
   })
-  .on('zoom', e => gRoot.attr('transform', e.transform));
+  .on('zoom', onZoom);
 svg.call(zoomBehavior);
 
 /* ================================================================
@@ -984,15 +1040,15 @@ function renderNodes() {
     /* fade-in animation with stagger */
     g.transition().delay(idx * 15).duration(300).style('opacity', 1);
 
-    /* 투명 히트 영역: 최소 44px 터치 타겟 보장 */
-    const minHit = 44;
+    /* 투명 히트 영역: 시각 크기와 일치, 최소 44px 보장 */
+    const minHit = 44 / Math.max(currentZoom, 0.5); // 줌 보정
     if (node.isAsset) {
       const hitR = Math.max((NODE_R + ASSET_EXTRA) * sc, minHit / 2);
-      g.append('circle').attr('r', hitR).attr('fill', 'transparent').attr('class', 'hit-area');
+      g.append('circle').attr('r', hitR).attr('fill', 'transparent').attr('class', 'hit-area').style('pointer-events', 'all');
     } else {
-      const hitW = Math.max(RECT_W * sc, minHit);
-      const hitH = Math.max(RECT_H * sc, minHit);
-      g.append('rect').attr('x', -hitW/2).attr('y', -hitH/2).attr('width', hitW).attr('height', hitH).attr('fill', 'transparent').attr('class', 'hit-area');
+      const rw = RECT_W * sc, rh = RECT_H * sc;
+      const hitW = Math.max(rw, minHit), hitH = Math.max(rh, minHit);
+      g.append('rect').attr('x', -hitW/2).attr('y', -hitH/2).attr('width', hitW).attr('height', hitH).attr('fill', 'transparent').attr('class', 'hit-area').style('pointer-events', 'all');
     }
 
     if (node.isAsset) {
@@ -1051,27 +1107,28 @@ function renderNodes() {
     g.on('click', function(e) {
       e.stopPropagation();
       if (editMode) return;
+      /* 탭 피드백: 짧은 스케일 애니메이션 */
+      d3.select(this).transition().duration(80).attr('transform', `translate(${node.cx},${node.cy}) scale(1.08)`)
+        .transition().duration(80).attr('transform', `translate(${node.cx},${node.cy}) scale(1)`);
+      if ('vibrate' in navigator) navigator.vibrate(10);
       if (selectedNode === node) {
-        /* 두 번째 탭 → 바텀시트 */
         openSheet(node);
       } else {
-        /* 첫 번째 탭 → 하이라이트만 */
         selectedNode = node;
         hoverActive = false;
         highlightNode(node);
       }
     });
 
-    /* long-press → 바로 바텀시트 (300ms) */
-    g.on('touchstart', function(e) {
-      if (editMode) return;
+    /* long-press via pointer events (터치+스타일러스 호환) */
+    g.on('pointerdown', function(e) {
+      if (editMode || e.pointerType === 'mouse') return;
       longPressTimer = setTimeout(() => {
-        e.preventDefault();
         openSheet(node);
         longPressTimer = null;
       }, 300);
-    }, { passive: false });
-    g.on('touchend touchcancel', function() {
+    });
+    g.on('pointerup pointercancel', function() {
       if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     });
 
@@ -1154,11 +1211,12 @@ function fitView(dur) {
   const visNodes = DATA.nodes.filter(n => n.level <= currentLevel);
   if (!visNodes.length) return;
 
-  const pad = 50;
-  const minX = Math.min(...visNodes.map(n => n.cx)) - pad - 50;
+  const isMobile = svgW < 600;
+  const pad = isMobile ? 25 : 50;
+  const minX = Math.min(...visNodes.map(n => n.cx)) - pad - (isMobile ? 25 : 50);
   const minY = Math.min(...visNodes.map(n => n.cy)) - pad;
-  const maxX = Math.max(...visNodes.map(n => n.cx)) + pad + 50;
-  const maxY = Math.max(...visNodes.map(n => n.cy)) + pad + 50;
+  const maxX = Math.max(...visNodes.map(n => n.cx)) + pad + (isMobile ? 25 : 50);
+  const maxY = Math.max(...visNodes.map(n => n.cy)) + pad + (isMobile ? 25 : 50);
 
   const cw = maxX - minX, ch = maxY - minY;
   if (cw <= 0 || ch <= 0) return;
@@ -1277,38 +1335,72 @@ function closeSheet() {
 document.getElementById('sheet-overlay').addEventListener('click', closeSheet);
 svg.on('click.sheet', () => { if (!editMode) closeSheet(); });
 
-/* ── 바텀시트 스와이프 다운 닫기 ── */
+/* ── 바텀시트 풀 스와이프 + 스냅 ── */
 (function initSheetSwipe() {
   const sheet = document.getElementById('bottom-sheet');
-  const handle = document.getElementById('sheet-handle');
   let startY = 0, currentY = 0, dragging = false;
 
-  handle.addEventListener('touchstart', (e) => {
+  /* 시트 전체에서 스와이프 가능 (스크롤 맨 위일 때만) */
+  sheet.addEventListener('touchstart', (e) => {
+    if (sheet.scrollTop > 0) return; // 내부 스크롤 중이면 무시
     startY = e.touches[0].clientY;
     currentY = startY;
     dragging = true;
     sheet.style.transition = 'none';
   }, { passive: true });
 
-  document.addEventListener('touchmove', (e) => {
+  sheet.addEventListener('touchmove', (e) => {
     if (!dragging) return;
     currentY = e.touches[0].clientY;
     const dy = currentY - startY;
     if (dy > 0) {
       sheet.style.transform = 'translateY(' + dy + 'px)';
+    } else if (dy < -10) {
+      /* 위로 스와이프 → 드래그 해제, 스크롤로 전환 */
+      dragging = false;
+      sheet.style.transition = 'transform .25s ease';
+      sheet.style.transform = 'translateY(0)';
     }
   }, { passive: true });
 
-  document.addEventListener('touchend', () => {
+  sheet.addEventListener('touchend', () => {
     if (!dragging) return;
     dragging = false;
     sheet.style.transition = 'transform .25s ease';
     const dy = currentY - startY;
-    if (dy > 80) {
+    const vh = window.innerHeight;
+    if (dy > vh * 0.25) {
+      /* 25% 이상 드래그 → 닫기 */
       closeSheet();
+    } else if (dy > vh * 0.1) {
+      /* 10-25% → 50vh 스냅 */
+      sheet.style.maxHeight = '50vh';
+      sheet.style.transform = 'translateY(0)';
     } else {
-      sheet.style.transform = sheet.classList.contains('show') ? 'translateY(0)' : 'translateY(100%)';
+      /* 복원 */
+      sheet.style.transform = 'translateY(0)';
     }
+  });
+})();
+
+/* ── 더블탭 줌 (노드로 줌인) ── */
+(function initDoubleTapZoom() {
+  let lastTap = 0;
+  svg.on('touchend.doubletap', function(e) {
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      e.preventDefault();
+      const svgW = window.innerWidth, svgH = window.innerHeight - BAR_H;
+      const t = d3.zoomTransform(svg.node());
+      const newScale = t.k < 1.5 ? 2.0 : 0.8;
+      const p = d3.pointer(e, svg.node());
+      const newT = d3.zoomIdentity
+        .translate(svgW / 2, svgH / 2)
+        .scale(newScale)
+        .translate(-p[0], -p[1]);
+      svg.transition().duration(300).call(zoomBehavior.transform, newT);
+    }
+    lastTap = now;
   });
 })();
 
