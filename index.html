@@ -62,8 +62,9 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 .link-line { fill:none; stroke-width:1.6; opacity:var(--link-opacity); }
 .link-hit  { fill:none; stroke:transparent; stroke-width:14; pointer-events:stroke; cursor:pointer; }
 
-/* ── Focus visible for keyboard nav ── */
-.node-g:focus-visible { outline:none; }
+/* ── Focus styles for nodes ── */
+.node-g { outline:none !important; -webkit-tap-highlight-color:transparent; }
+.node-g:focus { outline:none !important; }
 .node-g:focus-visible .node-circle,
 .node-g:focus-visible .node-rect {
   stroke:var(--accent-light) !important;
@@ -216,6 +217,8 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 
 /* ── Responsive: Large phones / small tablets ── */
 @media (max-width: 600px) {
+  .hide-mobile { display:none !important; }
+  #bottom-bar { justify-content:center; }
   #bottom-bar button { padding:8px 10px; font-size:11px; min-height:44px; }
   #search-input { width:70px; font-size:11px; min-height:44px; }
   .cat-chip { padding:6px 9px; font-size:10px; min-height:44px; display:inline-flex; align-items:center; }
@@ -288,9 +291,8 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
   <button id="btn-lv3" data-lv="3">심화</button>
   <button id="btn-edit" aria-pressed="false">수정</button>
   <button id="btn-reset" style="display:none;">초기화</button>
-  <button id="btn-multi-sim" title="복합 시나리오">복합</button>
-  <button id="btn-export" title="현재 맵을 PNG로 저장">PNG</button>
-  <span style="width:1px;height:20px;background:#3a3a5a;flex-shrink:0;"></span>
+  <button id="btn-multi-sim" class="hide-mobile" title="복합 시나리오">복합</button>
+  <button id="btn-export" class="hide-mobile" title="현재 맵을 PNG로 저장">PNG</button>
   <span id="cat-chips"></span>
 </div>
 
@@ -1129,16 +1131,18 @@ function renderNodes() {
       }
     });
 
-    /* 키보드 접근성 */
-    g.attr('tabindex', 0)
-      .attr('role', 'button')
-      .attr('aria-label', node.label + ' - ' + node.sub);
-    g.on('keydown', function(e) {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        openSheet(node);
-      }
-    });
+    /* 키보드 접근성 — 데스크톱만 tabindex 부여 */
+    if (!('ontouchstart' in window)) {
+      g.attr('tabindex', 0)
+        .attr('role', 'button')
+        .attr('aria-label', node.label + ' - ' + node.sub);
+      g.on('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openSheet(node);
+        }
+      });
+    }
 
     /* drag in edit mode — 자유 드래그 (박스 경계 없음) */
     g.call(d3.drag()
