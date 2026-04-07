@@ -4,14 +4,14 @@ import os
 import json
 import urllib.request
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 FRED_API_KEY = os.environ.get('FRED_API_KEY', '')
 
 # data/data.json의 dataSource.fred 기준
 SERIES_IDS = [
     'FEDFUNDS',         # us_rate: 기준금리
-    'DFII10',           # us_real_rate: 실질금리 (10Y TIPS)
+    'DFII10',           # us_realrate: 실질금리 (10Y TIPS)
     'A191RL1Q225SBEA',  # us_gdp: GDP 성장률
     'UNRATE',           # us_unemployment: 실업률
     'CPIAUCSL',         # us_cpi: 인플레이션 (CPI)
@@ -23,22 +23,35 @@ SERIES_IDS = [
     'DTWEXBGS',         # us_dollar: 달러인덱스
     'VIXCLS',           # us_vix: VIX
     'CSUSHPISA',        # us_realestate: Case-Shiller 주택가격지수
-    'PPIACO',           # us_commodity: 생산자물가 원자재지수 (All Commodities)
+    'GOLDAMGBD228NLBM', # us_commodity: 금 가격 (London Gold Fixing)
     'M2SL',             # us_m2: M2 통화량
     'UMCSENT',          # us_sentiment: 미시간대 소비자심리지수
-    'WALCL',            # us_liquidity: 연준 총자산 (글로벌 유동성 대용)
+    'WALCL',            # us_liquidity: 연준 총자산
     'GFDEBTN',          # us_fiscal: 미국 국가부채
-    'DFF',              # us_cash: 실효 연방기금금리 (현금/예금 수익률 대용)
+    'DFF',              # us_cash: 실효 연방기금금리
     'RSAFS',            # kr_consumption: 소비 (소매판매, US proxy)
     'DEXKOUS',          # kr_won: 원/달러 환율
-    'USEPUINDXD',       # us_tariff: 경제정책 불확실성 (Economic Policy Uncertainty Index)
-    'OVXCLS',           # us_war: 원유변동성지수 (OVX, 지정학 리스크 프록시)
+    'USEPUINDXD',       # us_tariff: 경제정책 불확실성
+    'OVXCLS',           # us_war: 원유변동성지수 (OVX)
     'PAYEMS',           # us_nfp: 비농업고용
     'CIVPART',          # us_lfpr: 경제활동참가율
     'NAPM',             # us_pmi: 제조업 PMI (ISM Manufacturing)
     'T5YIE',            # us_expinf: 기대인플레이션 (5Y Breakeven)
-    'DFII10',           # us_realrate: 실질금리 (10Y TIPS)
+    'ICSA',             # us_claims: 초기실업수당 청구건수
+    'PCOPPUSDM',        # us_copper: 구리 가격 (월간)
 ]
+
+# Stock형 지표: 절대 수준보다 YoY% 변화가 의미있는 시리즈
+YOY_SERIES = {
+    'CPIAUCSL',         # CPI → YoY%
+    'M2SL',             # M2 → YoY%
+    'CSUSHPISA',        # Case-Shiller → YoY%
+    'WALCL',            # 연준 대차대조표 → YoY%
+    'GFDEBTN',          # 국가부채 → YoY%
+    'RSAFS',            # 소매판매 → YoY%
+    'PAYEMS',           # 비농업고용 → YoY%
+}
+
 
 def fetch_series(series_id):
     params = urllib.parse.urlencode({
@@ -46,7 +59,7 @@ def fetch_series(series_id):
         'api_key': FRED_API_KEY,
         'file_type': 'json',
         'sort_order': 'desc',
-        'limit': 30,
+        'limit': 120,
     })
     url = 'https://api.stlouisfed.org/fred/series/observations?' + params
     try:
@@ -62,6 +75,42 @@ def fetch_series(series_id):
         print(f'  FAILED {series_id}: {e}')
         return []
 
+
+def calc_yoy_pct(series):
+    """Stock형 시리즈를 YoY% 변화율로 변환. 입력: 날짜 내림차순 리스트."""
+    if len(series) < 2:
+        return series
+
+    # 날짜순 정렬 (오래된→최근)
+    chrono = sorted(series, key=lambda x: x['date'])
+    result = []
+
+    for i, obs in enumerate(chrono):
+        dt = datetime.strptime(obs['date'], '%Y-%m-%d')
+        target = dt - timedelta(days=365)
+
+        # 약 12개월 전 데이터 찾기
+        best = None
+        best_diff = float('inf')
+        for j in range(i):
+            jdt = datetime.strptime(chrono[j]['date'], '%Y-%m-%d')
+            diff = abs((jdt - target).days)
+            if diff < best_diff:
+                best_diff = diff
+                best = chrono[j]
+
+        if best and best_diff < 90:  # 3개월 이내 허용
+            old_val = float(best['value'])
+            new_val = float(obs['value'])
+            if old_val != 0:
+                yoy = ((new_val - old_val) / abs(old_val)) * 100
+                result.append({'date': obs['date'], 'value': str(round(yoy, 2))})
+
+    # 다시 내림차순으로
+    result.sort(key=lambda x: x['date'], reverse=True)
+    return result
+
+
 def main():
     if not FRED_API_KEY:
         print('FRED_API_KEY not set')
@@ -70,7 +119,13 @@ def main():
     result = {}
     for sid in SERIES_IDS:
         print(f'Fetching {sid}...')
-        result[sid] = fetch_series(sid)
+        raw = fetch_series(sid)
+        if sid in YOY_SERIES and raw:
+            yoy = calc_yoy_pct(raw)
+            print(f'  → YoY% 변환: {len(raw)}건 → {len(yoy)}건')
+            result[sid] = yoy
+        else:
+            result[sid] = raw
 
     output = {
         'updated': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC'),

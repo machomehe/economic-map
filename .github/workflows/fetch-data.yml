@@ -2,6 +2,7 @@ name: Fetch FRED Data
 on:
   schedule:
     - cron: '30 13 * * 1-5'  # 평일 한국시간 22:30
+    - cron: '0 1 * * 1-5'    # 평일 한국시간 10:00 (아시아 오전 업데이트)
   workflow_dispatch:
 permissions:
   contents: write
@@ -16,8 +17,12 @@ jobs:
       - run: python fetch_data.py
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-      - run: |
+      - name: Commit and push if changed
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/values.json
-          git diff --cached --quiet || git commit -m "chore: update FRED data" && git push
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update FRED data ($(date -u +%Y-%m-%d))"
+            git push
+          fi

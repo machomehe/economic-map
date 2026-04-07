@@ -23,7 +23,7 @@
       "category": "매크로 지표",
       "level": 1,
       "isAsset": false,
-      "description": "연준 기준금리. 모든 자산의 핵심 동인.",
+      "description": "연방준비제도(Fed)가 설정하는 기준금리. 모든 자산 가격의 핵심 동인으로, 경제 전체의 자금 비용을 결정한다. 역사적으로 금리 인상 사이클은 평균 18개월 지속되며, 마지막 인상 후 6-12개월 뒤 경기 둔화가 나타나는 경향이 있다. 현재 수준과 중립금리(r*) 대비 위치를 확인하는 것이 중요하다.",
       "interpretation": {
         "up": "긴축. 현금↑, 주식↓, 채권↓, 부동산↓",
         "down": "완화. 현금↓, 주식↑, 채권↑, 부동산↑"
@@ -42,7 +42,8 @@
       "category": "매크로 지표",
       "level": 1,
       "isAsset": false,
-      "description": "물가 상승률. 현금 가치↓, 실물자산↑",
+      "unit": "YoY%",
+      "description": "소비자물가지수. 도시 소비자가 구매하는 재화·서비스 바스켓의 가격 변동률을 측정한다. 2% 목표 대비 상회/하회 여부가 연준 정책 결정의 핵심 기준이 된다. 에너지·식품을 제외한 Core CPI가 기조적 인플레이션 판단에 더 유용하다.",
       "interpretation": {
         "up": "구매력↓, 긴축 압력↑. 채권·성장주↓, 금 수요↑",
         "down": "구매력 안정, 완화 여지↑. 채권·성장주↑"
@@ -61,7 +62,7 @@
       "category": "리스크",
       "level": 1,
       "isAsset": false,
-      "description": "관세 인상 → 물가↑, 성장↓",
+      "description": "경제정책 불확실성 지수. 미국의 관세·무역 정책 변동성을 반영한다. 2018-19년 미중 무역전쟁, 2025년 트럼프 관세 확대 시기에 급등했다. 지수 상승은 기업 투자 지연과 공급망 재편 압력을 의미한다.",
       "interpretation": {
         "up": "관세 부과·확대. 수입물가↑, 교역↓, 공급망 재편",
         "down": "관세 철회·완화. 교역 정상화, 물가 안정, 시장 안도"
@@ -80,7 +81,7 @@
       "category": "자산",
       "level": 1,
       "isAsset": true,
-      "description": "가장 안전한 자산. 금리 상승기에 매력 증가.",
+      "description": "가장 안전한 자산 클래스. 머니마켓펀드(MMF), 정기예금, 양도성예금증서(CD)를 포함한다. 금리 상승기에는 무위험 수익률이 높아져 위험자산 대비 매력이 증가한다. 2023년 MMF 잔고가 사상 최대를 기록하며 현금 선호 현상이 두드러졌다.",
       "interpretation": {
         "up": "안전 선호 또는 금리 상승기. 자금이 위험자산에서 이탈.",
         "down": "위험자산 선호. 금리 인하로 예금 매력 감소."
@@ -99,7 +100,7 @@
       "category": "자산",
       "level": 1,
       "isAsset": true,
-      "description": "금리와 역방향. 경기 불안 시 안전자산.",
+      "description": "미국 국채 및 회사채. 금리와 역방향으로 움직이며, 경기 불안 시 안전자산 역할을 한다. 10년물 금리는 모기지·기업대출 금리의 벤치마크이며, 2년물과의 차이(스프레드)는 경기 전망의 핵심 지표다. 인플레이션 기대가 높으면 채권 매력이 감소한다.",
       "interpretation": {
         "up": "금리 인하기 또는 경기 불안. 안전자산 수요 증가.",
         "down": "금리 상승기. 채권 가격 하락, 신규 발행 채권 수익률 상승."
@@ -118,7 +119,7 @@
       "category": "시장 지표",
       "level": 3,
       "isAsset": false,
-      "description": "역전 시 침체 경고.",
+      "description": "10년물-2년물 국채금리 차이. 역전(마이너스) 시 경기침체 선행 지표로 1960년대 이후 7차례 모두 침체를 예측했다. 역전 후 평균 12-18개월 뒤 침체가 시작되는 패턴을 보인다. 다만 역전 기간과 침체 심각도는 반드시 비례하지 않는다.",
       "interpretation": {
         "up": "정상적 곡선 회복. 경기 회복 기대, 은행 수익성↑",
         "down": "곡선 역전. 6-18개월 내 경기침체 가능성↑"
@@ -135,7 +136,7 @@
       "category": "시장 지표",
       "level": 3,
       "isAsset": false,
-      "description": "신용위험 척도. 확대 시 위험 신호.",
+      "description": "BBB 이하 저신용 등급 채권과 국채 간 금리 차이. 신용위험 척도로, 스프레드 확대는 기업 부도 우려 증가를 의미한다. 300bp 이하는 낙관, 500bp 이상은 스트레스, 800bp 이상은 위기 수준으로 해석된다. 2020년 코로나 당시 1,100bp까지 급등한 바 있다.",
       "interpretation": {
         "up": "신용 리스크 확대. 기업 부도 우려↑, 위험자산 매도 압력",
         "down": "신용 리스크 축소. 기업 재무 건전성 신뢰, 위험선호 확산"
@@ -152,7 +153,8 @@
       "category": "시장 지표",
       "level": 3,
       "isAsset": false,
-      "description": "국채 대량 발행 → 채권 가격↓",
+      "unit": "YoY%",
+      "description": "미국 연방정부 국가부채 총액. 국채 대량 발행은 채권 시장에 공급 부담을 주어 금리 상승 압력으로 작용한다. GDP 대비 부채비율이 100%를 넘어서면서 재정 지속가능성 논의가 활발하다. 재정적자 확대는 단기 경기 부양이지만 장기 금리 상승 요인이다.",
       "interpretation": {
         "up": "재정 확대. 국채 공급↑ → 금리↑, 단기 경기 부양. 달러 신뢰↓ 가능",
         "down": "재정 긴축. 국채 공급↓ → 금리↓, 경기 위축 가능"
@@ -169,7 +171,7 @@
       "category": "자산",
       "level": 1,
       "isAsset": true,
-      "description": "경기 확장기 강세. 금리·유동성에 민감.",
+      "description": "미국 주식시장(S&P500, 나스닥). 경기 확장기에 강세를 보이며 금리·유동성에 민감하다. 역사적으로 연평균 약 10% 수익률을 기록했으나, 평균 회귀 경향이 강하다. PER, EPS 성장률과 함께 유동성 환경을 종합적으로 판단해야 한다.",
       "interpretation": {
         "up": "경기 확장, 유동성 풍부, 기업실적 호조. 위험선호 확산.",
         "down": "경기 둔화, 금리 상승, 유동성 축소. 위험회피 심화."
@@ -188,7 +190,7 @@
       "category": "매크로 지표",
       "level": 2,
       "isAsset": false,
-      "description": "경제 성장 속도. 주식의 근본 동인.",
+      "description": "실질 국내총생산 성장률. 경제 성장 속도를 나타내는 최종 지표다. 2분기 연속 마이너스 성장은 기술적 침체로 정의된다. 잠재성장률(약 2%) 대비 상회/하회 여부가 과열·둔화 판단 기준이며, 고용과 소비가 GDP의 약 70%를 차지한다.",
       "interpretation": {
         "up": "경기 확장. 기업실적↑, 고용↑, 과열 시 긴축 우려",
         "down": "경기 둔화. 실적↓, 실업↑, 완화 기대. 2분기 연속 마이너스 시 기술적 침체"
@@ -205,7 +207,7 @@
       "category": "매크로 지표",
       "level": 2,
       "isAsset": false,
-      "description": "고용 상태. 소비→성장에 영향.",
+      "description": "노동통계국(BLS) 발표 U-3 실업률. 경기 후행 지표이나 소비→성장 경로의 핵심 연결고리다. 자연실업률(약 4%) 대비 위치가 노동시장 과열/냉각을 판단하는 기준이다. 0.5%p 이상 급등 시 'Sahm Rule'에 의해 침체 신호로 해석된다.",
       "interpretation": {
         "up": "노동시장 악화. 소비↓, 연준 완화 기대↑",
         "down": "노동시장 강세. 임금↑ → 인플레 압력, 긴축 유지 명분"
@@ -222,7 +224,7 @@
       "category": "시장 지표",
       "level": 2,
       "isAsset": false,
-      "description": "변동성. 20 이상 불안, 30 이상 공포.",
+      "description": "S&P500 옵션의 30일 내재변동성(공포지수). 20 이상은 불안, 30 이상은 공포, 40 이상은 패닉 수준이다. 평균 회귀 특성이 강하여 극단값 도달 시 반전 가능성이 높다. 12 이하로 장기간 유지되면 시장 안일함(complacency)을 경고하는 역설적 지표다.",
       "interpretation": {
         "up": "시장 불안↑, 옵션 프리미엄↑, 위험자산 매도 압력",
         "down": "시장 안정, 위험선호 확산. 12 이하 시 과열 경고"
@@ -234,12 +236,13 @@
     },
     {
       "id": "us_liquidity",
-      "label": "글로벌 유동성",
-      "sub": "주요국 통화정책",
+      "label": "연준 대차대조표",
+      "sub": "Fed Balance Sheet",
       "category": "매크로 지표",
       "level": 2,
       "isAsset": false,
-      "description": "자산시장 최대 동인. 유동성↑=주식↑",
+      "unit": "YoY%",
+      "description": "연준 대차대조표(총자산). 양적완화(QE) 시 확대, 양적긴축(QT) 시 축소된다. 2020년 4조→9조 달러로 급팽창했으며, 유동성 규모는 자산시장 전체에 가장 큰 영향을 미치는 매크로 동인이다. 연준 대차대조표 변화율이 주식시장 방향성과 높은 상관관계를 보인다.",
       "interpretation": {
         "up": "유동성 확대. 자산가격 전반 상승, 위험선호↑",
         "down": "유동성 축소. 자산가격 전반 하락, 위험회피↑"
@@ -256,7 +259,8 @@
       "category": "매크로 지표",
       "level": 3,
       "isAsset": false,
-      "description": "금리 인하 시 예금→주식 자금 이동.",
+      "unit": "YoY%",
+      "description": "광의 통화량(현금+예금+MMF). 경기와 금리 사이클에 따라 자금이 예금↔주식↔채권 사이를 이동한다. 2020-21년 M2 급증(전년비 +27%)은 자산 인플레이션의 직접적 원인이었다. YoY 변화율이 마이너스로 전환되면 유동성 축소 신호다.",
       "interpretation": {
         "up": "통화공급 증가. 자산시장 유입↑, 인플레 압력 가능",
         "down": "통화공급 감소. 유동성 위축, 자산가격 하락 압력"
@@ -273,7 +277,7 @@
       "category": "매크로 지표",
       "level": 3,
       "isAsset": false,
-      "description": "소비 선행지표.",
+      "description": "미시간대학교 소비자심리지수. 소비 선행지표로 5~15 기대지수와 현재상황 지수로 구성된다. 60 이하는 강한 비관, 100 이상은 강한 낙관을 의미한다. 기대인플레이션 항목이 연준의 정책 결정에 직접 참조되어 시장 반응이 크다.",
       "interpretation": {
         "up": "경기 낙관. 소비 확대 기대, 내수 성장 지지",
         "down": "경기 비관. 소비 위축 우려, 경기 둔화 시그널"
@@ -290,7 +294,8 @@
       "category": "자산",
       "level": 1,
       "isAsset": true,
-      "description": "금리에 민감. 인플레 헤지. 유동성 낮음.",
+      "unit": "YoY%",
+      "description": "Case-Shiller 주택가격지수. 미국 주요 20개 도시의 주택가격 변동을 추적한다. 금리에 가장 민감한 자산으로, 모기지 금리 1%p 상승 시 구매력이 약 10% 감소한다. 주택은 미국 가계 자산의 약 30%를 차지하여 부(富)의 효과가 크다.",
       "interpretation": {
         "up": "금리 인하기, 유동성 풍부. 모기지 부담 감소로 수요 증가.",
         "down": "금리 상승기. 모기지 부담 증가, 거래 위축, 가격 하락 압력."
@@ -309,13 +314,13 @@
       "category": "자산",
       "level": 1,
       "isAsset": true,
-      "description": "인플레 헤지, 전쟁 시 안전자산.",
+      "description": "금 가격(London Gold Fixing). 대표적 안전자산이자 인플레이션 헤지 수단이다. 실질금리와 강한 역상관(-0.8)을 보이며, 달러 약세·지정학 리스크 시 상승한다. 중앙은행 매입량이 2022년 이후 역대 최고 수준을 기록하며 구조적 수요가 강하다.",
       "interpretation": {
         "up": "인플레 헤지 수요 증가, 지정학 리스크 확대, 달러 약세.",
         "down": "달러 강세, 실질금리 상승, 위험선호 확산으로 실물자산 매력 감소."
       },
       "dataSource": {
-        "fred": "PPIACO"
+        "fred": "GOLDAMGBD228NLBM"
       },
       "tags": [
         "핵심"
@@ -328,7 +333,7 @@
       "category": "시장 지표",
       "level": 2,
       "isAsset": false,
-      "description": "에너지 가격 → 물가에 직접 영향.",
+      "description": "서부텍사스산중질유(WTI) 가격. 에너지 비용의 핵심으로 CPI에 직접 영향을 미친다. 공급(OPEC+ 정책, 미국 셰일)과 수요(글로벌 경기)의 균형으로 결정된다. $100 이상 유지 시 스태그플레이션 위험이 높아지며 소비자 지출을 직접 압박한다.",
       "interpretation": {
         "up": "에너지비↑, 인플레 압력↑, 운송·항공 비용↑",
         "down": "에너지비↓, 인플레 완화, 소비자 구매력↑"
@@ -345,7 +350,7 @@
       "category": "시장 지표",
       "level": 2,
       "isAsset": false,
-      "description": "달러↑ → 원자재↓ (역상관).",
+      "description": "달러 인덱스(DXY). 주요 6개국 통화 대비 미 달러 가치를 측정한다. 달러 강세는 미국 수출 기업 불리, 신흥국 부채 부담 증가를 의미한다. '달러 밀크쉐이크 이론'처럼 글로벌 위기 시 안전자산 수요로 달러가 강세를 보이는 역설적 패턴이 있다.",
       "interpretation": {
         "up": "미국 경제 상대적 강세 또는 위험 회피. 원자재↓",
         "down": "금리 인하 기대 또는 위험선호. 원자재에 긍정적"
@@ -362,7 +367,7 @@
       "category": "리스크",
       "level": 2,
       "isAsset": false,
-      "description": "전쟁 → 유가↑, 금↑",
+      "description": "원유변동성지수(OVX). 지정학적 리스크의 프록시로, 중동 분쟁·러시아-우크라이나 전쟁 등 지정학 이벤트 시 급등한다. OVX와 VIX가 동시에 급등하면 금융+실물 동반 리스크를 의미한다. 에너지 공급 차질을 통해 인플레이션 경로로 파급된다.",
       "interpretation": {
         "up": "긴장 고조. 유가·금·VIX↑, 위험자산 매도, 공급망 리스크↑",
         "down": "긴장 완화. 위험자산 반등, 안전자산↓, 공급망 정상화"
@@ -379,7 +384,8 @@
       "category": "매크로 지표",
       "level": 2,
       "isAsset": false,
-      "description": "매월 첫째 금요일 발표. 고용→소비→GDP 핵심 연결고리.",
+      "unit": "YoY%",
+      "description": "비농업고용(NFP). 매월 첫째 금요일 발표되는 미국 고용시장의 핵심 지표다. 고용→소비→GDP의 핵심 연결고리로, 월 15만 명 이상 증가는 건강한 성장, 30만 명 이상은 과열 신호로 해석된다. 수정치(revision)도 시장에 큰 영향을 미치므로 주의가 필요하다.",
       "interpretation": {
         "up": "고용 강세. 소비↑, GDP↑, 긴축 명분↑. 주식 단기 호재",
         "down": "고용 둔화. 소비↓, 경기침체 우려, 완화 기대↑"
@@ -396,7 +402,7 @@
       "category": "매크로 지표",
       "level": 3,
       "isAsset": false,
-      "description": "생산가능인구 중 경제활동 비율. 노동시장 구조적 건강도.",
+      "description": "경제활동참가율. 생산가능인구 중 취업자+구직자 비율이다. 코로나 이후 조기 은퇴·돌봄 부담으로 참가율이 하락하여 구조적 노동력 부족을 야기했다. 참가율이 낮으면 실업률이 실제보다 낮게 보이는 착시가 발생한다.",
       "interpretation": {
         "up": "노동시장 참여 확대. 노동공급↑, 임금 상승 압력 완화",
         "down": "노동시장 이탈 증가. 고령화·구직 포기, 실업률 착시 가능"
@@ -413,7 +419,7 @@
       "category": "시장 지표",
       "level": 2,
       "isAsset": false,
-      "description": "50 이상 확장, 미만 수축. GDP 선행지표.",
+      "description": "ISM 제조업 구매관리자지수. 50 이상은 확장, 이하는 수축을 의미하는 경기 선행지표다. 신규주문, 생산, 고용 등 하위 지수로 구성되며, 3개월 연속 방향 변화가 추세 전환의 신호다. 43 이하가 지속되면 GDP 역성장과 연관된다.",
       "interpretation": {
         "up": "제조업 확장. 신규주문·생산↑, 경기 회복 신호",
         "down": "제조업 수축. 재고 축소, 경기 둔화 신호"
@@ -430,7 +436,7 @@
       "category": "시장 지표",
       "level": 3,
       "isAsset": false,
-      "description": "GDP의 70% 차지. 서비스업 경기 판단 핵심.",
+      "description": "GDP의 70% 차지. 서비스업 경기 판단 핵심. ISM Services PMI는 FRED 미제공으로 수동 업데이트 필요. 제조업 PMI보다 변동성이 낮고 50 이하로 떨어지는 빈도가 적어, 하락 시 더 강한 경기 둔화 신호로 해석된다.",
       "interpretation": {
         "up": "서비스업 확장. 소비·고용↑, 내수 경기 호조",
         "down": "서비스업 수축. 소비 둔화, 고용 위축 우려"
@@ -445,7 +451,7 @@
       "category": "매크로 지표",
       "level": 2,
       "isAsset": false,
-      "description": "시장이 예상하는 향후 5년 평균 인플레이션. 연준 정책 결정의 핵심 참고 지표.",
+      "description": "시장이 예상하는 향후 5년 평균 인플레이션. 5년 TIPS와 명목채권 수익률 차이로 산출된다. 연준이 가장 주시하는 인플레이션 기대 지표 중 하나로, 2.5% 이상이면 긴축 강화, 2% 이하이면 완화 여지로 해석된다. 실현 인플레이션과의 괴리가 정책 서프라이즈를 만든다.",
       "interpretation": {
         "up": "인플레 기대↑ → 긴축 압력, 임금 상승 가속, 채권 실질수익↓",
         "down": "인플레 기대↓ → 완화 여지, 임금 안정, 채권 실질수익↑"
@@ -462,13 +468,47 @@
       "category": "매크로 지표",
       "level": 2,
       "isAsset": false,
-      "description": "명목금리 - 기대인플레이션. 자산 가격의 진짜 동인. 양(+)이면 긴축, 음(-)이면 완화.",
+      "description": "명목금리에서 기대인플레이션을 뺀 값. 10Y TIPS 수익률로 직접 관찰 가능하다. 양(+)이면 실질적으로 긴축적, 음(-)이면 완화적 환경이다. 금과 -0.8의 상관계수를 보이며, 실질금리 1%p 변동은 S&P500 밸류에이션에 약 10-15% 영향을 미친다.",
       "interpretation": {
         "up": "실질 긴축. 금·주식↓, 달러↑. 저축 매력↑",
         "down": "실질 완화. 금·주식↑, 달러↓. 위험자산 선호↑"
       },
       "dataSource": {
         "fred": "DFII10"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_claims",
+      "label": "초기실업수당",
+      "sub": "Initial Claims",
+      "category": "매크로 지표",
+      "level": 3,
+      "isAsset": false,
+      "description": "주간 초기실업수당 청구건수. 가장 시의성이 높은 고용 선행지표로, 30만 건 이상이면 노동시장 냉각 신호다. NFP보다 1-2주 빠르게 고용 추세를 포착하며, 4주 이동평균으로 추세를 판단한다.",
+      "interpretation": {
+        "up": "해고 증가. 노동시장 악화, 경기 둔화 신호. 소비 위축 우려.",
+        "down": "해고 감소. 노동시장 건전, 소비 지속 기대."
+      },
+      "dataSource": {
+        "fred": "ICSA"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_copper",
+      "label": "구리",
+      "sub": "Dr. Copper",
+      "category": "시장 지표",
+      "level": 3,
+      "isAsset": false,
+      "description": "구리 가격. '닥터 코퍼'라 불리며 글로벌 제조업·건설 경기의 선행지표 역할을 한다. 전기차·재생에너지 전환으로 구조적 수요가 증가 중이며, 금과 달리 산업 수요가 50% 이상을 차지한다.",
+      "interpretation": {
+        "up": "글로벌 경기 확장 신호. 제조업·건설 활동↑, 인플레 압력 가능.",
+        "down": "글로벌 경기 둔화 신호. 제조업 수축, 디플레 압력."
+      },
+      "dataSource": {
+        "fred": "PCOPPUSDM"
       },
       "tags": []
     }
@@ -480,7 +520,9 @@
       "target": "us_cash",
       "type": "비례",
       "strength": 5,
-      "description": "금리↑ → 예금 수익↑ → 현금 유입"
+      "description": "금리↑ → 예금 수익↑ → 현금 유입",
+      "lag": "즉시",
+      "relation": "causal"
     },
     {
       "id": "us_rate-us_bonds",
@@ -488,7 +530,9 @@
       "target": "us_bonds",
       "type": "반비례",
       "strength": 5,
-      "description": "금리↑ → 채권가격↓"
+      "description": "금리↑ → 채권가격↓",
+      "lag": "즉시-1개월",
+      "relation": "causal"
     },
     {
       "id": "us_rate-us_stocks",
@@ -496,7 +540,9 @@
       "target": "us_stocks",
       "type": "반비례",
       "strength": 3,
-      "description": "금리↑ → 할인율↑ → 주식↓. 단, 경기 확장 초기에는 실적 개선이 할인율 효과를 상쇄할 수 있음"
+      "description": "금리↑ → 할인율↑ → 주식↓. 단, 경기 확장 초기에는 실적 개선이 할인율 효과를 상쇄할 수 있음",
+      "lag": "1-6개월",
+      "relation": "causal"
     },
     {
       "id": "us_rate-us_realestate",
@@ -504,7 +550,9 @@
       "target": "us_realestate",
       "type": "반비례",
       "strength": 4,
-      "description": "금리↑ → 모기지 부담↑ → 부동산↓"
+      "description": "금리↑ → 모기지 부담↑ → 부동산↓",
+      "lag": "6-18개월",
+      "relation": "causal"
     },
     {
       "id": "us_rate-us_commodity",
@@ -512,7 +560,9 @@
       "target": "us_commodity",
       "type": "반비례",
       "strength": 3,
-      "description": "실질금리↑ → 금 매력↓"
+      "description": "실질금리↑ → 금 매력↓",
+      "lag": "1-3개월",
+      "relation": "causal"
     },
     {
       "id": "us_cpi-us_cash",
@@ -520,7 +570,9 @@
       "target": "us_cash",
       "type": "반비례",
       "strength": 4,
-      "description": "인플레↑ → 현금 실질가치↓"
+      "description": "인플레↑ → 현금 실질가치↓",
+      "lag": "즉시",
+      "relation": "causal"
     },
     {
       "id": "us_cpi-us_commodity",
@@ -528,7 +580,9 @@
       "target": "us_commodity",
       "type": "비례",
       "strength": 4,
-      "description": "인플레↑ → 실물자산 헤지 수요↑"
+      "description": "인플레↑ → 실물자산 헤지 수요↑",
+      "lag": "1-3개월",
+      "relation": "causal"
     },
     {
       "id": "us_cpi-us_rate",
@@ -536,7 +590,9 @@
       "target": "us_rate",
       "type": "비례",
       "strength": 5,
-      "description": "인플레↑ → 긴축 압력 → 금리↑"
+      "description": "인플레↑ → 긴축 압력 → 금리↑",
+      "lag": "1-6개월",
+      "relation": "causal"
     },
     {
       "id": "us_tariff-us_cpi",
@@ -544,7 +600,9 @@
       "target": "us_cpi",
       "type": "비례",
       "strength": 4,
-      "description": "관세↑ → 수입물가↑ → 인플레↑"
+      "description": "관세↑ → 수입물가↑ → 인플레↑",
+      "lag": "3-6개월",
+      "relation": "causal"
     },
     {
       "id": "us_tariff-us_gdp",
@@ -552,7 +610,9 @@
       "target": "us_gdp",
       "type": "반비례",
       "strength": 4,
-      "description": "관세↑ → 교역↓ → 성장↓"
+      "description": "관세↑ → 교역↓ → 성장↓",
+      "lag": "6-12개월",
+      "relation": "causal"
     },
     {
       "id": "us_fiscal-us_bonds",
@@ -560,7 +620,9 @@
       "target": "us_bonds",
       "type": "반비례",
       "strength": 3,
-      "description": "국채발행↑ → 채권가격↓"
+      "description": "국채발행↑ → 채권가격↓",
+      "lag": "즉시-1개월",
+      "relation": "causal"
     },
     {
       "id": "us_spread-us_stocks",
@@ -568,7 +630,9 @@
       "target": "us_stocks",
       "type": "비례",
       "strength": 2,
-      "description": "금리차 역전 → 침체 경고 → 주식↓"
+      "description": "금리차 역전 → 침체 경고 → 주식↓",
+      "lag": "6-18개월",
+      "relation": "correlation"
     },
     {
       "id": "us_gdp-us_stocks",
@@ -576,7 +640,9 @@
       "target": "us_stocks",
       "type": "비례",
       "strength": 4,
-      "description": "성장↑ → 기업실적↑ → 주식↑"
+      "description": "성장↑ → 기업실적↑ → 주식↑",
+      "lag": "1-3개월",
+      "relation": "correlation"
     },
     {
       "id": "us_gdp-us_rate",
@@ -584,7 +650,9 @@
       "target": "us_rate",
       "type": "비례",
       "strength": 3,
-      "description": "성장↑ → 과열 방지 금리인상 / 성장↓ → 경기부양 금리인하"
+      "description": "성장↑ → 과열 방지 금리인상 / 성장↓ → 경기부양 금리인하",
+      "lag": "3-6개월",
+      "relation": "causal"
     },
     {
       "id": "us_vix-us_stocks",
@@ -592,7 +660,9 @@
       "target": "us_stocks",
       "type": "반비례",
       "strength": 4,
-      "description": "공포↑ → 주식 매도"
+      "description": "공포↑ → 주식 매도",
+      "lag": "즉시",
+      "relation": "correlation"
     },
     {
       "id": "us_vix-us_bonds",
@@ -600,7 +670,9 @@
       "target": "us_bonds",
       "type": "비례",
       "strength": 3,
-      "description": "공포↑ → 안전자산(채권) 매수. 단, 인플레 공포나 유동성 위기 시에는 채권도 동반 하락 가능"
+      "description": "공포↑ → 안전자산(채권) 매수. 단, 인플레 공포나 유동성 위기 시에는 채권도 동반 하락 가능",
+      "lag": "즉시",
+      "relation": "correlation"
     },
     {
       "id": "us_vix-us_commodity",
@@ -608,7 +680,9 @@
       "target": "us_commodity",
       "type": "비례",
       "strength": 3,
-      "description": "공포↑ → 금 매수"
+      "description": "공포↑ → 금 매수",
+      "lag": "즉시-1주",
+      "relation": "correlation"
     },
     {
       "id": "us_liquidity-us_stocks",
@@ -616,7 +690,9 @@
       "target": "us_stocks",
       "type": "비례",
       "strength": 5,
-      "description": "유동성↑ → 자산가격↑"
+      "description": "유동성↑ → 자산가격↑",
+      "lag": "3-6개월",
+      "relation": "causal"
     },
     {
       "id": "us_liquidity-us_realestate",
@@ -624,7 +700,9 @@
       "target": "us_realestate",
       "type": "비례",
       "strength": 3,
-      "description": "유동성↑ → 부동산↑"
+      "description": "유동성↑ → 부동산↑",
+      "lag": "6-12개월",
+      "relation": "causal"
     },
     {
       "id": "us_unemployment-us_gdp",
@@ -632,7 +710,9 @@
       "target": "us_gdp",
       "type": "반비례",
       "strength": 3,
-      "description": "실업↑ → 소비↓ → 성장↓"
+      "description": "실업↑ → 소비↓ → 성장↓",
+      "lag": "1-3개월",
+      "relation": "causal"
     },
     {
       "id": "us_m2-us_stocks",
@@ -640,7 +720,9 @@
       "target": "us_stocks",
       "type": "비례",
       "strength": 3,
-      "description": "부동자금↑ → 자산시장 유입"
+      "description": "부동자금↑ → 자산시장 유입",
+      "lag": "6-12개월",
+      "relation": "causal"
     },
     {
       "id": "us_sentiment-us_gdp",
@@ -648,7 +730,9 @@
       "target": "us_gdp",
       "type": "비례",
       "strength": 3,
-      "description": "심리 개선 → 소비↑ (GDP의 70%가 소비지출)"
+      "description": "심리 개선 → 소비↑ (GDP의 70%가 소비지출)",
+      "lag": "1-3개월",
+      "relation": "correlation"
     },
     {
       "id": "us_oil-us_cpi",
@@ -656,7 +740,9 @@
       "target": "us_cpi",
       "type": "비례",
       "strength": 4,
-      "description": "유가↑ → 에너지 물가↑"
+      "description": "유가↑ → 에너지 물가↑",
+      "lag": "1-3개월",
+      "relation": "causal"
     },
     {
       "id": "us_oil-us_gdp",
@@ -664,7 +750,9 @@
       "target": "us_gdp",
       "type": "반비례",
       "strength": 3,
-      "description": "유가↑ → 비용↑ → 성장↓"
+      "description": "유가↑ → 비용↑ → 성장↓",
+      "lag": "3-6개월",
+      "relation": "causal"
     },
     {
       "id": "us_dollar-us_commodity",
@@ -672,7 +760,9 @@
       "target": "us_commodity",
       "type": "반비례",
       "strength": 4,
-      "description": "달러↑ → 원자재↓"
+      "description": "달러↑ → 원자재↓",
+      "lag": "즉시",
+      "relation": "causal"
     },
     {
       "id": "us_war-us_oil",
@@ -680,7 +770,9 @@
       "target": "us_oil",
       "type": "비례",
       "strength": 4,
-      "description": "전쟁 → 공급불안 → 유가↑"
+      "description": "전쟁 → 공급불안 → 유가↑",
+      "lag": "즉시-1개월",
+      "relation": "causal"
     },
     {
       "id": "us_war-us_commodity",
@@ -688,7 +780,9 @@
       "target": "us_commodity",
       "type": "비례",
       "strength": 4,
-      "description": "전쟁 → 안전자산 수요↑ → 금↑"
+      "description": "전쟁 → 안전자산 수요↑ → 금↑",
+      "lag": "즉시-1주",
+      "relation": "causal"
     },
     {
       "id": "us_war-us_vix",
@@ -696,7 +790,9 @@
       "target": "us_vix",
       "type": "비례",
       "strength": 3,
-      "description": "전쟁 → VIX↑"
+      "description": "전쟁 → VIX↑",
+      "lag": "즉시",
+      "relation": "causal"
     },
     {
       "id": "us_fiscal-us_dollar",
@@ -704,7 +800,9 @@
       "target": "us_dollar",
       "type": "반비례",
       "strength": 3,
-      "description": "재정적자↑ → 달러 약세"
+      "description": "재정적자↑ → 달러 약세",
+      "lag": "3-6개월",
+      "relation": "correlation"
     },
     {
       "id": "us_tariff-us_stocks",
@@ -712,7 +810,9 @@
       "target": "us_stocks",
       "type": "반비례",
       "strength": 3,
-      "description": "관세↑ → 기업비용↑ → 주식↓"
+      "description": "관세↑ → 기업비용↑ → 주식↓",
+      "lag": "즉시-1개월",
+      "relation": "causal"
     },
     {
       "id": "us_nfp-us_unemployment",
@@ -720,7 +820,9 @@
       "target": "us_unemployment",
       "type": "반비례",
       "strength": 4,
-      "description": "고용↑ → 실업률↓"
+      "description": "고용↑ → 실업률↓",
+      "lag": "즉시",
+      "relation": "causal"
     },
     {
       "id": "us_nfp-us_gdp",
@@ -728,7 +830,9 @@
       "target": "us_gdp",
       "type": "비례",
       "strength": 4,
-      "description": "고용↑ → 소비↑ → GDP↑"
+      "description": "고용↑ → 소비↑ → GDP↑",
+      "lag": "1-3개월",
+      "relation": "causal"
     },
     {
       "id": "us_nfp-us_rate",
@@ -736,7 +840,9 @@
       "target": "us_rate",
       "type": "비례",
       "strength": 3,
-      "description": "고용 강세 → 긴축 유지 명분"
+      "description": "고용 강세 → 긴축 유지 명분",
+      "lag": "1-3개월",
+      "relation": "causal"
     },
     {
       "id": "us_nfp-us_stocks",
@@ -744,7 +850,9 @@
       "target": "us_stocks",
       "type": "비례",
       "strength": 3,
-      "description": "고용↑ → 소비 기대↑ → 주식↑. 단, 긴축기에는 고용 호조 → 금리인상 기대 → 주식 하락(good news is bad news)"
+      "description": "고용↑ → 소비 기대↑ → 주식↑. 단, 긴축기에는 고용 호조 → 금리인상 기대 → 주식 하락(good news is bad news)",
+      "lag": "즉시-1일",
+      "relation": "correlation"
     },
     {
       "id": "us_lfpr-us_nfp",
@@ -752,7 +860,9 @@
       "target": "us_nfp",
       "type": "비례",
       "strength": 3,
-      "description": "참가율↑ → 노동공급↑ → 고용 가능 인원↑"
+      "description": "참가율↑ → 노동공급↑ → 고용 가능 인원↑",
+      "lag": "1-3개월",
+      "relation": "causal"
     },
     {
       "id": "us_lfpr-us_unemployment",
@@ -760,7 +870,9 @@
       "target": "us_unemployment",
       "type": "비례",
       "strength": 2,
-      "description": "참가율↑ → 구직자 유입 → 단기 실업률↑"
+      "description": "참가율↑ → 구직자 유입 → 단기 실업률↑",
+      "lag": "1-3개월",
+      "relation": "causal"
     },
     {
       "id": "us_pmi-us_gdp",
@@ -768,7 +880,9 @@
       "target": "us_gdp",
       "type": "비례",
       "strength": 4,
-      "description": "제조업 확장 → GDP 선행"
+      "description": "제조업 확장 → GDP 선행",
+      "lag": "1-3개월",
+      "relation": "correlation"
     },
     {
       "id": "us_pmi-us_stocks",
@@ -776,7 +890,9 @@
       "target": "us_stocks",
       "type": "비례",
       "strength": 3,
-      "description": "제조업 경기↑ → 기업실적 기대↑ → 주식↑"
+      "description": "제조업 경기↑ → 기업실적 기대↑ → 주식↑",
+      "lag": "즉시-1개월",
+      "relation": "correlation"
     },
     {
       "id": "us_pmi_svc-us_gdp",
@@ -784,7 +900,9 @@
       "target": "us_gdp",
       "type": "비례",
       "strength": 4,
-      "description": "서비스업(GDP 70%) 확장 → GDP↑"
+      "description": "서비스업(GDP 70%) 확장 → GDP↑",
+      "lag": "1-3개월",
+      "relation": "correlation"
     },
     {
       "id": "us_pmi_svc-us_stocks",
@@ -792,7 +910,9 @@
       "target": "us_stocks",
       "type": "비례",
       "strength": 3,
-      "description": "서비스업 경기↑ → 주식↑"
+      "description": "서비스업 경기↑ → 주식↑",
+      "lag": "즉시-1개월",
+      "relation": "correlation"
     },
     {
       "id": "us_pmi_svc-us_nfp",
@@ -800,7 +920,9 @@
       "target": "us_nfp",
       "type": "비례",
       "strength": 3,
-      "description": "서비스업 확장 → 고용↑"
+      "description": "서비스업 확장 → 고용↑",
+      "lag": "1-3개월",
+      "relation": "correlation"
     },
     {
       "id": "us_cpi-us_expinf",
@@ -808,7 +930,9 @@
       "target": "us_expinf",
       "type": "비례",
       "strength": 4,
-      "description": "실현 인플레↑ → 기대인플레↑ (적응적 기대)"
+      "description": "실현 인플레↑ → 기대인플레↑ (적응적 기대)",
+      "lag": "즉시-1개월",
+      "relation": "causal"
     },
     {
       "id": "us_expinf-us_rate",
@@ -816,7 +940,9 @@
       "target": "us_rate",
       "type": "비례",
       "strength": 4,
-      "description": "기대인플레↑ → 연준 긴축 압력↑ → 금리 인상"
+      "description": "기대인플레↑ → 연준 긴축 압력↑ → 금리 인상",
+      "lag": "1-6개월",
+      "relation": "causal"
     },
     {
       "id": "us_expinf-us_realrate",
@@ -824,7 +950,9 @@
       "target": "us_realrate",
       "type": "반비례",
       "strength": 5,
-      "description": "기대인플레↑ → 실질금리↓ (실질금리 = 명목 - 기대인플레)"
+      "description": "기대인플레↑ → 실질금리↓ (실질금리 = 명목 - 기대인플레)",
+      "lag": "즉시",
+      "relation": "causal"
     },
     {
       "id": "us_rate-us_realrate",
@@ -832,7 +960,9 @@
       "target": "us_realrate",
       "type": "비례",
       "strength": 5,
-      "description": "명목금리↑ → 실질금리↑"
+      "description": "명목금리↑ → 실질금리↑",
+      "lag": "즉시",
+      "relation": "causal"
     },
     {
       "id": "us_realrate-us_commodity",
@@ -840,7 +970,9 @@
       "target": "us_commodity",
       "type": "반비례",
       "strength": 4,
-      "description": "실질금리↑ → 금 매력↓ (금은 이자를 주지 않으므로)"
+      "description": "실질금리↑ → 금 매력↓ (금은 이자를 주지 않으므로)",
+      "lag": "1-3개월",
+      "relation": "causal"
     },
     {
       "id": "us_realrate-us_stocks",
@@ -848,7 +980,59 @@
       "target": "us_stocks",
       "type": "반비례",
       "strength": 3,
-      "description": "실질금리↑ → 주식 할인율↑ → 밸류에이션 하락 압력"
+      "description": "실질금리↑ → 주식 할인율↑ → 밸류에이션 하락 압력",
+      "lag": "1-3개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_claims-us_unemployment",
+      "source": "us_claims",
+      "target": "us_unemployment",
+      "type": "비례",
+      "strength": 4,
+      "description": "실업수당 청구↑ → 실업률↑ (1-2주 선행)",
+      "lag": "1-3개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_claims-us_gdp",
+      "source": "us_claims",
+      "target": "us_gdp",
+      "type": "반비례",
+      "strength": 3,
+      "description": "실업수당↑ → 소비 위축 → GDP↓",
+      "lag": "3-6개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_copper-us_gdp",
+      "source": "us_copper",
+      "target": "us_gdp",
+      "type": "비례",
+      "strength": 3,
+      "description": "구리↑ → 글로벌 제조업·건설 확장 신호 → GDP↑",
+      "lag": "1-3개월",
+      "relation": "correlation"
+    },
+    {
+      "id": "us_copper-us_stocks",
+      "source": "us_copper",
+      "target": "us_stocks",
+      "type": "비례",
+      "strength": 2,
+      "description": "구리↑ → 경기 확장 기대 → 주식↑",
+      "lag": "즉시-1개월",
+      "relation": "correlation"
+    },
+    {
+      "id": "us_copper-us_cpi",
+      "source": "us_copper",
+      "target": "us_cpi",
+      "type": "비례",
+      "strength": 2,
+      "description": "구리↑ → 생산비용↑ → 인플레 압력",
+      "lag": "3-6개월",
+      "relation": "causal"
     }
   ]
 }

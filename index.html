@@ -2,18 +2,45 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net; connect-src 'self'; img-src 'self' data:;">
 <meta name="description" content="경제 지표 간 인과관계를 시각적으로 탐색하는 인터랙티브 맵. 금리, 환율, 주식 등 26개 지표의 연쇄 효과를 확인하세요.">
 <title>Economic Map — 경제 지표 인과관계 시각화</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
 <script src="d3.min.js"></script>
 <style>
+/* ── CSS Variables ── */
+:root {
+  --bg-primary: #0f0f14;
+  --bg-surface: #1a1a24;
+  --bg-card: #1e1e2e;
+  --bg-bar: #16161eee;
+  --bg-button: #23233a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --accent: #4f46e5;
+  --accent-light: #6366f1;
+  --border: #2a2a3a;
+  --border-light: #3a3a5a;
+  --color-up: #16a34a;
+  --color-down: #dc2626;
+  --color-cond: #ca8a04;
+  --color-dim: #555;
+  --link-opacity: 0.4;
+  --node-dim-opacity: 0.08;
+  --link-dim-opacity: 0.04;
+  --transition-fast: 0.15s;
+  --transition-normal: 0.25s;
+}
+
 /* ── Reset ── */
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 html, body {
   width:100%; height:100%; overflow:hidden;
-  background:#0f0f14; color:#e2e8f0;
+  background:var(--bg-primary); color:var(--text-primary);
   font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
   touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
@@ -21,29 +48,38 @@ html, body {
 
 /* ── SVG ── */
 svg { display:block; width:100%; height:100%; touch-action:none; }
-.cat-box { fill:#1a1a24; stroke-width:1; }
-.cat-label { fill:#cbd5e1; font-size:14px; font-weight:700; }
+.cat-box { fill:var(--bg-surface); stroke-width:1; }
+.cat-label { fill:var(--text-secondary); font-size:14px; font-weight:700; }
 
 /* ── Node styles ── */
 .node-circle { cursor:pointer; stroke-width:2.5; }
 .node-rect   { cursor:pointer; stroke-width:1.5; }
 .node-label  { fill:#fff; font-size:13px; font-weight:700; text-anchor:middle; pointer-events:none; }
-.node-sub    { fill:#94a3b8; font-size:10px; text-anchor:middle; pointer-events:none; }
+.node-sub    { fill:var(--text-muted); font-size:10px; text-anchor:middle; pointer-events:none; }
 .node-value  { font-size:10.5px; text-anchor:middle; pointer-events:none; }
 
 /* ── Link ── */
-.link-line { fill:none; stroke-width:1.6; opacity:0.4; }
+.link-line { fill:none; stroke-width:1.6; opacity:var(--link-opacity); }
 .link-hit  { fill:none; stroke:transparent; stroke-width:14; pointer-events:stroke; cursor:pointer; }
 
+/* ── Focus visible for keyboard nav ── */
+.node-g:focus-visible { outline:none; }
+.node-g:focus-visible .node-circle,
+.node-g:focus-visible .node-rect {
+  stroke:var(--accent-light) !important;
+  stroke-width:3 !important;
+  filter:drop-shadow(0 0 6px var(--accent-light));
+}
+
 /* ── Highlight / Dim ── */
-.node-dim  { opacity:0.08 !important; }
-.link-dim  { opacity:0.04 !important; }
+.node-dim  { opacity:var(--node-dim-opacity) !important; }
+.link-dim  { opacity:var(--link-dim-opacity) !important; }
 .link-hl   { opacity:0.95 !important; filter:drop-shadow(0 0 6px var(--glow)); }
 
 /* ── Toast ── */
 #link-toast {
-  position:fixed; bottom:70px; left:50%; transform:translateX(-50%);
-  background:#1e1e2eee; color:#e2e8f0; border:1px solid #3a3a5a;
+  position:fixed; bottom:calc(70px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
+  background:var(--bg-card); color:var(--text-primary); border:1px solid var(--border-light);
   border-radius:12px; padding:12px 18px; font-size:12.5px; line-height:1.6;
   z-index:300; max-width:90vw; text-align:center;
   opacity:0; pointer-events:none; transition:opacity .25s;
@@ -54,26 +90,28 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 /* ── Bottom bar ── */
 #bottom-bar {
   position:fixed; bottom:0; left:0; right:0;
-  background:#16161eee; border-top:1px solid #2a2a3a;
-  padding:8px 10px; display:flex; gap:6px; align-items:center;
+  background:var(--bg-bar); border-top:1px solid var(--border);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom)); display:flex; gap:6px; align-items:center;
   z-index:100; justify-content:center;
   backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  padding-left:calc(10px + env(safe-area-inset-left));
+  padding-right:calc(10px + env(safe-area-inset-right));
 }
 #bottom-bar button {
-  background:#23233a; color:#e2e8f0; border:1px solid #3a3a5a;
+  background:var(--bg-button); color:var(--text-primary); border:1px solid var(--border-light);
   border-radius:8px; padding:7px 13px; font-size:12px; cursor:pointer;
   white-space:nowrap; font-family:inherit; font-weight:600;
   transition:all .15s;
 }
-#bottom-bar button.active { background:#4f46e5; border-color:#6366f1; color:#fff; }
+#bottom-bar button.active { background:var(--accent); border-color:var(--accent-light); color:#fff; }
 #bottom-bar button:active { transform:scale(0.95); }
 #search-input {
-  background:#1a1a2e; color:#e2e8f0; border:1px solid #3a3a5a;
+  background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-light);
   border-radius:8px; padding:7px 10px; font-size:12px; width:90px;
   outline:none; font-family:inherit;
 }
-#search-input:focus { border-color:#6366f1; width:120px; transition:width .2s; outline:2px solid #6366f1; outline-offset:2px; }
-#bottom-bar button:focus-visible, .cat-chip:focus-visible { outline:2px solid #6366f1; outline-offset:2px; }
+#search-input:focus { border-color:var(--accent-light); width:120px; transition:width .2s; outline:2px solid var(--accent-light); outline-offset:2px; }
+#bottom-bar button:focus-visible, .cat-chip:focus-visible { outline:2px solid var(--accent-light); outline-offset:2px; }
 
 /* ── Bottom sheet ── */
 #sheet-overlay {
@@ -83,16 +121,20 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 #sheet-overlay.show { display:block; }
 #bottom-sheet {
   position:fixed; bottom:0; left:0; right:0;
-  background:#1e1e2e; border-top-left-radius:16px; border-top-right-radius:16px;
-  padding:20px 18px 34px; z-index:210;
+  background:var(--bg-card); border-top-left-radius:16px; border-top-right-radius:16px;
+  padding:20px 18px calc(34px + env(safe-area-inset-bottom)); z-index:210;
   transform:translateY(100%); transition:transform .25s ease;
-  max-height:65vh; overflow-y:auto;
+  max-height:90vh; overflow-y:auto;
+  will-change:transform;
 }
 #bottom-sheet.show { transform:translateY(0); }
-#sheet-handle { width:40px; height:4px; background:#444; border-radius:2px; margin:0 auto 14px; }
+#bottom-sheet.snap-30 { max-height:30vh; }
+#bottom-sheet.snap-50 { max-height:50vh; }
+#bottom-sheet.snap-90 { max-height:90vh; }
+#sheet-handle { width:40px; height:4px; background:#444; border-radius:2px; margin:0 auto 14px; cursor:grab; touch-action:none; }
 #sheet-title { font-size:18px; font-weight:700; margin-bottom:4px; }
-#sheet-sub { font-size:13px; color:#94a3b8; margin-bottom:10px; }
-#sheet-desc { font-size:13px; color:#cbd5e1; margin-bottom:12px; line-height:1.5; }
+#sheet-sub { font-size:13px; color:var(--text-muted); margin-bottom:10px; }
+#sheet-desc { font-size:13px; color:var(--text-secondary); margin-bottom:12px; line-height:1.5; }
 .sheet-btn-row { display:flex; gap:8px; margin-bottom:12px; }
 .sim-btn {
   flex:1; padding:10px; border-radius:10px; font-size:13px; font-weight:600;
@@ -101,11 +143,11 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 .sim-btn.up   { background:#16a34a22; color:#22c55e; border:1px solid #16a34a55; }
 .sim-btn.down { background:#dc262622; color:#f87171; border:1px solid #dc262655; }
 .sim-btn:active { transform:scale(0.97); }
-#sheet-interp { font-size:12.5px; color:#cbd5e1; line-height:1.6; }
+#sheet-interp { font-size:12.5px; color:var(--text-secondary); line-height:1.6; }
 
 /* ── Category filter chips ── */
 .cat-chip {
-  background:#23233a; color:#aaa; border:1px solid #3a3a5a;
+  background:var(--bg-button); color:#aaa; border:1px solid var(--border-light);
   border-radius:14px; padding:5px 10px; font-size:11px; cursor:pointer;
   white-space:nowrap; font-family:inherit; transition:all .15s;
 }
@@ -206,6 +248,9 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 </div>
 <style>@keyframes spin { to { transform:rotate(360deg); } }</style>
 
+<!-- Disclaimer -->
+<div id="disclaimer" style="position:fixed;bottom:calc(52px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-size:9px;color:#64748b;z-index:99;pointer-events:none;padding:0 10px;">본 서비스는 투자자문이 아니며, 제공된 정보는 참고용입니다. 투자 결정에 따른 책임은 이용자 본인에게 있습니다.</div>
+
 <!-- Bottom bar -->
 <nav id="bottom-bar" aria-label="맵 제어 도구모음">
   <input id="search-input" placeholder="검색..." aria-label="경제 지표 검색" />
@@ -214,8 +259,20 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
   <button id="btn-lv3" data-lv="3">심화</button>
   <button id="btn-edit" aria-pressed="false">수정</button>
   <button id="btn-reset" style="display:none;">초기화</button>
+  <button id="btn-multi-sim" title="복합 시나리오: 여러 지표 동시 변동 시뮬레이션">복합</button>
+  <button id="btn-export" title="현재 맵을 PNG로 저장">PNG</button>
   <span style="width:1px;height:20px;background:#3a3a5a;flex-shrink:0;"></span>
   <span id="cat-chips"></span>
+</div>
+
+<!-- Multi-sim panel -->
+<div id="multi-sim-panel" style="display:none;position:fixed;bottom:calc(52px + env(safe-area-inset-bottom));left:0;right:0;background:#1e1e2eee;border-top:1px solid #3a3a5a;padding:12px 16px;z-index:150;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);">
+  <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:#e2e8f0;">복합 시나리오: 지표를 선택하고 방향을 지정하세요</div>
+  <div id="multi-sim-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;max-height:30vh;overflow-y:auto;"></div>
+  <div style="display:flex;gap:8px;">
+    <button id="btn-multi-run" style="flex:1;padding:8px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">시뮬레이션 실행</button>
+    <button id="btn-multi-cancel" style="padding:8px 14px;background:#23233a;color:#e2e8f0;border:1px solid #3a3a5a;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;">취소</button>
+  </div>
 </div>
 
 <!-- Bottom sheet overlay -->
@@ -265,6 +322,11 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 </div>
 
 <script>
+/* ── Service Worker 등록 ── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
 /* ================================================================
    Economic Map v4 — Complete Rewrite
    ================================================================ */
@@ -342,13 +404,25 @@ Promise.all([
   }
   init();
 }).catch(err => {
-  document.getElementById('loading-spinner').innerHTML =
-    '<div style="text-align:center;color:#e2e8f0;padding:40px;">' +
-    '<div style="font-size:24px;margin-bottom:12px;">⚠</div>' +
-    '<h2 style="font-size:16px;margin-bottom:8px;">데이터를 불러올 수 없습니다</h2>' +
-    '<p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">네트워크 연결을 확인하고 새로고침해 주세요.</p>' +
-    '<button onclick="location.reload()" style="padding:10px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">새로고침</button>' +
-    '</div>';
+  const spinner = document.getElementById('loading-spinner');
+  spinner.textContent = '';
+  const errWrap = document.createElement('div');
+  errWrap.style.cssText = 'text-align:center;color:#e2e8f0;padding:40px;';
+  const errIcon = document.createElement('div');
+  errIcon.style.cssText = 'font-size:24px;margin-bottom:12px;';
+  errIcon.textContent = '\u26A0';
+  const errH2 = document.createElement('h2');
+  errH2.style.cssText = 'font-size:16px;margin-bottom:8px;';
+  errH2.textContent = '데이터를 불러올 수 없습니다';
+  const errP = document.createElement('p');
+  errP.style.cssText = 'color:#94a3b8;font-size:13px;margin-bottom:16px;';
+  errP.textContent = '네트워크 연결을 확인하고 새로고침해 주세요.';
+  const errBtn = document.createElement('button');
+  errBtn.style.cssText = 'padding:10px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;';
+  errBtn.textContent = '새로고침';
+  errBtn.addEventListener('click', () => location.reload());
+  errWrap.append(errIcon, errH2, errP, errBtn);
+  spinner.appendChild(errWrap);
 });
 
 /* ================================================================
@@ -409,6 +483,26 @@ function init() {
   fitView(0);
   bindEvents();
   renderCatChips();
+
+  /* URL 파라미터 처리: ?focus=nodeId&sim=up|down&lv=1|2|3 */
+  const params = new URLSearchParams(location.search);
+  if (params.has('lv')) {
+    const lv = parseInt(params.get('lv'));
+    if (lv >= 1 && lv <= 3) applyLevel(lv);
+  }
+  if (params.has('focus')) {
+    const focusId = params.get('focus');
+    const focusNode = nodeMap[focusId];
+    if (focusNode) {
+      setTimeout(() => {
+        openSheet(focusNode);
+        const simDir = params.get('sim');
+        if (simDir === 'up' || simDir === 'down') {
+          runSim(focusNode, simDir);
+        }
+      }, 300);
+    }
+  }
 }
 
 /* ================================================================
@@ -416,7 +510,6 @@ function init() {
    ================================================================ */
 function attachValues() {
   if (!VALS || !VALS.data) return;
-  const YOY_SERIES = ['CPIAUCSL'];
   DATA.nodes.forEach(n => {
     const key = n.dataSource && n.dataSource.fred;
     if (!key) { n._val = null; n._dir = null; n._isYoY = false; return; }
@@ -424,18 +517,10 @@ function attachValues() {
     if (!s || s.length < 2) { n._val = null; n._dir = null; n._isYoY = false; return; }
     const cur  = parseFloat(s[0].value);
     const prev = parseFloat(s[1].value);
-    if (YOY_SERIES.includes(key)) {
-      // YoY% 변환: 12개월 전 값 사용, 없으면 가장 오래된 값 사용
-      const oldIdx = s.length >= 13 ? 12 : s.length - 1;
-      const old = parseFloat(s[oldIdx].value);
-      n._val = old !== 0 ? ((cur - old) / old * 100) : null;
-      n._dir = n._val != null ? (n._val > 0 ? 'up' : n._val < 0 ? 'down' : 'flat') : null;
-      n._isYoY = true;
-    } else {
-      n._val = cur;
-      n._dir = cur > prev ? 'up' : cur < prev ? 'down' : 'flat';
-      n._isYoY = false;
-    }
+    const isYoY = n.unit === 'YoY%';
+    n._val = cur;
+    n._dir = cur > prev ? 'up' : cur < prev ? 'down' : 'flat';
+    n._isYoY = isYoY;
   });
 }
 
@@ -876,65 +961,129 @@ function updateBoxPositions(animate) {
   });
 }
 
+/* ── Level-based scale factor ── */
+function levelScale(level) {
+  if (level === 1) return 1.2;
+  if (level === 2) return 1.0;
+  return 0.85;
+}
+
 /* ── Nodes ── */
 function renderNodes() {
   gNodes.selectAll('*').remove();
 
-  DATA.nodes.forEach(node => {
+  DATA.nodes.forEach((node, idx) => {
+    const sc = levelScale(node.level);
     const g = gNodes.append('g')
       .datum(node)
       .attr('class','node-g')
       .attr('transform', `translate(${node.cx},${node.cy})`)
-      .attr('display', node.level <= currentLevel ? null : 'none');
+      .attr('display', node.level <= currentLevel ? null : 'none')
+      .style('opacity', 0);
+
+    /* fade-in animation with stagger */
+    g.transition().delay(idx * 15).duration(300).style('opacity', 1);
+
+    /* 투명 히트 영역: 최소 44px 터치 타겟 보장 */
+    const minHit = 44;
+    if (node.isAsset) {
+      const hitR = Math.max((NODE_R + ASSET_EXTRA) * sc, minHit / 2);
+      g.append('circle').attr('r', hitR).attr('fill', 'transparent').attr('class', 'hit-area');
+    } else {
+      const hitW = Math.max(RECT_W * sc, minHit);
+      const hitH = Math.max(RECT_H * sc, minHit);
+      g.append('rect').attr('x', -hitW/2).attr('y', -hitH/2).attr('width', hitW).attr('height', hitH).attr('fill', 'transparent').attr('class', 'hit-area');
+    }
 
     if (node.isAsset) {
+      const r = (NODE_R + ASSET_EXTRA) * sc;
       /* big circle */
       g.append('circle')
         .attr('class','node-circle')
-        .attr('r', NODE_R + ASSET_EXTRA)
+        .attr('r', r)
         .attr('fill', nodeFill(node))
         .attr('stroke', nodeStroke(node));
 
       g.append('text').attr('class','node-label')
-        .attr('y', 1).text(node.label);
+        .attr('y', 1)
+        .attr('font-size', (13 * sc) + 'px')
+        .text(node.label);
 
       g.append('text').attr('class','node-sub')
-        .attr('y', NODE_R + ASSET_EXTRA + 15)
-        .attr('font-size','9px')
+        .attr('y', r + 15)
+        .attr('font-size', (9 * sc) + 'px')
         .text(node.sub);
 
       g.append('text').attr('class','node-value')
-        .attr('y', NODE_R + ASSET_EXTRA + 27)
+        .attr('y', r + 27)
         .text(valueText(node))
         .attr('fill', valueColor(node));
 
     } else {
+      const rw = RECT_W * sc, rh = RECT_H * sc;
       /* rounded rect */
       g.append('rect')
         .attr('class','node-rect')
-        .attr('x', -RECT_W/2).attr('y', -RECT_H/2)
-        .attr('width', RECT_W).attr('height', RECT_H)
+        .attr('x', -rw/2).attr('y', -rh/2)
+        .attr('width', rw).attr('height', rh)
         .attr('rx', 8)
         .attr('fill', nodeFill(node))
         .attr('stroke', nodeStroke(node));
 
       g.append('text').attr('class','node-label')
-        .attr('y', -4).text(node.label);
+        .attr('y', -4)
+        .attr('font-size', (13 * sc) + 'px')
+        .text(node.label);
 
       g.append('text').attr('class','node-sub')
-        .attr('y', 12).text(node.sub);
+        .attr('y', 12)
+        .attr('font-size', (10 * sc) + 'px')
+        .text(node.sub);
 
       g.append('text').attr('class','node-value')
-        .attr('y', RECT_H/2 + 14)
+        .attr('y', rh/2 + 14)
         .text(valueText(node))
         .attr('fill', valueColor(node));
     }
 
-    /* click → sheet */
+    /* click → two-tap pattern: 1st tap = highlight, 2nd tap = sheet */
+    let longPressTimer = null;
     g.on('click', function(e) {
       e.stopPropagation();
       if (editMode) return;
-      openSheet(node);
+      if (selectedNode === node) {
+        /* 두 번째 탭 → 바텀시트 */
+        openSheet(node);
+      } else {
+        /* 첫 번째 탭 → 하이라이트만 */
+        selectedNode = node;
+        hoverActive = false;
+        highlightNode(node);
+      }
+    });
+
+    /* long-press → 바로 바텀시트 (300ms) */
+    g.on('touchstart', function(e) {
+      if (editMode) return;
+      longPressTimer = setTimeout(() => {
+        e.preventDefault();
+        openSheet(node);
+        longPressTimer = null;
+      }, 300);
+    }, { passive: false });
+    g.on('touchend touchcancel', function() {
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    });
+
+    /* 키보드 접근성 */
+    g.attr('tabindex', 0)
+      .attr('role', 'button')
+      .attr('aria-label', node.label + ' - ' + node.sub);
+    g.on('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openSheet(node);
+      }
     });
 
     /* drag in edit mode — 자유 드래그 (박스 경계 없음) */
@@ -1061,7 +1210,7 @@ function openSheet(node) {
   document.getElementById('sheet-title').textContent = node.label;
   document.getElementById('sheet-sub').textContent = node.sub + (node._val != null ? '  |  ' + valueText(node) : '');
   document.getElementById('sheet-desc').textContent = node.description || '';
-  document.getElementById('sheet-interp').innerHTML = '';
+  document.getElementById('sheet-interp').textContent = '';
 
   /* FRED 출처 링크 */
   let sourceEl = document.getElementById('sheet-source');
@@ -1070,14 +1219,41 @@ function openSheet(node) {
     sourceEl.id = 'sheet-source';
     document.getElementById('bottom-sheet').appendChild(sourceEl);
   }
-  sourceEl.innerHTML = '';
+  sourceEl.textContent = '';
   if (node.dataSource && node.dataSource.fred) {
     const fredId = node.dataSource.fred;
-    sourceEl.innerHTML = `<a href="https://fred.stlouisfed.org/series/${fredId}" target="_blank" rel="noopener" style="color:#64748b;font-size:11px;text-decoration:underline;display:inline-block;margin-top:8px;">출처: FRED - ${fredId}</a>`;
+    /* 원천 기관명 매핑 */
+    const agencyMap = {
+      'FEDFUNDS': 'Federal Reserve', 'DFF': 'Federal Reserve', 'DFII10': 'US Treasury',
+      'CPIAUCSL': 'BLS (노동통계국)', 'UNRATE': 'BLS (노동통계국)', 'PAYEMS': 'BLS (노동통계국)',
+      'CIVPART': 'BLS (노동통계국)', 'A191RL1Q225SBEA': 'BEA (경제분석국)',
+      'DGS10': 'US Treasury', 'T10Y2Y': 'US Treasury', 'T5YIE': 'US Treasury',
+      'NASDAQCOM': 'NASDAQ', 'DTWEXBGS': 'Federal Reserve', 'VIXCLS': 'CBOE',
+      'DCOILWTICO': 'EIA (에너지정보국)', 'GOLDAMGBD228NLBM': 'LBMA (런던금시장)',
+      'WALCL': 'Federal Reserve', 'M2SL': 'Federal Reserve', 'GFDEBTN': 'US Treasury',
+      'CSUSHPISA': 'S&P/Case-Shiller', 'UMCSENT': 'Univ. of Michigan',
+      'NAPM': 'ISM (공급관리협회)', 'BAMLH0A0HYM2': 'ICE BofA',
+      'USEPUINDXD': 'PolicyUncertainty.com', 'OVXCLS': 'CBOE',
+      'RSAFS': 'Census Bureau', 'DEXKOUS': 'Federal Reserve',
+      'ICSA': 'DOL (노동부)', 'PCOPPUSDM': 'IMF',
+    };
+    const agency = agencyMap[fredId] || 'FRED';
+    const a = document.createElement('a');
+    a.href = 'https://fred.stlouisfed.org/series/' + encodeURIComponent(fredId);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.style.cssText = 'color:#64748b;font-size:11px;text-decoration:underline;display:inline-block;margin-top:8px;';
+    a.textContent = '출처: ' + agency + ' (FRED: ' + fredId + ')';
+    sourceEl.appendChild(a);
   }
 
   document.getElementById('sheet-overlay').classList.add('show');
   document.getElementById('bottom-sheet').classList.add('show');
+
+  /* URL 상태 업데이트 */
+  const url = new URL(location);
+  url.searchParams.set('focus', node.id);
+  history.replaceState(null, '', url);
 
   /* 스파크라인 (FRED 데이터 있으면) */
   setTimeout(() => renderSparkline(node), 50);
@@ -1086,14 +1262,55 @@ function openSheet(node) {
 function closeSheet() {
   document.getElementById('sheet-overlay').classList.remove('show');
   document.getElementById('bottom-sheet').classList.remove('show');
-  document.getElementById('sheet-spark').innerHTML = '';
+  document.getElementById('sheet-spark').textContent = '';
   clearHighlight();
   selectedNode = null;
   hoverActive = false;
+
+  /* URL에서 focus 파라미터 제거 */
+  const url = new URL(location);
+  url.searchParams.delete('focus');
+  url.searchParams.delete('sim');
+  history.replaceState(null, '', url.pathname + (url.search || ''));
 }
 
 document.getElementById('sheet-overlay').addEventListener('click', closeSheet);
 svg.on('click.sheet', () => { if (!editMode) closeSheet(); });
+
+/* ── 바텀시트 스와이프 다운 닫기 ── */
+(function initSheetSwipe() {
+  const sheet = document.getElementById('bottom-sheet');
+  const handle = document.getElementById('sheet-handle');
+  let startY = 0, currentY = 0, dragging = false;
+
+  handle.addEventListener('touchstart', (e) => {
+    startY = e.touches[0].clientY;
+    currentY = startY;
+    dragging = true;
+    sheet.style.transition = 'none';
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    currentY = e.touches[0].clientY;
+    const dy = currentY - startY;
+    if (dy > 0) {
+      sheet.style.transform = 'translateY(' + dy + 'px)';
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = 'transform .25s ease';
+    const dy = currentY - startY;
+    if (dy > 80) {
+      closeSheet();
+    } else {
+      sheet.style.transform = sheet.classList.contains('show') ? 'translateY(0)' : 'translateY(100%)';
+    }
+  });
+})();
 
 /* ── Sim buttons ── */
 document.getElementById('btn-sim-up').addEventListener('click', () => {
@@ -1133,36 +1350,75 @@ function runSim(startNode, direction) {
 
   /* display in sheet */
   const dirLabel = direction === 'up' ? '상승' : '하락';
-  let html = `<div style="font-weight:700;margin-bottom:8px;font-size:13px;">
-    ${startNode.label} ${dirLabel} 시 연쇄 효과:</div>`;
+  const interpEl = document.getElementById('sheet-interp');
+  interpEl.textContent = '';
+
+  const header = document.createElement('div');
+  header.style.cssText = 'font-weight:700;margin-bottom:8px;font-size:13px;';
+  header.textContent = startNode.label + ' ' + dirLabel + ' 시 연쇄 효과:';
+  interpEl.appendChild(header);
 
   if (!results.length) {
-    html += '<div style="color:#64748b;">영향받는 노드 없음</div>';
+    const empty = document.createElement('div');
+    empty.style.color = '#64748b';
+    empty.textContent = '영향받는 노드 없음';
+    interpEl.appendChild(empty);
   } else {
     results.forEach(r => {
       const str = r.link.strength || 3;
-      let icon;
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:4px 0;border-bottom:1px solid #ffffff08;';
+
+      const bold = document.createElement('b');
+      bold.textContent = r.node.label;
+      row.appendChild(bold);
+      row.appendChild(document.createTextNode(' '));
+
+      const iconSpan = document.createElement('span');
       if (r.dir === 'up') {
-        if (str >= 5)      icon = '<span style="color:#16a34a;font-weight:700">&#9650;&#9650; 강하게 상승</span>';
-        else if (str >= 3) icon = '<span style="color:#16a34a">&#9650; 상승</span>';
-        else               icon = '<span style="color:#16a34a;opacity:0.7">&#9650; 약하게 상승</span>';
+        iconSpan.style.color = '#16a34a';
+        if (str >= 5)      { iconSpan.style.fontWeight = '700'; iconSpan.textContent = '\u25B2\u25B2 강하게 상승'; }
+        else if (str >= 3) { iconSpan.textContent = '\u25B2 상승'; }
+        else               { iconSpan.style.opacity = '0.7'; iconSpan.textContent = '\u25B2 약하게 상승'; }
       } else if (r.dir === 'down') {
-        if (str >= 5)      icon = '<span style="color:#dc2626;font-weight:700">&#9660;&#9660; 강하게 하락</span>';
-        else if (str >= 3) icon = '<span style="color:#dc2626">&#9660; 하락</span>';
-        else               icon = '<span style="color:#dc2626;opacity:0.7">&#9660; 약하게 하락</span>';
+        iconSpan.style.color = '#dc2626';
+        if (str >= 5)      { iconSpan.style.fontWeight = '700'; iconSpan.textContent = '\u25BC\u25BC 강하게 하락'; }
+        else if (str >= 3) { iconSpan.textContent = '\u25BC 하락'; }
+        else               { iconSpan.style.opacity = '0.7'; iconSpan.textContent = '\u25BC 약하게 하락'; }
       } else {
-        icon = '<span style="color:#ca8a04">&#9670; 조건부</span>';
+        iconSpan.style.color = '#ca8a04';
+        iconSpan.textContent = '\u25C6 조건부';
       }
-      const barW = str * 20;
+      row.appendChild(iconSpan);
+
+      /* 시차(lag) + 인과/상관 태그 */
+      if (r.link.lag || r.link.relation) {
+        const meta = document.createElement('span');
+        meta.style.cssText = 'font-size:10px;margin-left:6px;';
+        const parts = [];
+        if (r.link.lag) parts.push('\u23F1 ' + r.link.lag);
+        if (r.link.relation) {
+          const relLabel = r.link.relation === 'causal' ? '\u2192 인과' : '\u2194 상관';
+          parts.push(relLabel);
+        }
+        meta.style.color = '#6366f1';
+        meta.textContent = parts.join(' | ');
+        row.appendChild(meta);
+      }
+
+      const desc = document.createElement('span');
+      desc.style.cssText = 'color:#64748b;font-size:11px;margin-left:4px;display:block;';
+      desc.textContent = r.link.description || '';
+      row.appendChild(desc);
+
+      const bar = document.createElement('div');
       const barColor = r.dir === 'up' ? '#16a34a' : r.dir === 'down' ? '#dc2626' : '#ca8a04';
-      html += `<div style="padding:4px 0;border-bottom:1px solid #ffffff08;">
-        <b>${r.node.label}</b> ${icon}
-        <span style="color:#64748b;font-size:11px;margin-left:4px;">${r.link.description}</span>
-        <div style="margin-top:2px;height:3px;width:${barW}%;max-width:100%;background:${barColor};border-radius:2px;opacity:0.4;"></div>
-      </div>`;
+      bar.style.cssText = 'margin-top:2px;height:3px;max-width:100%;border-radius:2px;opacity:0.4;width:' + (str * 20) + '%;background:' + barColor + ';';
+      row.appendChild(bar);
+
+      interpEl.appendChild(row);
     });
   }
-  document.getElementById('sheet-interp').innerHTML = html;
 
   /* highlight simulation path */
   const affIds  = new Set([startNode.id, ...results.map(r => r.node.id)]);
@@ -1177,6 +1433,155 @@ function runSim(startNode, direction) {
       return affLink.has(d.id) ? base + 1 : base;
     });
 }
+
+/* ================================================================
+   MULTI-SIM — 복합 시나리오
+   ================================================================ */
+let multiSimMode = false;
+const multiSimSelections = {}; // nodeId → 'up' | 'down'
+
+function openMultiSimPanel() {
+  multiSimMode = true;
+  Object.keys(multiSimSelections).forEach(k => delete multiSimSelections[k]);
+  const panel = document.getElementById('multi-sim-panel');
+  const list = document.getElementById('multi-sim-list');
+  list.textContent = '';
+
+  DATA.nodes.filter(n => n.level <= currentLevel).forEach(n => {
+    const chip = document.createElement('button');
+    chip.style.cssText = 'padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;border:1px solid #3a3a5a;background:#23233a;color:#94a3b8;font-family:inherit;transition:all .15s;';
+    chip.textContent = n.label;
+    chip.dataset.nodeId = n.id;
+    chip.dataset.dir = '';
+    chip.addEventListener('click', () => {
+      const dirs = ['', 'up', 'down'];
+      const ci = (dirs.indexOf(chip.dataset.dir) + 1) % 3;
+      chip.dataset.dir = dirs[ci];
+      if (dirs[ci] === 'up') {
+        chip.style.background = '#16a34a33'; chip.style.borderColor = '#16a34a'; chip.style.color = '#22c55e';
+        chip.textContent = n.label + ' \u25B2';
+        multiSimSelections[n.id] = 'up';
+      } else if (dirs[ci] === 'down') {
+        chip.style.background = '#dc262633'; chip.style.borderColor = '#dc2626'; chip.style.color = '#f87171';
+        chip.textContent = n.label + ' \u25BC';
+        multiSimSelections[n.id] = 'down';
+      } else {
+        chip.style.background = '#23233a'; chip.style.borderColor = '#3a3a5a'; chip.style.color = '#94a3b8';
+        chip.textContent = n.label;
+        delete multiSimSelections[n.id];
+      }
+    });
+    list.appendChild(chip);
+  });
+
+  panel.style.display = 'block';
+}
+
+function closeMultiSimPanel() {
+  multiSimMode = false;
+  document.getElementById('multi-sim-panel').style.display = 'none';
+}
+
+function runMultiSim() {
+  const starts = Object.entries(multiSimSelections);
+  if (!starts.length) return;
+
+  closeMultiSimPanel();
+
+  /* BFS from multiple start points */
+  const visited = new Set(starts.map(s => s[0]));
+  const queue = starts.map(([id, dir]) => ({ id, dir }));
+  const results = [];
+
+  while (queue.length) {
+    const cur = queue.shift();
+    DATA.links.forEach(link => {
+      if (link.source !== cur.id) return;
+      const tgt = nodeMap[link.target];
+      if (!tgt || tgt.level > currentLevel) return;
+      if (visited.has(link.target)) return;
+      visited.add(link.target);
+
+      let rDir;
+      if (link.type === '비례')        rDir = cur.dir;
+      else if (link.type === '반비례') rDir = (cur.dir === 'up' ? 'down' : 'up');
+      else                             rDir = 'cond';
+
+      results.push({ node: tgt, dir: rDir, link });
+      queue.push({ id: link.target, dir: rDir });
+    });
+  }
+
+  /* Display results in sheet */
+  const startLabels = starts.map(([id, dir]) => nodeMap[id].label + (dir === 'up' ? '\u25B2' : '\u25BC')).join(' + ');
+  const interpEl = document.getElementById('sheet-interp');
+  interpEl.textContent = '';
+
+  document.getElementById('sheet-title').textContent = '복합 시나리오';
+  document.getElementById('sheet-sub').textContent = startLabels;
+  document.getElementById('sheet-desc').textContent = starts.length + '개 지표 동시 변동 시 연쇄 효과';
+  document.getElementById('sheet-spark').textContent = '';
+
+  const header = document.createElement('div');
+  header.style.cssText = 'font-weight:700;margin-bottom:8px;font-size:13px;';
+  header.textContent = '연쇄 효과 (' + results.length + '개 지표 영향):';
+  interpEl.appendChild(header);
+
+  results.forEach(r => {
+    const str = r.link.strength || 3;
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:4px 0;border-bottom:1px solid #ffffff08;';
+
+    const bold = document.createElement('b');
+    bold.textContent = r.node.label;
+    row.appendChild(bold);
+    row.appendChild(document.createTextNode(' '));
+
+    const iconSpan = document.createElement('span');
+    if (r.dir === 'up') {
+      iconSpan.style.color = '#16a34a';
+      iconSpan.textContent = str >= 5 ? '\u25B2\u25B2 강하게 상승' : str >= 3 ? '\u25B2 상승' : '\u25B2 약하게 상승';
+    } else if (r.dir === 'down') {
+      iconSpan.style.color = '#dc2626';
+      iconSpan.textContent = str >= 5 ? '\u25BC\u25BC 강하게 하락' : str >= 3 ? '\u25BC 하락' : '\u25BC 약하게 하락';
+    } else {
+      iconSpan.style.color = '#ca8a04';
+      iconSpan.textContent = '\u25C6 조건부';
+    }
+    row.appendChild(iconSpan);
+
+    /* impact 정량 표시 */
+    if (r.link.impact) {
+      const impactSpan = document.createElement('span');
+      impactSpan.style.cssText = 'color:#6366f1;font-size:10px;margin-left:6px;';
+      impactSpan.textContent = r.link.impact;
+      row.appendChild(impactSpan);
+    }
+
+    const desc = document.createElement('span');
+    desc.style.cssText = 'color:#64748b;font-size:11px;margin-left:4px;display:block;';
+    desc.textContent = r.link.description || '';
+    row.appendChild(desc);
+
+    interpEl.appendChild(row);
+  });
+
+  document.getElementById('sheet-overlay').classList.add('show');
+  document.getElementById('bottom-sheet').classList.add('show');
+
+  /* highlight */
+  const allIds = new Set([...starts.map(s => s[0]), ...results.map(r => r.node.id)]);
+  const allLinks = new Set(results.map(r => r.link.id));
+  gNodes.selectAll('g.node-g').classed('node-dim', d => !allIds.has(d.id));
+  gLinks.selectAll('path.link-line')
+    .classed('link-dim', d => !allLinks.has(d.id))
+    .classed('link-hl',  d => allLinks.has(d.id));
+}
+
+/* Bind multi-sim buttons */
+document.getElementById('btn-multi-sim').addEventListener('click', openMultiSimPanel);
+document.getElementById('btn-multi-cancel').addEventListener('click', closeMultiSimPanel);
+document.getElementById('btn-multi-run').addEventListener('click', runMultiSim);
 
 /* ================================================================
    HIGHLIGHT / DIM
@@ -1273,7 +1678,7 @@ function applyCategoryFilter(catName) {
    ================================================================ */
 function renderCatChips() {
   const container = document.getElementById('cat-chips');
-  container.innerHTML = '';
+  container.textContent = '';
   const cats = DATA.categories;
   Object.keys(cats).forEach(catName => {
     const chip = document.createElement('span');
@@ -1318,12 +1723,46 @@ function bindEvents() {
     }
   });
 
+  /* PNG 내보내기 */
+  document.getElementById('btn-export').addEventListener('click', () => {
+    const svgEl = document.getElementById('svg');
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svgEl);
+    const canvas = document.createElement('canvas');
+    const bbox = svgEl.getBoundingClientRect();
+    canvas.width = bbox.width * 2;
+    canvas.height = bbox.height * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+    ctx.fillStyle = '#0f0f14';
+    ctx.fillRect(0, 0, bbox.width, bbox.height);
+    const img = new Image();
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, bbox.width, bbox.height);
+      URL.revokeObjectURL(url);
+      const a = document.createElement('a');
+      a.download = 'economic-map.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    };
+    img.src = url;
+  });
+
   /* Resize */
   window.addEventListener('resize', () => { W = innerWidth; H = innerHeight; fitView(200); });
 
-  /* ESC to close sheet */
+  /* ESC to close sheet / deselect */
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeSheet();
+    if (e.key === 'Escape') {
+      if (document.getElementById('bottom-sheet').classList.contains('show')) {
+        closeSheet();
+      } else if (selectedNode) {
+        selectedNode = null;
+        clearHighlight();
+      }
+    }
   });
 }
 
@@ -1358,13 +1797,40 @@ function showLinkToast(link) {
   if (!srcNode || !tgtNode) return;
 
   const el = document.getElementById('link-toast');
-  const typeLabel = link.type === '비례'
-    ? '<span style="color:#16a34a">비례 ▲▲</span>'
-    : '<span style="color:#dc2626">반비례 ▲▼</span>';
+  el.textContent = '';
 
-  el.innerHTML = `<div style="font-weight:700;margin-bottom:4px;">${srcNode.label} → ${tgtNode.label}</div>` +
-    `<div style="margin-bottom:4px;">${typeLabel}</div>` +
-    `<div style="color:#94a3b8;">${link.description || ''}</div>`;
+  const titleDiv = document.createElement('div');
+  titleDiv.style.cssText = 'font-weight:700;margin-bottom:4px;';
+  titleDiv.textContent = srcNode.label + ' \u2192 ' + tgtNode.label;
+
+  const typeDiv = document.createElement('div');
+  typeDiv.style.marginBottom = '4px';
+  const typeSpan = document.createElement('span');
+  if (link.type === '비례') {
+    typeSpan.style.color = '#16a34a';
+    typeSpan.textContent = '비례 \u25B2\u25B2';
+  } else {
+    typeSpan.style.color = '#dc2626';
+    typeSpan.textContent = '반비례 \u25B2\u25BC';
+  }
+  typeDiv.appendChild(typeSpan);
+
+  const descDiv = document.createElement('div');
+  descDiv.style.color = '#94a3b8';
+  descDiv.textContent = link.description || '';
+
+  el.append(titleDiv, typeDiv, descDiv);
+
+  /* 시차/관계 메타 */
+  if (link.lag || link.relation) {
+    const metaDiv = document.createElement('div');
+    metaDiv.style.cssText = 'color:#6366f1;font-size:10px;margin-top:4px;';
+    const parts = [];
+    if (link.lag) parts.push('\u23F1 시차: ' + link.lag);
+    if (link.relation) parts.push(link.relation === 'causal' ? '\u2192 인과관계' : '\u2194 상관관계');
+    metaDiv.textContent = parts.join('  |  ');
+    el.appendChild(metaDiv);
+  }
 
   el.classList.add('show');
   if (toastTimer) clearTimeout(toastTimer);
@@ -1376,7 +1842,7 @@ function showLinkToast(link) {
    ================================================================ */
 function renderSparkline(node) {
   const container = document.getElementById('sheet-spark');
-  container.innerHTML = '';
+  container.textContent = '';
 
   if (!VALS || !VALS.data || !node.dataSource || !node.dataSource.fred) return;
   const series = VALS.data[node.dataSource.fred];
@@ -1389,8 +1855,8 @@ function renderSparkline(node) {
   const range = maxV - minV || 1;
 
   const W = container.clientWidth || 300;
-  const H = 48;
-  const padL = 36, padR = 36, padY = 6;
+  const H = 80;
+  const padL = 36, padR = 36, padY = 10;
   const plotW = W - padL - padR;
   const plotH = H - padY * 2;
 
@@ -1451,6 +1917,78 @@ function renderSparkline(node) {
   txtEnd.textContent = fmtVal(last);
   svgEl.appendChild(txtEnd);
 
+  /* 시간축 라벨 (시작일/종료일) */
+  const fmtDate = (d) => d.replace(/-/g, '.').slice(2); // "2025.01.15" → "25.01.15"
+  const dateStart = document.createElementNS(svgNs, 'text');
+  dateStart.setAttribute('x', padL);
+  dateStart.setAttribute('y', H - 2);
+  dateStart.setAttribute('text-anchor', 'start');
+  dateStart.setAttribute('fill', '#4a5568');
+  dateStart.setAttribute('font-size', '8px');
+  dateStart.textContent = fmtDate(pts[0].date);
+  svgEl.appendChild(dateStart);
+
+  const dateEnd = document.createElementNS(svgNs, 'text');
+  dateEnd.setAttribute('x', padL + plotW);
+  dateEnd.setAttribute('y', H - 2);
+  dateEnd.setAttribute('text-anchor', 'end');
+  dateEnd.setAttribute('fill', '#4a5568');
+  dateEnd.setAttribute('font-size', '8px');
+  dateEnd.textContent = fmtDate(pts[pts.length - 1].date);
+  svgEl.appendChild(dateEnd);
+
+  /* 호버 툴팁: 투명 rect 위에 mousemove → 날짜+값 표시 */
+  const overlay = document.createElementNS(svgNs, 'rect');
+  overlay.setAttribute('x', padL);
+  overlay.setAttribute('y', padY);
+  overlay.setAttribute('width', plotW);
+  overlay.setAttribute('height', plotH);
+  overlay.setAttribute('fill', 'transparent');
+  overlay.style.cursor = 'crosshair';
+
+  const tooltipG = document.createElementNS(svgNs, 'g');
+  tooltipG.style.display = 'none';
+  const tooltipLine = document.createElementNS(svgNs, 'line');
+  tooltipLine.setAttribute('stroke', '#6366f1');
+  tooltipLine.setAttribute('stroke-width', '1');
+  tooltipLine.setAttribute('stroke-dasharray', '3,2');
+  tooltipLine.setAttribute('y1', padY);
+  tooltipLine.setAttribute('y2', padY + plotH);
+  tooltipG.appendChild(tooltipLine);
+
+  const tooltipDot = document.createElementNS(svgNs, 'circle');
+  tooltipDot.setAttribute('r', '3');
+  tooltipDot.setAttribute('fill', lineColor);
+  tooltipG.appendChild(tooltipDot);
+
+  const tooltipText = document.createElementNS(svgNs, 'text');
+  tooltipText.setAttribute('fill', '#e2e8f0');
+  tooltipText.setAttribute('font-size', '9px');
+  tooltipText.setAttribute('font-weight', '600');
+  tooltipG.appendChild(tooltipText);
+
+  svgEl.appendChild(tooltipG);
+  svgEl.appendChild(overlay);
+
+  overlay.addEventListener('mousemove', (e) => {
+    const rect = svgEl.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / rect.width * W;
+    const idx = Math.round(((mx - padL) / plotW) * (vals.length - 1));
+    const ci = Math.max(0, Math.min(vals.length - 1, idx));
+    const cx = padL + (ci / (vals.length - 1)) * plotW;
+    const cy = padY + plotH - ((vals[ci] - minV) / range) * plotH;
+    tooltipG.style.display = '';
+    tooltipLine.setAttribute('x1', cx);
+    tooltipLine.setAttribute('x2', cx);
+    tooltipDot.setAttribute('cx', cx);
+    tooltipDot.setAttribute('cy', cy);
+    tooltipText.setAttribute('x', cx);
+    tooltipText.setAttribute('y', padY - 4);
+    tooltipText.setAttribute('text-anchor', cx > W / 2 ? 'end' : 'start');
+    tooltipText.textContent = fmtDate(pts[ci].date) + '  ' + fmtVal(vals[ci]);
+  });
+  overlay.addEventListener('mouseleave', () => { tooltipG.style.display = 'none'; });
+
   container.appendChild(svgEl);
 }
 
@@ -1497,9 +2035,12 @@ function renderSparkline(node) {
 
   function show() {
     stepEl.textContent = steps[cur];
-    dotsEl.innerHTML = steps.map((_, i) =>
-      '<span class="ob-dot' + (i === cur ? ' active' : '') + '"></span>'
-    ).join('');
+    dotsEl.textContent = '';
+    steps.forEach((_, i) => {
+      const dot = document.createElement('span');
+      dot.className = 'ob-dot' + (i === cur ? ' active' : '');
+      dotsEl.appendChild(dot);
+    });
     nextBtn.textContent = cur === steps.length - 1 ? '시작하기' : '다음';
   }
 
