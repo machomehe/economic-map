@@ -1040,17 +1040,6 @@ function renderNodes() {
     /* fade-in animation with stagger */
     g.transition().delay(idx * 15).duration(300).style('opacity', 1);
 
-    /* 투명 히트 영역: 시각 크기와 일치, 최소 44px 보장 */
-    const minHit = 44 / Math.max(currentZoom, 0.5); // 줌 보정
-    if (node.isAsset) {
-      const hitR = Math.max((NODE_R + ASSET_EXTRA) * sc, minHit / 2);
-      g.append('circle').attr('r', hitR).attr('fill', 'transparent').attr('class', 'hit-area').style('pointer-events', 'all');
-    } else {
-      const rw = RECT_W * sc, rh = RECT_H * sc;
-      const hitW = Math.max(rw, minHit), hitH = Math.max(rh, minHit);
-      g.append('rect').attr('x', -hitW/2).attr('y', -hitH/2).attr('width', hitW).attr('height', hitH).attr('fill', 'transparent').attr('class', 'hit-area').style('pointer-events', 'all');
-    }
-
     if (node.isAsset) {
       const r = (NODE_R + ASSET_EXTRA) * sc;
       /* big circle */
@@ -1102,12 +1091,36 @@ function renderNodes() {
         .attr('fill', valueColor(node));
     }
 
-    /* click → two-tap pattern: 1st tap = highlight, 2nd tap = sheet */
-    let longPressTimer = null;
+    /* 탭 vs 드래그 구분: 이동 < 8px이면 탭, 아니면 패닝 */
+    let ptrStartX = 0, ptrStartY = 0, wasDrag = false, longPressTimer = null;
+
+    g.on('pointerdown', function(e) {
+      ptrStartX = e.clientX;
+      ptrStartY = e.clientY;
+      wasDrag = false;
+      if (!editMode && e.pointerType !== 'mouse') {
+        longPressTimer = setTimeout(() => {
+          openSheet(node);
+          longPressTimer = null;
+        }, 300);
+      }
+    });
+    g.on('pointermove', function(e) {
+      const dx = e.clientX - ptrStartX, dy = e.clientY - ptrStartY;
+      if (dx * dx + dy * dy > 64) { // 8px threshold
+        wasDrag = true;
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      }
+    });
+    g.on('pointerup pointercancel', function() {
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    });
+
     g.on('click', function(e) {
-      e.stopPropagation();
       if (editMode) return;
-      /* 탭 피드백: 짧은 스케일 애니메이션 */
+      if (wasDrag) { wasDrag = false; return; } // 드래그였으면 무시
+      e.stopPropagation();
+      /* 탭 피드백 */
       d3.select(this).transition().duration(80).attr('transform', `translate(${node.cx},${node.cy}) scale(1.08)`)
         .transition().duration(80).attr('transform', `translate(${node.cx},${node.cy}) scale(1)`);
       if ('vibrate' in navigator) navigator.vibrate(10);
@@ -1118,18 +1131,6 @@ function renderNodes() {
         hoverActive = false;
         highlightNode(node);
       }
-    });
-
-    /* long-press via pointer events (터치+스타일러스 호환) */
-    g.on('pointerdown', function(e) {
-      if (editMode || e.pointerType === 'mouse') return;
-      longPressTimer = setTimeout(() => {
-        openSheet(node);
-        longPressTimer = null;
-      }, 300);
-    });
-    g.on('pointerup pointercancel', function() {
-      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     });
 
     /* 키보드 접근성 */
