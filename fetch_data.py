@@ -36,6 +36,8 @@ SERIES_IDS = [
     'PAYEMS',           # us_nfp: 비농업고용
     'CIVPART',          # us_lfpr: 경제활동참가율
     'NAPM',             # us_pmi: 제조업 PMI (ISM Manufacturing)
+    'T5YIE',            # us_expinf: 기대인플레이션 (5Y Breakeven)
+    'DFII10',           # us_realrate: 실질금리 (10Y TIPS)
 ]
 
 def fetch_series(series_id):

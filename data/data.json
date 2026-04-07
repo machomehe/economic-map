@@ -1,6 +1,6 @@
 {
-  "version": "4.1",
-  "lastUpdated": "2026-04-06",
+  "version": "4.2",
+  "lastUpdated": "2026-04-07",
   "categories": {
     "자산": {
       "color": "#fbbf24"
@@ -437,6 +437,40 @@
       },
       "dataSource": {},
       "tags": []
+    },
+    {
+      "id": "us_expinf",
+      "label": "기대인플레이션",
+      "sub": "5Y Breakeven",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "시장이 예상하는 향후 5년 평균 인플레이션. 연준 정책 결정의 핵심 참고 지표.",
+      "interpretation": {
+        "up": "인플레 기대↑ → 긴축 압력, 임금 상승 가속, 채권 실질수익↓",
+        "down": "인플레 기대↓ → 완화 여지, 임금 안정, 채권 실질수익↑"
+      },
+      "dataSource": {
+        "fred": "T5YIE"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_realrate",
+      "label": "실질금리",
+      "sub": "10Y TIPS",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "명목금리 - 기대인플레이션. 자산 가격의 진짜 동인. 양(+)이면 긴축, 음(-)이면 완화.",
+      "interpretation": {
+        "up": "실질 긴축. 금·주식↓, 달러↑. 저축 매력↑",
+        "down": "실질 완화. 금·주식↑, 달러↓. 위험자산 선호↑"
+      },
+      "dataSource": {
+        "fred": "DFII10"
+      },
+      "tags": []
     }
   ],
   "links": [
@@ -461,8 +495,8 @@
       "source": "us_rate",
       "target": "us_stocks",
       "type": "반비례",
-      "strength": 5,
-      "description": "금리↑ → 할인율↑ → 주식↓"
+      "strength": 3,
+      "description": "금리↑ → 할인율↑ → 주식↓. 단, 경기 확장 초기에는 실적 개선이 할인율 효과를 상쇄할 수 있음"
     },
     {
       "id": "us_rate-us_realestate",
@@ -548,9 +582,9 @@
       "id": "us_gdp-us_rate",
       "source": "us_gdp",
       "target": "us_rate",
-      "type": "반비례",
+      "type": "비례",
       "strength": 3,
-      "description": "성장↓ → 금리인하 압력"
+      "description": "성장↑ → 과열 방지 금리인상 / 성장↓ → 경기부양 금리인하"
     },
     {
       "id": "us_vix-us_stocks",
@@ -566,7 +600,7 @@
       "target": "us_bonds",
       "type": "비례",
       "strength": 3,
-      "description": "공포↑ → 안전자산(채권) 매수"
+      "description": "공포↑ → 안전자산(채권) 매수. 단, 인플레 공포나 유동성 위기 시에는 채권도 동반 하락 가능"
     },
     {
       "id": "us_vix-us_commodity",
@@ -613,8 +647,8 @@
       "source": "us_sentiment",
       "target": "us_gdp",
       "type": "비례",
-      "strength": 2,
-      "description": "심리 개선 → 소비↑"
+      "strength": 3,
+      "description": "심리 개선 → 소비↑ (GDP의 70%가 소비지출)"
     },
     {
       "id": "us_oil-us_cpi",
@@ -710,7 +744,7 @@
       "target": "us_stocks",
       "type": "비례",
       "strength": 3,
-      "description": "고용↑ → 소비 기대↑ → 주식↑"
+      "description": "고용↑ → 소비 기대↑ → 주식↑. 단, 긴축기에는 고용 호조 → 금리인상 기대 → 주식 하락(good news is bad news)"
     },
     {
       "id": "us_lfpr-us_nfp",
@@ -767,6 +801,54 @@
       "type": "비례",
       "strength": 3,
       "description": "서비스업 확장 → 고용↑"
+    },
+    {
+      "id": "us_cpi-us_expinf",
+      "source": "us_cpi",
+      "target": "us_expinf",
+      "type": "비례",
+      "strength": 4,
+      "description": "실현 인플레↑ → 기대인플레↑ (적응적 기대)"
+    },
+    {
+      "id": "us_expinf-us_rate",
+      "source": "us_expinf",
+      "target": "us_rate",
+      "type": "비례",
+      "strength": 4,
+      "description": "기대인플레↑ → 연준 긴축 압력↑ → 금리 인상"
+    },
+    {
+      "id": "us_expinf-us_realrate",
+      "source": "us_expinf",
+      "target": "us_realrate",
+      "type": "반비례",
+      "strength": 5,
+      "description": "기대인플레↑ → 실질금리↓ (실질금리 = 명목 - 기대인플레)"
+    },
+    {
+      "id": "us_rate-us_realrate",
+      "source": "us_rate",
+      "target": "us_realrate",
+      "type": "비례",
+      "strength": 5,
+      "description": "명목금리↑ → 실질금리↑"
+    },
+    {
+      "id": "us_realrate-us_commodity",
+      "source": "us_realrate",
+      "target": "us_commodity",
+      "type": "반비례",
+      "strength": 4,
+      "description": "실질금리↑ → 금 매력↓ (금은 이자를 주지 않으므로)"
+    },
+    {
+      "id": "us_realrate-us_stocks",
+      "source": "us_realrate",
+      "target": "us_stocks",
+      "type": "반비례",
+      "strength": 3,
+      "description": "실질금리↑ → 주식 할인율↑ → 밸류에이션 하락 압력"
     }
   ]
 }

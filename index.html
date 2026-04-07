@@ -2,22 +2,25 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Economic Map</title>
-<script src="d3.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="경제 지표 간 인과관계를 시각적으로 탐색하는 인터랙티브 맵. 금리, 환율, 주식 등 26개 지표의 연쇄 효과를 확인하세요.">
+<title>Economic Map — 경제 지표 인과관계 시각화</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<script src="d3.min.js" defer></script>
 <style>
 /* ── Reset ── */
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 html, body {
   width:100%; height:100%; overflow:hidden;
   background:#0f0f14; color:#e2e8f0;
-  font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
-  touch-action:none;
+  font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
+  touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
 }
 
 /* ── SVG ── */
-svg { display:block; width:100%; height:100%; }
+svg { display:block; width:100%; height:100%; touch-action:none; }
 .cat-box { fill:#1a1a24; stroke-width:1; }
 .cat-label { fill:#cbd5e1; font-size:14px; font-weight:700; }
 
@@ -29,7 +32,7 @@ svg { display:block; width:100%; height:100%; }
 .node-value  { font-size:10.5px; text-anchor:middle; pointer-events:none; }
 
 /* ── Link ── */
-.link-line { fill:none; stroke-width:1.6; opacity:0.25; }
+.link-line { fill:none; stroke-width:1.6; opacity:0.4; }
 .link-hit  { fill:none; stroke:transparent; stroke-width:14; pointer-events:stroke; cursor:pointer; }
 
 /* ── Highlight / Dim ── */
@@ -69,7 +72,8 @@ svg { display:block; width:100%; height:100%; }
   border-radius:8px; padding:7px 10px; font-size:12px; width:90px;
   outline:none; font-family:inherit;
 }
-#search-input:focus { border-color:#6366f1; width:120px; transition:width .2s; }
+#search-input:focus { border-color:#6366f1; width:120px; transition:width .2s; outline:2px solid #6366f1; outline-offset:2px; }
+#bottom-bar button:focus-visible, .cat-chip:focus-visible { outline:2px solid #6366f1; outline-offset:2px; }
 
 /* ── Bottom sheet ── */
 #sheet-overlay {
@@ -186,15 +190,29 @@ svg { display:block; width:100%; height:100%; }
 </head>
 <body>
 
-<svg id="svg"></svg>
+<svg id="svg" role="img" aria-label="경제 지표 인과관계 네트워크 맵">
+  <title>경제 지표 인과관계 맵 — 26개 지표 간 상승/하락 연쇄 효과를 시각화합니다</title>
+</svg>
+
+<!-- Data timestamp -->
+<div id="data-timestamp" style="position:fixed;top:10px;right:10px;z-index:90;font-size:10px;color:#64748b;background:#16161ecc;padding:4px 8px;border-radius:6px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);"></div>
+
+<!-- Loading spinner -->
+<div id="loading-spinner" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:999;">
+  <div style="text-align:center;color:#94a3b8;">
+    <div style="width:40px;height:40px;border:3px solid #3a3a5a;border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>
+    <div style="font-size:13px;">데이터 로딩 중...</div>
+  </div>
+</div>
+<style>@keyframes spin { to { transform:rotate(360deg); } }</style>
 
 <!-- Bottom bar -->
-<div id="bottom-bar">
-  <input id="search-input" placeholder="검색..." />
+<nav id="bottom-bar" aria-label="맵 제어 도구모음">
+  <input id="search-input" placeholder="검색..." aria-label="경제 지표 검색" />
   <button id="btn-lv1" class="active" data-lv="1">핵심</button>
   <button id="btn-lv2" data-lv="2">기본</button>
   <button id="btn-lv3" data-lv="3">심화</button>
-  <button id="btn-edit">수정</button>
+  <button id="btn-edit" aria-pressed="false">수정</button>
   <button id="btn-reset" style="display:none;">초기화</button>
   <span style="width:1px;height:20px;background:#3a3a5a;flex-shrink:0;"></span>
   <span id="cat-chips"></span>
@@ -218,7 +236,7 @@ svg { display:block; width:100%; height:100%; }
 <!-- Legend -->
 <div id="legend-box">
   <span style="font-weight:700;color:#cbd5e1;">범례</span>
-  <button id="legend-toggle"></button>
+  <button id="legend-toggle" aria-label="범례 접기/펼치기" aria-expanded="true"></button>
   <div id="legend-items">
     <div class="legend-row"><span class="legend-line" style="border-color:#16a34a;"></span>상승 영향</div>
     <div class="legend-row"><span class="legend-line" style="border-color:#dc2626;"></span>하락 영향</div>
@@ -306,12 +324,31 @@ svg.call(zoomBehavior);
    DATA LOAD
    ================================================================ */
 Promise.all([
-  fetch('data/data.json').then(r => r.json()),
+  fetch('data/data.json').then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }),
   fetch('data/values.json').then(r => r.json()).catch(() => null)
 ]).then(([data, vals]) => {
   DATA = data;
   VALS = vals;
+  document.getElementById('loading-spinner').style.display = 'none';
+  /* Show data timestamp */
+  const tsEl = document.getElementById('data-timestamp');
+  if (vals && vals.updated) {
+    tsEl.textContent = '데이터 기준: ' + vals.updated;
+  } else if (data.lastUpdated) {
+    tsEl.textContent = '데이터 기준: ' + data.lastUpdated;
+  }
   init();
+}).catch(err => {
+  document.getElementById('loading-spinner').innerHTML =
+    '<div style="text-align:center;color:#e2e8f0;padding:40px;">' +
+    '<div style="font-size:24px;margin-bottom:12px;">⚠</div>' +
+    '<h2 style="font-size:16px;margin-bottom:8px;">데이터를 불러올 수 없습니다</h2>' +
+    '<p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">네트워크 연결을 확인하고 새로고침해 주세요.</p>' +
+    '<button onclick="location.reload()" style="padding:10px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">새로고침</button>' +
+    '</div>';
 });
 
 /* ================================================================
