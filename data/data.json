@@ -1,5 +1,5 @@
 {
-  "version": "5.0",
+  "version": "5.1",
   "lastUpdated": "2026-04-08",
   "categories": {
     "자산": {
@@ -597,6 +597,133 @@
       "dataSource": {
         "fred": "DEXJPUS"
       },
+      "tags": []
+    },
+    {
+      "id": "us_retail",
+      "label": "소매판매",
+      "sub": "Retail Sales",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "unit": "YoY%",
+      "description": "미국 소매판매. 소비자 지출의 직접 측정 지표로 GDP의 약 70%를 차지하는 소비의 선행지표. 식품·에너지 제외 Core Retail Sales가 더 안정적. 1-2% YoY 성장이 건강, 0% 이하는 침체 경고.",
+      "interpretation": {
+        "up": "소비 확대 → GDP↑, 기업 매출↑. 인플레 압력 동반 가능.",
+        "down": "소비 위축 → GDP↓, 경기 둔화 신호. 연준 완화 여지."
+      },
+      "dataSource": {"fred": "RSAFS"},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "us_core_cpi",
+      "label": "Core CPI",
+      "sub": "식품·에너지 제외",
+      "category": "매크로 지표",
+      "level": 1,
+      "isAsset": false,
+      "unit": "YoY%",
+      "description": "식품·에너지를 제외한 근원 소비자물가. 변동성이 큰 항목을 제외해 기조적 인플레이션을 측정한다. 연준이 실제로 주시하는 지표로 CPI보다 정책 판단에 직결된다. 3% 이상이면 긴축 압력, 2% 근방이 타겟.",
+      "interpretation": {
+        "up": "기조적 인플레↑ → 긴축 강화. 서비스 물가가 주요 동인.",
+        "down": "기조적 인플레↓ → 완화 여지. 실현 목표 근접."
+      },
+      "dataSource": {"fred": "CPILFESL"},
+      "tags": ["핵심"]
+    },
+    {
+      "id": "us_jolts",
+      "label": "JOLTs 구인",
+      "sub": "Job Openings",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "unit": "YoY%",
+      "description": "노동통계국 JOLTs (Job Openings and Labor Turnover Survey). 미충원 구인건수로 노동시장 타이트함을 직접 측정한다. 실업자 1인당 구인 1.0 이상이면 과열, 1.5 이상이면 극단적 타이트. 2022년 2.0을 돌파한 바 있다.",
+      "interpretation": {
+        "up": "구인 증가 → 노동시장 타이트 → 임금 압력↑",
+        "down": "구인 감소 → 노동시장 완화 → 임금 압력↓"
+      },
+      "dataSource": {"fred": "JTSJOL"},
+      "tags": []
+    },
+    {
+      "id": "us_cb_conf",
+      "label": "소비자신뢰",
+      "sub": "CB Consumer Conf",
+      "category": "매크로 지표",
+      "level": 3,
+      "isAsset": false,
+      "description": "OECD 기반 미국 소비자신뢰지수 (Conference Board CCI의 근사치). 미시간대 지수보다 직업시장 질문 비중이 높아 고용과 상관관계가 강하다. 100 이상이면 낙관, 90 이하는 비관 구간.",
+      "interpretation": {
+        "up": "소비자 낙관 → 지출 확대 기대",
+        "down": "소비자 비관 → 지출 위축 경고"
+      },
+      "dataSource": {"fred": "CSCICP03USM665S"},
+      "tags": []
+    },
+    {
+      "id": "us_ppi",
+      "label": "PPI",
+      "sub": "생산자물가",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "unit": "YoY%",
+      "description": "생산자물가지수(Final Demand). 기업의 생산원가 변화를 측정하며 CPI를 3-6개월 선행한다. PPI 상승이 소비자에게 전가되는 정도는 수요 탄력성에 따라 다르다. 2022년 PPI가 CPI보다 먼저 피크를 형성했다.",
+      "interpretation": {
+        "up": "원가 상승 → 기업 마진 압박 또는 CPI 전가 → 인플레 파이프라인↑",
+        "down": "원가 하락 → 마진 개선 또는 디플레 신호"
+      },
+      "dataSource": {"fred": "PPIFIS"},
+      "tags": []
+    },
+    {
+      "id": "us_indprod",
+      "label": "산업생산",
+      "sub": "Industrial Production",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "unit": "YoY%",
+      "description": "제조업·광업·유틸리티의 실질 생산량 지수. GDP의 제조업 부문을 실시간 추적한다. PMI가 '심리'라면 산업생산은 '실제 활동'. 마이너스 YoY는 제조업 침체 신호.",
+      "interpretation": {
+        "up": "제조업 활동 확대 → GDP 제조업 부문↑",
+        "down": "제조업 수축 → 경기 둔화 신호"
+      },
+      "dataSource": {"fred": "INDPRO"},
+      "tags": []
+    },
+    {
+      "id": "us_housing_starts",
+      "label": "주택착공",
+      "sub": "Housing Starts",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "unit": "YoY%",
+      "description": "신규 주택 착공건수. 건축허가 후 1-2개월 뒤에 발생하는 실제 건설 시작 시점. 연 150만호 이상이면 건강, 100만호 이하는 부동산 침체. 금리에 매우 민감하다.",
+      "interpretation": {
+        "up": "건설 활동 확대 → 고용·건자재 수요↑ → GDP 기여",
+        "down": "건설 위축 → 경기 둔화 신호, 모기지 금리 부담"
+      },
+      "dataSource": {"fred": "HOUST"},
+      "tags": []
+    },
+    {
+      "id": "us_permits",
+      "label": "건축허가",
+      "sub": "Building Permits",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "unit": "YoY%",
+      "description": "주거용 건축허가 건수. 주택착공보다 1-2개월 선행하는 부동산 선행지표다. 경기선행지수(LEI)의 구성요소이기도 하다. 허가가 줄면 1-2개월 후 착공이 감소한다.",
+      "interpretation": {
+        "up": "건설 계획 확대 → 향후 착공 증가 신호",
+        "down": "건설 위축 예고 → 부동산 경기 냉각 선행지표"
+      },
+      "dataSource": {"fred": "PERMIT"},
       "tags": []
     }
   ],
@@ -1380,6 +1507,31 @@
       "description": "엔 급강세(캐리 해소) → 글로벌 유동성 수축 → VIX↑",
       "lag": "즉시",
       "relation": "correlation"
-    }
+    },
+    {"id":"us_core_cpi-us_rate","source":"us_core_cpi","target":"us_rate","type":"비례","strength":5,"description":"Core CPI↑ → 연준 긴축. 헤드라인 CPI보다 정책 반응 더 직접적.","lag":"1-6개월","relation":"causal"},
+    {"id":"us_cpi-us_core_cpi","source":"us_cpi","target":"us_core_cpi","type":"비례","strength":3,"description":"헤드라인 CPI와 Core CPI는 대부분 동행하나, 에너지 충격기에 괴리","lag":"즉시","relation":"correlation"},
+    {"id":"us_wage-us_core_cpi","source":"us_wage","target":"us_core_cpi","type":"비례","strength":4,"description":"임금↑ → 서비스 물가↑ → Core CPI↑. 서비스가 Core의 60% 차지","lag":"3-6개월","relation":"causal"},
+    {"id":"us_sentiment-us_retail","source":"us_sentiment","target":"us_retail","type":"비례","strength":3,"description":"심리 개선 → 소비 지출 확대","lag":"1-3개월","relation":"causal"},
+    {"id":"us_retail-us_gdp","source":"us_retail","target":"us_gdp","type":"비례","strength":4,"description":"소매판매↑ → 소비 지출↑ → GDP↑ (소비가 GDP의 70%)","lag":"즉시-1개월","relation":"causal"},
+    {"id":"us_nfp-us_retail","source":"us_nfp","target":"us_retail","type":"비례","strength":3,"description":"고용↑ → 가계 소득↑ → 소비↑","lag":"1-3개월","relation":"causal"},
+    {"id":"us_wage-us_retail","source":"us_wage","target":"us_retail","type":"비례","strength":3,"description":"임금↑ → 구매력↑ → 소매판매↑","lag":"1-3개월","relation":"causal"},
+    {"id":"us_jolts-us_wage","source":"us_jolts","target":"us_wage","type":"비례","strength":3,"description":"구인 급증 → 노동 수요>공급 → 임금 압력","lag":"3-6개월","relation":"causal"},
+    {"id":"us_jolts-us_nfp","source":"us_jolts","target":"us_nfp","type":"비례","strength":3,"description":"구인 증가 → 실제 고용 증가 (구인/취업 비율이 핵심)","lag":"1-3개월","relation":"correlation"},
+    {"id":"us_gdp-us_jolts","source":"us_gdp","target":"us_jolts","type":"비례","strength":3,"description":"GDP↑ → 기업 확장 → 구인 증가","lag":"1-3개월","relation":"causal"},
+    {"id":"us_stocks-us_cb_conf","source":"us_stocks","target":"us_cb_conf","type":"비례","strength":3,"description":"주가↑ → 부의 효과 → 소비자 신뢰↑","lag":"즉시","relation":"causal"},
+    {"id":"us_unemployment-us_cb_conf","source":"us_unemployment","target":"us_cb_conf","type":"반비례","strength":4,"description":"실업↑ → 소비자 신뢰↓. CB 지수는 고용 질문 비중이 높음","lag":"1-3개월","relation":"causal"},
+    {"id":"us_cb_conf-us_retail","source":"us_cb_conf","target":"us_retail","type":"비례","strength":3,"description":"신뢰↑ → 향후 소비 지출 계획↑","lag":"1-3개월","relation":"correlation"},
+    {"id":"us_oil-us_ppi","source":"us_oil","target":"us_ppi","type":"비례","strength":4,"description":"유가↑ → 에너지·운송 비용↑ → PPI 상승","lag":"1-3개월","relation":"causal"},
+    {"id":"us_copper-us_ppi","source":"us_copper","target":"us_ppi","type":"비례","strength":3,"description":"금속 원자재↑ → 제조 원가↑ → PPI↑","lag":"1-3개월","relation":"causal"},
+    {"id":"us_ppi-us_cpi","source":"us_ppi","target":"us_cpi","type":"비례","strength":3,"description":"PPI↑ → 기업이 소비자가에 전가 → CPI↑ (파이프라인 인플레)","lag":"3-6개월","relation":"causal"},
+    {"id":"us_dollar-us_ppi","source":"us_dollar","target":"us_ppi","type":"반비례","strength":3,"description":"달러↑ → 수입물가↓ → PPI 하락 압력","lag":"1-3개월","relation":"causal"},
+    {"id":"us_pmi-us_indprod","source":"us_pmi","target":"us_indprod","type":"비례","strength":4,"description":"ISM PMI는 산업생산을 2-3개월 선행","lag":"1-3개월","relation":"correlation"},
+    {"id":"us_indprod-us_gdp","source":"us_indprod","target":"us_gdp","type":"비례","strength":4,"description":"산업생산↑ → GDP 제조업 부문↑","lag":"즉시-1개월","relation":"causal"},
+    {"id":"us_rate-us_indprod","source":"us_rate","target":"us_indprod","type":"반비례","strength":3,"description":"금리↑ → 자본재 투자↓ → 생산↓","lag":"6-12개월","relation":"causal"},
+    {"id":"us_permits-us_housing_starts","source":"us_permits","target":"us_housing_starts","type":"비례","strength":5,"description":"허가↑ → 1-2개월 후 착공↑. 가장 강력한 선행 관계","lag":"1-3개월","relation":"causal"},
+    {"id":"us_rate-us_permits","source":"us_rate","target":"us_permits","type":"반비례","strength":4,"description":"금리↑ → 모기지 부담↑ → 신축 허가 신청↓","lag":"3-6개월","relation":"causal"},
+    {"id":"us_rate-us_housing_starts","source":"us_rate","target":"us_housing_starts","type":"반비례","strength":4,"description":"금리↑ → 건설비용↑ + 수요↓ → 착공↓","lag":"3-6개월","relation":"causal"},
+    {"id":"us_housing_starts-us_gdp","source":"us_housing_starts","target":"us_gdp","type":"비례","strength":3,"description":"착공↑ → 건설투자↑ → GDP 건설부문↑","lag":"1-3개월","relation":"causal"},
+    {"id":"us_housing_starts-us_realestate","source":"us_housing_starts","target":"us_realestate","type":"비례","strength":3,"description":"공급 증가 패턴 → 주택가격에 장기적 영향 (공급-수요 균형)","lag":"6-12개월","relation":"correlation"}
   ]
 }

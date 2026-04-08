@@ -43,6 +43,13 @@ SERIES_IDS = [
     'PCEPILFE',         # us_pce: Core PCE 물가지수 (연준 공식 타겟)
     'CES0500000003',    # us_wage: 평균시간당임금 (Average Hourly Earnings)
     'DEXJPUS',          # us_jpyusd: 엔/달러 환율
+    'CPILFESL',         # us_core_cpi: Core CPI (식품·에너지 제외)
+    'JTSJOL',           # us_jolts: JOLTs 구인건수
+    'CSCICP03USM665S',  # us_cb_conf: OECD Consumer Confidence (CB 근사)
+    'PPIFIS',           # us_ppi: PPI Final Demand
+    'INDPRO',           # us_indprod: 산업생산
+    'HOUST',            # us_housing_starts: 주택착공
+    'PERMIT',           # us_permits: 건축허가
 ]
 
 # Stock형 지표: 절대 수준보다 YoY% 변화가 의미있는 시리즈
@@ -56,6 +63,12 @@ YOY_SERIES = {
     'PAYEMS',           # 비농업고용 → YoY%
     'PCEPILFE',         # Core PCE → YoY%
     'CES0500000003',    # 임금 → YoY%
+    'CPILFESL',         # Core CPI → YoY%
+    'JTSJOL',           # JOLTs → YoY%
+    'PPIFIS',           # PPI → YoY%
+    'INDPRO',           # 산업생산 → YoY%
+    'HOUST',            # 주택착공 → YoY%
+    'PERMIT',           # 건축허가 → YoY%
 }
 
 # 데이터 빈도: 월간 통일을 위한 메타데이터
