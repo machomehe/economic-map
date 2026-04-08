@@ -171,27 +171,24 @@ def fetch_series_meta(series_id):
         return None
 
 
-def fetch_upcoming_releases(release_id, from_date):
-    """FRED release/dates 엔드포인트에서 실제 예정된 발표일 조회.
-    from_date: YYYY-MM-DD (오늘 기준 이후만 반환)"""
+def fetch_recent_releases(release_id):
+    """FRED release/dates에서 최근 실제 발표일 조회 (과거 기준, 최근 6개)."""
     params = urllib.parse.urlencode({
         'release_id': release_id,
         'api_key': FRED_API_KEY,
         'file_type': 'json',
-        'sort_order': 'asc',
-        'limit': 10,
-        'include_release_dates_with_no_data': 'true',
+        'sort_order': 'desc',
+        'limit': 6,
+        'include_release_dates_with_no_data': 'false',
     })
     url = 'https://api.stlouisfed.org/fred/release/dates?' + params
     try:
         with urllib.request.urlopen(url, timeout=15) as resp:
             data = json.loads(resp.read())
             dates = data.get('release_dates', [])
-            # 오늘 이후 날짜만 필터
-            upcoming = [d['date'] for d in dates if d.get('date', '') >= from_date]
-            return upcoming[:5]  # 최대 5개
+            return [d['date'] for d in dates if d.get('date')]
     except Exception as e:
-        print(f'  UPCOMING FAILED {release_id}: {e}')
+        print(f'  RECENT FAILED {release_id}: {e}')
         return []
 
 
@@ -289,13 +286,13 @@ def main():
         except:
             avg_3m = None
 
-        # 향후 발표일 (FRED 공식)
+        # 최근 발표일 (FRED 공식 — 실제 과거 발표일)
         rid = fetch_series_release_id(sid)
-        upcoming = []
+        recent = []
         if rid:
             if rid not in release_id_cache:
-                release_id_cache[rid] = fetch_upcoming_releases(rid, today)
-            upcoming = release_id_cache[rid]
+                release_id_cache[rid] = fetch_recent_releases(rid)
+            recent = release_id_cache[rid]
 
         releases_data.append({
             'seriesId': sid,
@@ -306,9 +303,9 @@ def main():
             'previousValue': prev_val,
             'avg3m': avg_3m,
             'releaseId': rid,
-            'upcomingDates': upcoming,
+            'recentReleases': recent,
         })
-        print(f'  {sid}: last={meta["last_updated"][:10] if meta["last_updated"] else "N/A"}, upcoming={len(upcoming)}')
+        print(f'  {sid}: last={meta["last_updated"][:10] if meta["last_updated"] else "N/A"}, recent={len(recent)}')
 
     # Fed 공식 2026 FOMC 일정 (federalreserve.gov 공식)
     fomc_2026 = [

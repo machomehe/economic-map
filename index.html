@@ -334,7 +334,7 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
     <button id="btn-cal-close" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
   </div>
   <div id="cal-disclaimer" style="font-size:10px;color:#64748b;margin-bottom:12px;padding:6px 10px;background:#1a1a24;border-radius:6px;">
-    ⓘ 모든 날짜/수치는 FRED 및 Fed 공식 발표 기준. 추측 데이터 없음.
+    ⓘ 최근 실제 발표일 기준 (FRED 공식). FOMC만 Fed 공식 미래 일정. 추측 없음.
   </div>
   <div id="cal-timeline"></div>
 </div>
@@ -2366,96 +2366,100 @@ function renderCalendar() {
     });
   }
 
-  /* 경제지표 섹션 */
+  /* 최근 발표 섹션 (과거 실제 발표일 기준) */
   const header = document.createElement('div');
   header.style.cssText = 'font-size:12px;font-weight:700;color:#6366f1;margin:14px 0 6px;padding:4px 0;border-bottom:1px solid #2a2a3a;';
-  header.textContent = '📊 경제지표 발표 (FRED 공식)';
+  header.textContent = '📊 최근 경제지표 발표 (FRED 공식)';
   timeline.appendChild(header);
 
-  /* 업커밍이 있는 시리즈를 우선 정렬 */
-  const withUpcoming = RELEASES.releases.filter(r => r.upcomingDates && r.upcomingDates.length > 0);
-  const withoutUpcoming = RELEASES.releases.filter(r => !r.upcomingDates || r.upcomingDates.length === 0);
-
-  /* 업커밍 리스트 평탄화: [{seriesId, date, ...}] */
-  const upcomingList = [];
-  withUpcoming.forEach(r => {
-    r.upcomingDates.forEach(d => {
-      upcomingList.push({ ...r, nextDate: d });
+  /* 최근 발표일이 있는 시리즈 → 평탄화 + 정렬 */
+  const recentList = [];
+  RELEASES.releases.forEach(r => {
+    if (!r.recentReleases || !r.recentReleases.length) return;
+    r.recentReleases.forEach(d => {
+      recentList.push({ ...r, releaseDate: d });
     });
   });
-  upcomingList.sort((a, b) => a.nextDate.localeCompare(b.nextDate));
+  /* 최근 발표부터 내림차순 */
+  recentList.sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
 
-  /* 중요도 필터링: 상위 노드만 (중요도 2-3) */
-  const filtered = upcomingList.filter(r => {
+  /* 중요도 2-3 노드만 필터 */
+  const filtered = recentList.filter(r => {
     const node = fredToNode[r.seriesId];
     return node && getImportance(node) >= 2;
   });
 
-  if (filtered.length === 0) {
-    const empty = document.createElement('div');
-    empty.style.cssText = 'font-size:11px;color:#64748b;padding:10px;';
-    empty.textContent = 'FRED에서 예정 발표일 정보를 가져오지 못했습니다.';
-    timeline.appendChild(empty);
-  } else {
-    filtered.slice(0, 15).forEach(r => {
-      const node = fredToNode[r.seriesId];
-      const importance = getImportance(node);
-      const stars = '⭐'.repeat(importance);
+  /* 날짜별 그룹화 */
+  const grouped = {};
+  filtered.slice(0, 30).forEach(r => {
+    if (!grouped[r.releaseDate]) grouped[r.releaseDate] = [];
+    grouped[r.releaseDate].push(r);
+  });
 
-      const card = document.createElement('div');
-      card.style.cssText = 'background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;';
-
-      const dateLine = document.createElement('div');
-      dateLine.style.cssText = 'font-size:11px;color:#6366f1;font-weight:700;';
-      dateLine.textContent = stars + ' ' + r.nextDate + ' · ' + (node ? node.label : r.seriesId);
-      card.appendChild(dateLine);
-
-      /* 실데이터 라인: 직전값, 3개월 평균, 빈도 */
-      const dataLine = document.createElement('div');
-      dataLine.style.cssText = 'font-size:11px;color:#cbd5e1;margin-top:4px;';
-      const parts = [];
-      if (r.lastValue != null) parts.push('직전: ' + r.lastValue);
-      if (r.avg3m != null) parts.push('3M평균: ' + r.avg3m);
-      if (r.frequency) parts.push(r.frequency);
-      dataLine.textContent = parts.join(' · ');
-      card.appendChild(dataLine);
-
-      /* 맵에서 영향 보기 힌트 */
-      const hint = document.createElement('div');
-      hint.style.cssText = 'font-size:10px;color:#a78bfa;margin-top:6px;';
-      hint.textContent = '탭 → 맵에서 연쇄 영향 확인';
-      card.appendChild(hint);
-
-      if (node) {
-        card.addEventListener('click', () => {
-          document.getElementById('calendar-panel').style.display = 'none';
-          sheetFromDashboard = false;
-          openSheet(node);
-        });
-      }
-
-      timeline.appendChild(card);
-    });
+  const today = new Date().toISOString().slice(0, 10);
+  function relativeDate(dateStr) {
+    const diffDays = Math.round((new Date(today) - new Date(dateStr)) / 86400000);
+    if (diffDays === 0) return '오늘';
+    if (diffDays === 1) return '어제';
+    if (diffDays < 7) return diffDays + '일 전';
+    if (diffDays < 30) return Math.round(diffDays / 7) + '주 전';
+    return Math.round(diffDays / 30) + '개월 전';
   }
 
-  /* 빈도 기반 참고 (업커밍 없는 경우) */
-  if (withoutUpcoming.length > 0) {
-    const noteHeader = document.createElement('div');
-    noteHeader.style.cssText = 'font-size:11px;color:#64748b;margin:14px 0 6px;padding:4px 0;border-bottom:1px solid #2a2a3a;';
-    noteHeader.textContent = '일간/상시 업데이트 지표 (참고)';
-    timeline.appendChild(noteHeader);
+  if (Object.keys(grouped).length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:11px;color:#64748b;padding:10px;';
+    empty.textContent = 'FRED에서 발표일 정보를 가져오지 못했습니다.';
+    timeline.appendChild(empty);
+  } else {
+    Object.keys(grouped).sort((a,b) => b.localeCompare(a)).forEach(dateStr => {
+      /* 날짜 헤더 */
+      const dateHead = document.createElement('div');
+      dateHead.style.cssText = 'font-size:11px;color:#94a3b8;margin:10px 0 4px;font-weight:700;';
+      dateHead.textContent = dateStr + ' · ' + relativeDate(dateStr);
+      timeline.appendChild(dateHead);
 
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:6px;font-size:10px;';
-    withoutUpcoming.forEach(r => {
-      const node = fredToNode[r.seriesId];
-      if (!node || getImportance(node) < 2) return;
-      const item = document.createElement('div');
-      item.style.cssText = 'color:#94a3b8;padding:4px 6px;background:#1a1a24;border-radius:4px;';
-      item.textContent = (node.label || r.seriesId) + ' · ' + (r.frequency || '?');
-      grid.appendChild(item);
+      grouped[dateStr].forEach(r => {
+        const node = fredToNode[r.seriesId];
+        const importance = getImportance(node);
+        const stars = '⭐'.repeat(importance);
+
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;';
+
+        const titleLine = document.createElement('div');
+        titleLine.style.cssText = 'font-size:12px;color:#e2e8f0;font-weight:700;';
+        titleLine.textContent = stars + ' ' + (node ? node.label : r.seriesId);
+        card.appendChild(titleLine);
+
+        /* 실데이터: 최신값, 이전값, 3M평균, 빈도 */
+        const dataLine = document.createElement('div');
+        dataLine.style.cssText = 'font-size:11px;color:#cbd5e1;margin-top:4px;';
+        const parts = [];
+        if (r.lastValue != null) parts.push('최신: ' + r.lastValue);
+        if (r.previousValue != null) parts.push('이전: ' + r.previousValue);
+        if (r.avg3m != null) parts.push('3M평균: ' + r.avg3m);
+        if (r.frequency) parts.push(r.frequency);
+        dataLine.textContent = parts.join(' · ');
+        card.appendChild(dataLine);
+
+        /* 맵에서 영향 보기 힌트 */
+        const hint = document.createElement('div');
+        hint.style.cssText = 'font-size:10px;color:#a78bfa;margin-top:6px;';
+        hint.textContent = '탭 → 맵에서 연쇄 영향 확인';
+        card.appendChild(hint);
+
+        if (node) {
+          card.addEventListener('click', () => {
+            document.getElementById('calendar-panel').style.display = 'none';
+            sheetFromDashboard = false;
+            openSheet(node);
+          });
+        }
+
+        timeline.appendChild(card);
+      });
     });
-    timeline.appendChild(grid);
   }
 }
 
