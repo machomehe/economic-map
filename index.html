@@ -259,6 +259,12 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
   #legend-box { top:6px; left:6px; max-width:120px; font-size:9px; }
   #disclaimer { display:none; }
 }
+
+/* ── Warning badges ── */
+.threshold-badge {
+  display:inline-block; padding:3px 8px; border-radius:4px;
+  font-size:11px; font-weight:600; color:#fff; margin-right:4px;
+}
 </style>
 </head>
 <body>
@@ -1277,6 +1283,59 @@ function openSheet(node) {
   document.getElementById('sheet-title').textContent = node.label;
   document.getElementById('sheet-sub').textContent = node.sub + (node._val != null ? '  |  ' + valueText(node) : '');
   document.getElementById('sheet-desc').textContent = node.description || '';
+
+  /* 임계값 경고 배지 */
+  let warningEl = document.getElementById('sheet-warning');
+  if (!warningEl) {
+    warningEl = document.createElement('div');
+    warningEl.id = 'sheet-warning';
+    warningEl.style.cssText = 'margin-bottom:10px;';
+    document.getElementById('sheet-desc').after(warningEl);
+  }
+  warningEl.textContent = '';
+
+  const thresholds = {
+    'us_vix': [
+      { check: v => v >= 30, label: '공포 단계', color: '#dc2626' },
+      { check: v => v >= 20 && v < 30, label: '불안', color: '#f59e0b' },
+      { check: v => v < 12, label: '안일함 경고', color: '#f59e0b' },
+    ],
+    'us_hy': [
+      { check: v => v >= 800, label: '위기 수준', color: '#dc2626' },
+      { check: v => v >= 500, label: '스트레스', color: '#f59e0b' },
+    ],
+    'us_spread': [
+      { check: v => v < 0, label: '침체 경고 (역전)', color: '#dc2626' },
+    ],
+    'us_cpi': [
+      { check: v => v > 4, label: '고인플레', color: '#dc2626' },
+      { check: v => v > 2.5, label: '인플레 주의', color: '#f59e0b' },
+    ],
+    'us_pce': [
+      { check: v => v > 3, label: '연준 타겟 대폭 상회', color: '#dc2626' },
+      { check: v => v > 2, label: '타겟 상회', color: '#f59e0b' },
+    ],
+    'us_unemployment': [
+      { check: v => v > 5, label: '고실업', color: '#dc2626' },
+    ],
+    'us_nfci': [
+      { check: v => v > 0, label: '금융 긴축', color: '#f59e0b' },
+    ],
+  };
+
+  if (node._val != null && thresholds[node.id]) {
+    const checks = thresholds[node.id];
+    for (const t of checks) {
+      if (t.check(node._val)) {
+        const badge = document.createElement('span');
+        badge.style.cssText = 'display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;color:#fff;background:' + t.color + ';';
+        badge.textContent = t.label;
+        warningEl.appendChild(badge);
+        break; // first matching threshold only
+      }
+    }
+  }
+
   document.getElementById('sheet-interp').textContent = '';
 
   /* FRED 출처 링크 */
@@ -1519,6 +1578,14 @@ function runSim(startNode, direction) {
         row.appendChild(meta);
       }
 
+      /* 레짐 조건부 경고 */
+      if (r.link.caveat) {
+        const caveatEl = document.createElement('div');
+        caveatEl.style.cssText = 'color:#f59e0b;font-size:10px;margin-top:2px;font-style:italic;';
+        caveatEl.textContent = '\u26A0 ' + r.link.caveat;
+        row.appendChild(caveatEl);
+      }
+
       const desc = document.createElement('span');
       desc.style.cssText = 'color:#64748b;font-size:11px;margin-left:4px;display:block;';
       desc.textContent = r.link.description || '';
@@ -1678,6 +1745,14 @@ function runMultiSim() {
     impactPct.style.cssText = 'color:#a78bfa;font-size:11px;margin-left:6px;font-weight:600;';
     impactPct.textContent = '(영향도 ' + Math.round(r.impact * 100) + '%)';
     row.appendChild(impactPct);
+
+    /* 레짐 조건부 경고 */
+    if (r.link.caveat) {
+      const caveatEl = document.createElement('div');
+      caveatEl.style.cssText = 'color:#f59e0b;font-size:10px;margin-top:2px;font-style:italic;';
+      caveatEl.textContent = '\u26A0 ' + r.link.caveat;
+      row.appendChild(caveatEl);
+    }
 
     const desc = document.createElement('span');
     desc.style.cssText = 'color:#64748b;font-size:11px;margin-left:4px;display:block;';

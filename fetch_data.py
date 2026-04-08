@@ -58,14 +58,41 @@ YOY_SERIES = {
     'CES0500000003',    # 임금 → YoY%
 }
 
+# 데이터 빈도: 월간 통일을 위한 메타데이터
+DAILY_SERIES = {
+    'FEDFUNDS', 'DFII10', 'DCOILWTICO', 'DGS10', 'BAMLH0A0HYM2',
+    'NASDAQCOM', 'DTWEXBGS', 'VIXCLS', 'GOLDAMGBD228NLBM', 'DFF',
+    'USEPUINDXD', 'OVXCLS', 'T5YIE', 'DEXKOUS', 'DEXJPUS', 'NFCI',
+}
 
-def fetch_series(series_id):
+WEEKLY_SERIES = {
+    'ICSA', 'WALCL',
+}
+
+QUARTERLY_SERIES = {
+    'A191RL1Q225SBEA', 'GFDEBTN',
+}
+
+
+def get_limit(series_id):
+    """Get appropriate limit to fetch ~5 years of data."""
+    if series_id in DAILY_SERIES:
+        return 1300  # ~5 years of trading days
+    elif series_id in WEEKLY_SERIES:
+        return 260   # ~5 years of weeks
+    elif series_id in QUARTERLY_SERIES:
+        return 20    # ~5 years of quarters
+    else:
+        return 60    # ~5 years of months
+
+
+def fetch_series(series_id, limit=120):
     params = urllib.parse.urlencode({
         'series_id': series_id,
         'api_key': FRED_API_KEY,
         'file_type': 'json',
         'sort_order': 'desc',
-        'limit': 120,
+        'limit': limit,
     })
     url = 'https://api.stlouisfed.org/fred/series/observations?' + params
     try:
@@ -117,6 +144,25 @@ def calc_yoy_pct(series):
     return result
 
 
+def resample_to_monthly(series):
+    """Convert any frequency to monthly (last value per month)."""
+    if not series:
+        return series
+
+    # series comes in descending order from FRED
+    # Take the first (most recent) observation per year-month
+    seen = set()
+    result = []
+    for obs in series:
+        ym = obs['date'][:7]  # "2025-03"
+        if ym not in seen:
+            seen.add(ym)
+            result.append(obs)
+
+    # Limit to 60 months (5 years)
+    return result[:60]
+
+
 def main():
     if not FRED_API_KEY:
         print('FRED_API_KEY not set')
@@ -125,13 +171,15 @@ def main():
     result = {}
     for sid in SERIES_IDS:
         print(f'Fetching {sid}...')
-        raw = fetch_series(sid)
+        lim = get_limit(sid)
+        raw = fetch_series(sid, limit=lim)
         if sid in YOY_SERIES and raw:
             yoy = calc_yoy_pct(raw)
             print(f'  → YoY% 변환: {len(raw)}건 → {len(yoy)}건')
-            result[sid] = yoy
+            result[sid] = resample_to_monthly(yoy)
         else:
-            result[sid] = raw
+            result[sid] = resample_to_monthly(raw)
+        print(f'  → 월간 {len(result[sid])}건')
 
     output = {
         'updated': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC'),
