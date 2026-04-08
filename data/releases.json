@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-08 11:55 UTC",
+  "updated": "2026-04-08 12:08 UTC",
   "source": "FRED API (series release_dates) + Fed 공식 FOMC 일정",
   "disclaimer": "추측 데이터 없음. 모든 날짜와 수치는 FRED/Fed 공식 발표 기준.",
   "releases": [
@@ -516,50 +516,7 @@
       "previousValue": "3.01",
       "avg3m": 2.97,
       "releaseId": 54,
-      "recentReleases": [
-        "2026-03-13",
-        "2026-02-20",
-        "2026-01-22",
-        "2025-12-23",
-        "2025-12-05",
-        "2025-09-26"
-      ]
-    },
-    {
-      "seriesId": "CES0500000003",
-      "title": "Average Hourly Earnings of All Employees, Total Private",
-      "frequency": "Monthly",
-      "lastUpdated": "2026-04-03 08:23:31-05",
-      "lastValue": "3.52",
-      "previousValue": "3.76",
-      "avg3m": 3.65,
-      "releaseId": 50,
-      "recentReleases": [
-        "2026-04-03",
-        "2026-03-06",
-        "2026-02-11",
-        "2026-01-09",
-        "2025-12-16",
-        "2025-11-20"
-      ]
-    },
-    {
-      "seriesId": "DEXJPUS",
-      "title": "Japanese Yen to U.S. Dollar Spot Exchange Rate",
-      "frequency": "Daily",
-      "lastUpdated": "2026-04-06 15:16:43-05",
-      "lastValue": "159.64",
-      "previousValue": "159.08",
-      "avg3m": 158.26,
-      "releaseId": 17,
-      "recentReleases": [
-        "2026-04-06",
-        "2026-03-30",
-        "2026-03-23",
-        "2026-03-16",
-        "2026-03-09",
-        "2026-03-02"
-      ]
+      "recentReleases": []
     }
   ],
   "fomc2026": [
