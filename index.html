@@ -340,7 +340,9 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 <div id="sheet-overlay"></div>
 <div id="bottom-sheet">
   <div id="sheet-handle"></div>
-  <div id="sheet-title"></div>
+  <button id="btn-sheet-close" aria-label="닫기" style="position:absolute;top:10px;right:14px;background:#23233a;border:1px solid #3a3a5a;color:#cbd5e1;width:32px;height:32px;border-radius:16px;font-size:16px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0;">✕</button>
+  <button id="btn-back-dash" style="display:none;position:absolute;top:10px;left:14px;background:#4f46e522;border:1px solid #6366f155;color:#a78bfa;padding:6px 12px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">← 대시보드</button>
+  <div id="sheet-title" style="padding-top:8px;"></div>
   <div id="sheet-sub"></div>
   <div id="sheet-desc"></div>
   <div class="sheet-btn-row">
@@ -1441,10 +1443,16 @@ function applyLevel(lv) {
 /* ================================================================
    BOTTOM SHEET
    ================================================================ */
+let sheetFromDashboard = false;
+
 function openSheet(node) {
   selectedNode = node;
   hoverActive = false;
   highlightNode(node);
+
+  /* 대시보드 출처일 때 "대시보드로" 버튼 표시 */
+  const backBtn = document.getElementById('btn-back-dash');
+  if (backBtn) backBtn.style.display = sheetFromDashboard ? 'block' : 'none';
 
   document.getElementById('sheet-title').textContent = node.label;
   document.getElementById('sheet-sub').textContent = node.sub + (node._pct != null ? '  |  ' + valueText(node) : '');
@@ -1558,6 +1566,7 @@ function closeSheet() {
   clearHighlight();
   selectedNode = null;
   hoverActive = false;
+  sheetFromDashboard = false;
 
   /* URL에서 focus 파라미터 제거 */
   const url = new URL(location);
@@ -2124,6 +2133,7 @@ function renderDashboard() {
 
       card.addEventListener('click', () => {
         document.getElementById('dashboard-panel').style.display = 'none';
+        sheetFromDashboard = true;
         openSheet(node);
       });
 
@@ -2229,6 +2239,20 @@ function bindEvents() {
   document.getElementById('btn-lv1').addEventListener('click', () => applyLevel(1));
   document.getElementById('btn-lv2').addEventListener('click', () => applyLevel(2));
   document.getElementById('btn-lv3').addEventListener('click', () => applyLevel(3));
+
+  /* 바텀시트 닫기 버튼 */
+  document.getElementById('btn-sheet-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeSheet();
+  });
+
+  /* 대시보드로 돌아가기 버튼 */
+  document.getElementById('btn-back-dash').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeSheet();
+    renderDashboard();
+    document.getElementById('dashboard-panel').style.display = 'block';
+  });
 
   /* 검색 토글 */
   document.getElementById('btn-search-toggle').addEventListener('click', () => {
