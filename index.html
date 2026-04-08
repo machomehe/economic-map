@@ -580,15 +580,21 @@ function attachValues() {
   if (!VALS || !VALS.data) return;
   DATA.nodes.forEach(n => {
     const key = n.dataSource && n.dataSource.fred;
-    if (!key) { n._val = null; n._dir = null; n._isYoY = false; return; }
+    if (!key) { n._val = null; n._dir = null; n._pct = null; return; }
     const s = VALS.data[key];
-    if (!s || s.length < 2) { n._val = null; n._dir = null; n._isYoY = false; return; }
+    if (!s || s.length < 2) { n._val = null; n._dir = null; n._pct = null; return; }
     const cur  = parseFloat(s[0].value);
     const prev = parseFloat(s[1].value);
-    const isYoY = n.unit === 'YoY%';
     n._val = cur;
     n._dir = cur > prev ? 'up' : cur < prev ? 'down' : 'flat';
-    n._isYoY = isYoY;
+    /* 모든 값을 변화율(%)로 통일 */
+    if (n.unit === 'YoY%') {
+      n._pct = cur; /* 이미 YoY% 변환된 값 */
+    } else if (prev !== 0) {
+      n._pct = ((cur - prev) / Math.abs(prev)) * 100;
+    } else {
+      n._pct = null;
+    }
   });
 }
 
@@ -1206,14 +1212,10 @@ function valueColor(n) {
   return n._dir === 'up' ? '#16a34a' : '#dc2626';
 }
 function valueText(n) {
-  if (n._val == null) return '';
+  if (n._pct == null) return '';
   const arrow = n._dir === 'up' ? '\u25B2' : n._dir === 'down' ? '\u25BC' : '';
-  if (n._isYoY) return n._val.toFixed(1) + '% ' + arrow;
-  let v = n._val;
-  if (v >= 10000)   v = (v / 1000).toFixed(1) + 'K';
-  else if (v >= 100) v = v.toFixed(1);
-  else               v = v.toFixed(2);
-  return v + ' ' + arrow;
+  const sign = n._pct > 0 ? '+' : '';
+  return sign + n._pct.toFixed(1) + '% ' + arrow;
 }
 
 /* ================================================================
@@ -1281,7 +1283,7 @@ function openSheet(node) {
   highlightNode(node);
 
   document.getElementById('sheet-title').textContent = node.label;
-  document.getElementById('sheet-sub').textContent = node.sub + (node._val != null ? '  |  ' + valueText(node) : '');
+  document.getElementById('sheet-sub').textContent = node.sub + (node._pct != null ? '  |  ' + valueText(node) : '');
   document.getElementById('sheet-desc').textContent = node.description || '';
 
   /* 임계값 경고 배지 */
