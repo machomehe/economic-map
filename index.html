@@ -276,6 +276,9 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 <!-- Data timestamp -->
 <div id="data-timestamp" style="position:fixed;top:10px;left:10px;z-index:90;font-size:10px;color:#64748b;background:#16161ecc;padding:4px 8px;border-radius:6px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);"></div>
 
+<!-- Regime badge -->
+<div id="regime-badge" style="position:fixed;top:36px;left:10px;z-index:90;font-size:10px;padding:4px 10px;border-radius:6px;background:#16161ecc;border:1px solid #2a2a3a;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#94a3b8;cursor:pointer;" title="현재 경기 국면 (PMI, 금리차, VIX 기반 자동 판별)"></div>
+
 <!-- Loading spinner -->
 <div id="loading-spinner" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:999;">
   <div style="text-align:center;color:#94a3b8;">
@@ -300,12 +303,22 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
   <button id="btn-reset" style="display:none;">초기화</button>
   <button id="btn-multi-sim" title="복합 시나리오">복합</button>
   <button id="btn-export" title="현재 맵을 PNG로 저장">PNG</button>
+  <button id="btn-dashboard">대시보드</button>
 </nav>
 <!-- 검색 오버레이 (토글) -->
 <div id="search-bar" style="display:none;position:fixed;bottom:calc(52px + env(safe-area-inset-bottom));left:0;right:0;padding:8px 12px;background:var(--bg-bar);z-index:110;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--border);">
   <input id="search-input" placeholder="지표 이름 검색..." aria-label="경제 지표 검색" style="width:100%;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-light);border-radius:8px;padding:10px 12px;font-size:13px;outline:none;font-family:inherit;" />
 </div>
 <span id="cat-chips" style="display:none;"></span>
+
+<!-- Dashboard panel -->
+<div id="dashboard-panel" style="display:none;position:fixed;inset:0;z-index:180;background:var(--bg-primary);overflow-y:auto;padding:16px 12px calc(60px + env(safe-area-inset-bottom));">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <h2 style="font-size:16px;font-weight:700;color:var(--text-primary);">경제 지표 대시보드</h2>
+    <button id="btn-dash-close" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+  </div>
+  <div id="dash-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;"></div>
+</div>
 
 <!-- Multi-sim panel -->
 <div id="multi-sim-panel" style="display:none;position:fixed;bottom:calc(52px + env(safe-area-inset-bottom));left:0;right:0;background:#1e1e2eee;border-top:1px solid #3a3a5a;padding:12px 16px;z-index:150;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);">
@@ -327,6 +340,7 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
   <div class="sheet-btn-row">
     <button class="sim-btn up" id="btn-sim-up">오르면?</button>
     <button class="sim-btn down" id="btn-sim-down">내리면?</button>
+    <button id="btn-portfolio" style="padding:10px;border-radius:10px;font-size:13px;font-weight:600;border:1px solid #6366f155;background:#6366f122;color:#a78bfa;cursor:pointer;font-family:inherit;">포트폴리오</button>
   </div>
   <div id="sheet-spark"></div>
   <div id="sheet-interp"></div>
@@ -532,6 +546,49 @@ function resetPositions() {
 }
 
 /* ================================================================
+   REGIME DETECTION — 경기 국면 자동 탐지
+   ================================================================ */
+function detectRegime() {
+  const badge = document.getElementById('regime-badge');
+  if (!badge) return;
+
+  const pmi = nodeMap['us_pmi']?._val;
+  const spread = nodeMap['us_spread']?._val;
+  const vix = nodeMap['us_vix']?._val;
+  const nfci = nodeMap['us_nfci']?._val;
+
+  let regime = '판별 불가';
+  let color = '#64748b';
+  let emoji = '';
+
+  if (pmi == null && spread == null) {
+    badge.textContent = '';
+    return;
+  }
+
+  /* 위기 (VIX>=30 OR spread<-0.5 AND PMI<45) */
+  if ((vix != null && vix >= 30) || (spread != null && spread < -0.5 && pmi != null && pmi < 45)) {
+    regime = '위기/침체'; color = '#dc2626'; emoji = '\uD83D\uDFE5';
+  }
+  /* 둔화 (PMI<50 OR spread<0 OR NFCI>0) */
+  else if ((pmi != null && pmi < 50) || (spread != null && spread < 0) || (nfci != null && nfci > 0)) {
+    regime = '둔화/경고'; color = '#f59e0b'; emoji = '\uD83D\uDFE7';
+  }
+  /* 과열 (PMI>55 AND VIX<15) */
+  else if (pmi != null && pmi > 55 && vix != null && vix < 15) {
+    regime = '과열 주의'; color = '#f97316'; emoji = '\uD83D\uDFE0';
+  }
+  /* 확장 (PMI>=50 AND spread>0) */
+  else {
+    regime = '확장'; color = '#22c55e'; emoji = '\uD83D\uDFE2';
+  }
+
+  badge.style.color = color;
+  badge.style.borderColor = color + '55';
+  badge.textContent = emoji + ' ' + regime;
+}
+
+/* ================================================================
    INIT
    ================================================================ */
 function init() {
@@ -571,6 +628,8 @@ function init() {
       }, 300);
     }
   }
+
+  detectRegime();
 }
 
 /* ================================================================
@@ -1898,6 +1957,166 @@ function renderCatChips() {
 }
 
 /* ================================================================
+   DASHBOARD — 경제 지표 신호등
+   ================================================================ */
+function renderDashboard() {
+  const grid = document.getElementById('dash-grid');
+  grid.textContent = '';
+
+  const categories = ['매크로 지표', '시장 지표', '자산', '리스크'];
+
+  categories.forEach(cat => {
+    /* 카테고리 헤더 */
+    const catHeader = document.createElement('div');
+    catHeader.style.cssText = 'grid-column:1/-1;font-size:12px;font-weight:700;color:' + (DATA.categories[cat]?.color || '#94a3b8') + ';margin-top:8px;padding:4px 0;border-bottom:1px solid #2a2a3a;';
+    catHeader.textContent = cat;
+    grid.appendChild(catHeader);
+
+    DATA.nodes.filter(n => n.category === cat).forEach(node => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:10px;cursor:pointer;transition:all .15s;';
+
+      /* 신호등 색상 결정 */
+      let statusColor = '#555'; // 기본 회색
+      let statusText = '—';
+
+      if (node._pct != null) {
+        const pct = node._pct;
+        if (Math.abs(pct) < 1) {
+          statusColor = '#22c55e'; statusText = '안정';
+        } else if (Math.abs(pct) < 5) {
+          statusColor = pct > 0 ? '#16a34a' : '#dc2626';
+          statusText = pct > 0 ? '상승' : '하락';
+        } else {
+          statusColor = pct > 0 ? '#f59e0b' : '#dc2626';
+          statusText = pct > 0 ? '급등 주의' : '급락 주의';
+        }
+      }
+
+      /* 특수 임계값 */
+      if (node.id === 'us_vix' && node._val >= 30) { statusColor = '#dc2626'; statusText = '공포'; }
+      if (node.id === 'us_vix' && node._val >= 20 && node._val < 30) { statusColor = '#f59e0b'; statusText = '불안'; }
+      if (node.id === 'us_spread' && node._val < 0) { statusColor = '#dc2626'; statusText = '역전'; }
+      if (node.id === 'us_hy' && node._val >= 500) { statusColor = '#dc2626'; statusText = '스트레스'; }
+
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:4px;';
+      label.textContent = node.label;
+
+      const valueRow = document.createElement('div');
+      valueRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+
+      const valSpan = document.createElement('span');
+      valSpan.style.cssText = 'font-size:13px;font-weight:700;color:' + statusColor + ';';
+      valSpan.textContent = node._pct != null ? (node._pct > 0 ? '+' : '') + node._pct.toFixed(1) + '%' : '—';
+
+      const badge = document.createElement('span');
+      badge.style.cssText = 'font-size:9px;padding:2px 6px;border-radius:4px;color:#fff;background:' + statusColor + ';';
+      badge.textContent = statusText;
+
+      valueRow.append(valSpan, badge);
+      card.append(label, valueRow);
+
+      card.addEventListener('click', () => {
+        document.getElementById('dashboard-panel').style.display = 'none';
+        openSheet(node);
+      });
+
+      grid.appendChild(card);
+    });
+  });
+}
+
+/* ================================================================
+   PORTFOLIO IMPACT — 포트폴리오 영향 분석
+   ================================================================ */
+function openPortfolio() {
+  const panel = document.getElementById('portfolio-panel');
+  const inputs = document.getElementById('port-inputs');
+  inputs.textContent = '';
+  document.getElementById('port-result').textContent = '';
+
+  /* 자산 노드만 입력 필드 생성 */
+  const assetNodes = DATA.nodes.filter(n => n.isAsset);
+  assetNodes.forEach(n => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    const lbl = document.createElement('label');
+    lbl.style.cssText = 'font-size:11px;color:#cbd5e1;flex:1;';
+    lbl.textContent = n.label;
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.max = '100';
+    inp.value = '20';
+    inp.dataset.nodeId = n.id;
+    inp.style.cssText = 'width:60px;background:#0f0f14;color:#e2e8f0;border:1px solid #3a3a5a;border-radius:6px;padding:6px 8px;font-size:12px;text-align:right;font-family:inherit;';
+    const pct = document.createElement('span');
+    pct.style.cssText = 'font-size:11px;color:#64748b;';
+    pct.textContent = '%';
+    wrap.append(lbl, inp, pct);
+    inputs.appendChild(wrap);
+  });
+
+  panel.style.display = 'block';
+}
+
+function calcPortfolioImpact() {
+  const resultEl = document.getElementById('port-result');
+  resultEl.textContent = '';
+
+  const weights = {};
+  document.querySelectorAll('#port-inputs input').forEach(inp => {
+    weights[inp.dataset.nodeId] = parseFloat(inp.value) || 0;
+  });
+
+  const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+  if (totalWeight === 0) {
+    resultEl.textContent = '비중을 입력해주세요.';
+    return;
+  }
+
+  /* 현재 변화율 기반 포트폴리오 영향 */
+  let portfolioPct = 0;
+  const details = [];
+
+  Object.entries(weights).forEach(([nodeId, weight]) => {
+    if (weight <= 0) return;
+    const node = nodeMap[nodeId];
+    if (!node || node._pct == null) return;
+    const contribution = (weight / totalWeight) * node._pct;
+    portfolioPct += contribution;
+    details.push({ label: node.label, weight, pct: node._pct, contribution });
+  });
+
+  /* 결과 표시 */
+  const header = document.createElement('div');
+  header.style.cssText = 'font-size:14px;font-weight:700;margin-bottom:10px;color:' + (portfolioPct >= 0 ? '#22c55e' : '#dc2626') + ';';
+  header.textContent = '포트폴리오 예상 영향: ' + (portfolioPct >= 0 ? '+' : '') + portfolioPct.toFixed(2) + '%';
+  resultEl.appendChild(header);
+
+  details.forEach(d => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #ffffff08;font-size:11px;';
+    const left = document.createElement('span');
+    left.textContent = d.label + ' (' + d.weight.toFixed(0) + '%)';
+    const right = document.createElement('span');
+    right.style.color = d.contribution >= 0 ? '#22c55e' : '#dc2626';
+    right.textContent = (d.contribution >= 0 ? '+' : '') + d.contribution.toFixed(2) + '%';
+    row.append(left, right);
+    resultEl.appendChild(row);
+  });
+
+  /* 경고 */
+  if (Math.abs(portfolioPct) > 3) {
+    const warn = document.createElement('div');
+    warn.style.cssText = 'margin-top:10px;padding:8px;background:#dc262622;border:1px solid #dc262655;border-radius:8px;font-size:11px;color:#f87171;';
+    warn.textContent = '\u26A0 현재 변동성이 높습니다. 리밸런싱을 검토하세요.';
+    resultEl.appendChild(warn);
+  }
+}
+
+/* ================================================================
    EVENTS
    ================================================================ */
 function bindEvents() {
@@ -1956,6 +2175,20 @@ function bindEvents() {
     img.src = url;
   });
 
+  /* 대시보드 토글 */
+  document.getElementById('btn-dashboard').addEventListener('click', () => {
+    const panel = document.getElementById('dashboard-panel');
+    if (panel.style.display === 'none') {
+      renderDashboard();
+      panel.style.display = 'block';
+    } else {
+      panel.style.display = 'none';
+    }
+  });
+  document.getElementById('btn-dash-close').addEventListener('click', () => {
+    document.getElementById('dashboard-panel').style.display = 'none';
+  });
+
   /* Resize */
   window.addEventListener('resize', () => { W = innerWidth; H = innerHeight; fitView(200); });
 
@@ -1970,6 +2203,16 @@ function bindEvents() {
       }
     }
   });
+
+  /* 포트폴리오 */
+  document.getElementById('btn-portfolio').addEventListener('click', () => {
+    closeSheet();
+    openPortfolio();
+  });
+  document.getElementById('btn-port-close').addEventListener('click', () => {
+    document.getElementById('portfolio-panel').style.display = 'none';
+  });
+  document.getElementById('btn-port-calc').addEventListener('click', calcPortfolioImpact);
 }
 
 /* ================================================================
@@ -2264,5 +2507,20 @@ function renderSparkline(node) {
   show();
 })();
 </script>
+<!-- Portfolio panel -->
+<div id="portfolio-panel" style="display:none;position:fixed;inset:0;z-index:220;background:rgba(0,0,0,0.7);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);">
+  <div style="position:fixed;bottom:0;left:0;right:0;background:#1e1e2e;border-top-left-radius:16px;border-top-right-radius:16px;padding:20px 18px calc(34px + env(safe-area-inset-bottom));max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="font-size:16px;font-weight:700;color:#e2e8f0;">내 포트폴리오 영향 분석</h3>
+      <button id="btn-port-close" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">자산별 비중(%)을 입력하면 시나리오 영향을 계산합니다</div>
+    <div id="port-inputs" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button id="btn-port-calc" style="flex:1;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">영향 분석</button>
+    </div>
+    <div id="port-result" style="font-size:12px;color:#cbd5e1;line-height:1.6;"></div>
+  </div>
+</div>
 </body>
 </html>
