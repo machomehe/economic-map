@@ -1,6 +1,6 @@
 {
-  "version": "4.2",
-  "lastUpdated": "2026-04-07",
+  "version": "5.0",
+  "lastUpdated": "2026-04-08",
   "categories": {
     "자산": {
       "color": "#fbbf24"
@@ -511,6 +511,93 @@
         "fred": "PCOPPUSDM"
       },
       "tags": []
+    },
+    {
+      "id": "kr_won",
+      "label": "원/달러",
+      "sub": "KRW/USD",
+      "category": "시장 지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "원/달러 환율. 한국 투자자의 해외투자 수익률을 결정하는 핵심 변수. 한미 금리차, 경상수지, 외국인 자금 유출입에 의해 결정된다. 1,300원 이상은 위기 수준, 1,100원 이하는 원화 강세.",
+      "interpretation": {
+        "up": "원화 약세. 수출기업 유리, 수입물가↑, 해외투자 환손실.",
+        "down": "원화 강세. 수입물가↓, 해외투자 환이익, 수출 경쟁력↓."
+      },
+      "dataSource": {
+        "fred": "DEXKOUS"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_nfci",
+      "label": "금융상황지수",
+      "sub": "NFCI",
+      "category": "시장 지표",
+      "level": 2,
+      "isAsset": false,
+      "description": "시카고 연준 국가금융상황지수. 금리, 스프레드, 주가, 환율을 종합한 단일 지표. 0 이상이면 평균보다 긴축적, 이하이면 완화적. 파월 의장이 기자회견에서 financial conditions를 자주 언급한다.",
+      "interpretation": {
+        "up": "금융 긴축. 대출 조건↑, 자산가격↓, 경기 둔화 압력.",
+        "down": "금융 완화. 대출 조건↓, 자산가격↑, 경기 부양 효과."
+      },
+      "dataSource": {
+        "fred": "NFCI"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_pce",
+      "label": "Core PCE",
+      "sub": "연준 공식 물가",
+      "category": "매크로 지표",
+      "level": 2,
+      "isAsset": false,
+      "unit": "YoY%",
+      "description": "개인소비지출 물가지수(식품·에너지 제외). 연준의 공식 인플레이션 타겟(2%)이 이 지표 기준이다. CPI보다 대체효과를 반영하여 0.3-0.5%p 낮은 경향이 있다.",
+      "interpretation": {
+        "up": "연준 타겟 2% 상회 시 긴축 압력. 3% 이상이면 강한 긴축.",
+        "down": "연준 타겟 하회 시 완화 여지. 1.5% 이하이면 디플레 우려."
+      },
+      "dataSource": {
+        "fred": "PCEPILFE"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_wage",
+      "label": "임금상승률",
+      "sub": "Avg Hourly Earnings",
+      "category": "매크로 지표",
+      "level": 3,
+      "isAsset": false,
+      "unit": "YoY%",
+      "description": "비농업 민간부문 평균시간당임금. 임금-물가 나선(wage-price spiral)의 핵심 변수. 3.5% 이상이면 인플레 압력, 2% 이하이면 디플레 우려. 2022-23년 연준 긴축의 핵심 근거 중 하나.",
+      "interpretation": {
+        "up": "노동시장 과열. 인플레 압력↑, 긴축 명분 강화.",
+        "down": "노동시장 냉각. 인플레 완화, 연준 완화 여지↑."
+      },
+      "dataSource": {
+        "fred": "CES0500000003"
+      },
+      "tags": []
+    },
+    {
+      "id": "us_jpyusd",
+      "label": "엔/달러",
+      "sub": "JPY/USD",
+      "category": "시장 지표",
+      "level": 3,
+      "isAsset": false,
+      "description": "엔/달러 환율. 엔캐리 트레이드의 핵심 변수로, 엔 약세 시 글로벌 캐리 확대, 엔 강세(캐리 해소) 시 글로벌 유동성 급감. 2024년 8월 엔캐리 청산이 글로벌 폭락을 촉발했다.",
+      "interpretation": {
+        "up": "엔 약세(달러당 엔 증가). 캐리 트레이드 확대, BOJ 완화 지속 신호.",
+        "down": "엔 강세. 캐리 해소 위험, 글로벌 유동성 수축 경고."
+      },
+      "dataSource": {
+        "fred": "DEXJPUS"
+      },
+      "tags": []
     }
   ],
   "links": [
@@ -529,7 +616,7 @@
       "source": "us_rate",
       "target": "us_bonds",
       "type": "반비례",
-      "strength": 5,
+      "strength": 4,
       "description": "금리↑ → 채권가격↓",
       "lag": "즉시-1개월",
       "relation": "causal"
@@ -559,7 +646,7 @@
       "source": "us_rate",
       "target": "us_commodity",
       "type": "반비례",
-      "strength": 3,
+      "strength": 2,
       "description": "실질금리↑ → 금 매력↓",
       "lag": "1-3개월",
       "relation": "causal"
@@ -589,7 +676,7 @@
       "source": "us_cpi",
       "target": "us_rate",
       "type": "비례",
-      "strength": 5,
+      "strength": 4,
       "description": "인플레↑ → 긴축 압력 → 금리↑",
       "lag": "1-6개월",
       "relation": "causal"
@@ -629,7 +716,7 @@
       "source": "us_spread",
       "target": "us_stocks",
       "type": "비례",
-      "strength": 2,
+      "strength": 3,
       "description": "금리차 역전 → 침체 경고 → 주식↓",
       "lag": "6-18개월",
       "relation": "correlation"
@@ -669,7 +756,7 @@
       "source": "us_vix",
       "target": "us_bonds",
       "type": "비례",
-      "strength": 3,
+      "strength": 2,
       "description": "공포↑ → 안전자산(채권) 매수. 단, 인플레 공포나 유동성 위기 시에는 채권도 동반 하락 가능",
       "lag": "즉시",
       "relation": "correlation"
@@ -689,7 +776,7 @@
       "source": "us_liquidity",
       "target": "us_stocks",
       "type": "비례",
-      "strength": 5,
+      "strength": 4,
       "description": "유동성↑ → 자산가격↑",
       "lag": "3-6개월",
       "relation": "causal"
@@ -1033,6 +1120,256 @@
       "description": "구리↑ → 생산비용↑ → 인플레 압력",
       "lag": "3-6개월",
       "relation": "causal"
+    },
+    {
+      "id": "us_rate-us_dollar",
+      "source": "us_rate",
+      "target": "us_dollar",
+      "type": "비례",
+      "strength": 4,
+      "description": "금리↑ → 달러 캐리 매력↑ → 달러 강세. 한미 금리차가 핵심 결정 변수.",
+      "lag": "즉시-1개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_rate-us_gdp",
+      "source": "us_rate",
+      "target": "us_gdp",
+      "type": "반비례",
+      "strength": 3,
+      "description": "금리↑ → 투자·소비 비용↑ → 경기 둔화. IS곡선의 핵심 전달경로.",
+      "lag": "6-12개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_hy-us_stocks",
+      "source": "us_hy",
+      "target": "us_stocks",
+      "type": "반비례",
+      "strength": 3,
+      "description": "HY 스프레드↑ → 신용경색 → 기업 자금조달 어려움 → 주식↓. 2-4주 선행.",
+      "lag": "1-3개월",
+      "relation": "correlation"
+    },
+    {
+      "id": "us_hy-us_gdp",
+      "source": "us_hy",
+      "target": "us_gdp",
+      "type": "반비례",
+      "strength": 2,
+      "description": "HY 스프레드↑ → 기업 투자 위축 → 성장↓",
+      "lag": "3-6개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_stocks-us_sentiment",
+      "source": "us_stocks",
+      "target": "us_sentiment",
+      "type": "비례",
+      "strength": 4,
+      "description": "주가↑ → 부의 효과 → 소비자심리 개선. 역자산효과도 강력.",
+      "lag": "즉시",
+      "relation": "causal"
+    },
+    {
+      "id": "us_stocks-us_gdp",
+      "source": "us_stocks",
+      "target": "us_gdp",
+      "type": "비례",
+      "strength": 3,
+      "description": "주가↑ → 부의 효과 + 기업 자금조달 용이 → GDP↑. 주식이 GDP를 6-9개월 선행.",
+      "lag": "1-3개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_vix-us_dollar2",
+      "source": "us_vix",
+      "target": "us_dollar",
+      "type": "비례",
+      "strength": 3,
+      "description": "공포↑ → 안전자산 수요 → 달러 강세 (달러 스마일 이론).",
+      "lag": "즉시",
+      "relation": "correlation"
+    },
+    {
+      "id": "us_dollar-us_stocks",
+      "source": "us_dollar",
+      "target": "us_stocks",
+      "type": "반비례",
+      "strength": 2,
+      "description": "달러↑ → 다국적기업 실적↓ + EM 자금이탈 → 주식↓",
+      "lag": "1-3개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_unemployment-us_cpi",
+      "source": "us_unemployment",
+      "target": "us_cpi",
+      "type": "반비례",
+      "strength": 3,
+      "description": "실업↑ → 임금 압력↓ → 인플레↓. 필립스 곡선의 핵심 메커니즘.",
+      "lag": "6-12개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_commodity-us_cpi2",
+      "source": "us_commodity",
+      "target": "us_cpi",
+      "type": "비례",
+      "strength": 2,
+      "description": "금↑ → 인플레 기대 상승 신호 → CPI 상승 압력",
+      "lag": "3-6개월",
+      "relation": "correlation"
+    },
+    {
+      "id": "us_realestate-us_gdp",
+      "source": "us_realestate",
+      "target": "us_gdp",
+      "type": "비례",
+      "strength": 3,
+      "description": "주택가격↑ → 건설투자↑ + 부의 효과 → GDP↑",
+      "lag": "3-6개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_gdp-us_unemployment",
+      "source": "us_gdp",
+      "target": "us_unemployment",
+      "type": "반비례",
+      "strength": 4,
+      "description": "GDP↓ → 기업 감원 → 실업↑. 오쿤의 법칙: GDP -1%p → 실업률 +0.5%p",
+      "lag": "3-6개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_stocks-us_vix",
+      "source": "us_stocks",
+      "target": "us_vix",
+      "type": "반비례",
+      "strength": 4,
+      "description": "주식↓ → VIX↑. VIX는 S&P500 옵션 내재변동성에서 파생.",
+      "lag": "즉시",
+      "relation": "correlation"
+    },
+    {
+      "id": "us_rate-us_hy",
+      "source": "us_rate",
+      "target": "us_hy",
+      "type": "비례",
+      "strength": 3,
+      "description": "금리↑ → 기업 차입비용↑ → 디폴트 위험↑ → HY 스프레드↑",
+      "lag": "1-3개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_gdp-us_hy",
+      "source": "us_gdp",
+      "target": "us_hy",
+      "type": "반비례",
+      "strength": 3,
+      "description": "GDP↓ → 기업 실적↓ → 신용위험↑ → HY 스프레드↑",
+      "lag": "1-3개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_dollar-kr_won",
+      "source": "us_dollar",
+      "target": "kr_won",
+      "type": "비례",
+      "strength": 4,
+      "description": "달러↑ → 원화 약세. DXY와 원/달러 상관 0.7+",
+      "lag": "즉시",
+      "relation": "causal"
+    },
+    {
+      "id": "us_rate-kr_won",
+      "source": "us_rate",
+      "target": "kr_won",
+      "type": "비례",
+      "strength": 3,
+      "description": "미국 금리↑ → 한미 금리차 확대 → 자본 유출 → 원화 약세",
+      "lag": "1-3개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_rate-us_nfci",
+      "source": "us_rate",
+      "target": "us_nfci",
+      "type": "비례",
+      "strength": 4,
+      "description": "금리↑ → 금융 긴축. NFCI는 금리를 가장 큰 구성요소로 포함",
+      "lag": "즉시",
+      "relation": "causal"
+    },
+    {
+      "id": "us_nfci-us_stocks",
+      "source": "us_nfci",
+      "target": "us_stocks",
+      "type": "반비례",
+      "strength": 3,
+      "description": "금융 긴축(NFCI↑) → 자산가격↓, 대출↓ → 주식↓",
+      "lag": "1-3개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_nfci-us_gdp",
+      "source": "us_nfci",
+      "target": "us_gdp",
+      "type": "반비례",
+      "strength": 3,
+      "description": "금융 긴축(NFCI↑) → 투자·소비 위축 → GDP↓",
+      "lag": "3-6개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_pce-us_rate",
+      "source": "us_pce",
+      "target": "us_rate",
+      "type": "비례",
+      "strength": 4,
+      "description": "Core PCE↑ → 연준 긴축 압력. 연준 공식 타겟이므로 CPI보다 직접적 영향",
+      "lag": "1-6개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_nfp-us_wage",
+      "source": "us_nfp",
+      "target": "us_wage",
+      "type": "비례",
+      "strength": 4,
+      "description": "고용 강세 → 노동시장 타이트 → 임금 상승 압력",
+      "lag": "1-3개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_wage-us_cpi",
+      "source": "us_wage",
+      "target": "us_cpi",
+      "type": "비례",
+      "strength": 3,
+      "description": "임금↑ → 서비스 물가↑ → CPI↑. 임금-물가 나선의 핵심 경로",
+      "lag": "3-6개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_rate-us_jpyusd",
+      "source": "us_rate",
+      "target": "us_jpyusd",
+      "type": "비례",
+      "strength": 3,
+      "description": "미국 금리↑ → 미일 금리차 확대 → 엔 약세(달러당 엔↑)",
+      "lag": "즉시-1개월",
+      "relation": "causal"
+    },
+    {
+      "id": "us_jpyusd-us_vix",
+      "source": "us_jpyusd",
+      "target": "us_vix",
+      "type": "반비례",
+      "strength": 2,
+      "description": "엔 급강세(캐리 해소) → 글로벌 유동성 수축 → VIX↑",
+      "lag": "즉시",
+      "relation": "correlation"
     }
   ]
 }

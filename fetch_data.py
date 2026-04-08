@@ -39,6 +39,10 @@ SERIES_IDS = [
     'T5YIE',            # us_expinf: 기대인플레이션 (5Y Breakeven)
     'ICSA',             # us_claims: 초기실업수당 청구건수
     'PCOPPUSDM',        # us_copper: 구리 가격 (월간)
+    'NFCI',             # us_nfci: 시카고 연준 금융상황지수 (National Financial Conditions Index)
+    'PCEPILFE',         # us_pce: Core PCE 물가지수 (연준 공식 타겟)
+    'CES0500000003',    # us_wage: 평균시간당임금 (Average Hourly Earnings)
+    'DEXJPUS',          # us_jpyusd: 엔/달러 환율
 ]
 
 # Stock형 지표: 절대 수준보다 YoY% 변화가 의미있는 시리즈
@@ -50,6 +54,8 @@ YOY_SERIES = {
     'GFDEBTN',          # 국가부채 → YoY%
     'RSAFS',            # 소매판매 → YoY%
     'PAYEMS',           # 비농업고용 → YoY%
+    'PCEPILFE',         # Core PCE → YoY%
+    'CES0500000003',    # 임금 → YoY%
 }
 
 

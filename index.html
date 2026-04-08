@@ -1425,29 +1425,36 @@ document.getElementById('btn-sim-down').addEventListener('click', () => {
    BFS SIMULATION — "오르면? / 내리면?"
    ================================================================ */
 function runSim(startNode, direction) {
-  const visited = new Set([startNode.id]);
-  const queue   = [{ id: startNode.id, dir: direction }];
-  const results = [];
+  const impacts = {}; // nodeId → { node, dir, impact (0-1), link, depth }
+  const queue = [{ id: startNode.id, dir: direction, impact: 1.0, depth: 0 }];
 
   while (queue.length) {
     const cur = queue.shift();
+    if (cur.depth >= 3) continue; // max depth
 
     DATA.links.forEach(link => {
       if (link.source !== cur.id) return;
       const tgt = nodeMap[link.target];
       if (!tgt || tgt.level > currentLevel) return;
-      if (visited.has(link.target)) return;
-      visited.add(link.target);
 
       let rDir;
       if (link.type === '비례')        rDir = cur.dir;
       else if (link.type === '반비례') rDir = (cur.dir === 'up' ? 'down' : 'up');
       else                             rDir = 'cond';
 
-      results.push({ node: tgt, dir: rDir, link });
-      queue.push({ id: link.target, dir: rDir });
+      const decay = (link.strength || 3) / 5;
+      const newImpact = cur.impact * decay;
+
+      if (!impacts[link.target] || newImpact > impacts[link.target].impact) {
+        impacts[link.target] = {
+          node: tgt, dir: rDir, impact: newImpact, link: link, depth: cur.depth + 1
+        };
+        queue.push({ id: link.target, dir: rDir, impact: newImpact, depth: cur.depth + 1 });
+      }
     });
   }
+
+  const results = Object.values(impacts).sort((a, b) => b.impact - a.impact);
 
   /* display in sheet */
   const dirLabel = direction === 'up' ? '상승' : '하락';
@@ -1456,7 +1463,7 @@ function runSim(startNode, direction) {
 
   const header = document.createElement('div');
   header.style.cssText = 'font-weight:700;margin-bottom:8px;font-size:13px;';
-  header.textContent = startNode.label + ' ' + dirLabel + ' 시 연쇄 효과:';
+  header.textContent = startNode.label + ' ' + dirLabel + ' 시 연쇄 효과 (3단계 전파):';
   interpEl.appendChild(header);
 
   if (!results.length) {
@@ -1491,6 +1498,11 @@ function runSim(startNode, direction) {
         iconSpan.textContent = '\u25C6 조건부';
       }
       row.appendChild(iconSpan);
+
+      const impactPct = document.createElement('span');
+      impactPct.style.cssText = 'color:#a78bfa;font-size:11px;margin-left:6px;font-weight:600;';
+      impactPct.textContent = '(영향도 ' + Math.round(r.impact * 100) + '%)';
+      row.appendChild(impactPct);
 
       /* 시차(lag) + 인과/상관 태그 */
       if (r.link.lag || r.link.relation) {
@@ -1589,29 +1601,40 @@ function runMultiSim() {
 
   closeMultiSimPanel();
 
-  /* BFS from multiple start points */
-  const visited = new Set(starts.map(s => s[0]));
-  const queue = starts.map(([id, dir]) => ({ id, dir }));
-  const results = [];
+  /* Weighted propagation from multiple start points */
+  const impacts = {}; // nodeId → { node, dir, impact, link, depth }
+  const startSet = new Set(starts.map(s => s[0]));
+  const queue = starts.map(([id, dir]) => ({ id, dir, impact: 1.0, depth: 0 }));
 
   while (queue.length) {
     const cur = queue.shift();
+    if (cur.depth >= 3) continue; // max depth
+
     DATA.links.forEach(link => {
       if (link.source !== cur.id) return;
       const tgt = nodeMap[link.target];
       if (!tgt || tgt.level > currentLevel) return;
-      if (visited.has(link.target)) return;
-      visited.add(link.target);
 
       let rDir;
       if (link.type === '비례')        rDir = cur.dir;
       else if (link.type === '반비례') rDir = (cur.dir === 'up' ? 'down' : 'up');
       else                             rDir = 'cond';
 
-      results.push({ node: tgt, dir: rDir, link });
-      queue.push({ id: link.target, dir: rDir });
+      const decay = (link.strength || 3) / 5;
+      const newImpact = cur.impact * decay;
+
+      if (!impacts[link.target] || newImpact > impacts[link.target].impact) {
+        impacts[link.target] = {
+          node: tgt, dir: rDir, impact: newImpact, link: link, depth: cur.depth + 1
+        };
+        queue.push({ id: link.target, dir: rDir, impact: newImpact, depth: cur.depth + 1 });
+      }
     });
   }
+
+  // Exclude start nodes from results
+  startSet.forEach(id => delete impacts[id]);
+  const results = Object.values(impacts).sort((a, b) => b.impact - a.impact);
 
   /* Display results in sheet */
   const startLabels = starts.map(([id, dir]) => nodeMap[id].label + (dir === 'up' ? '\u25B2' : '\u25BC')).join(' + ');
@@ -1620,7 +1643,7 @@ function runMultiSim() {
 
   document.getElementById('sheet-title').textContent = '복합 시나리오';
   document.getElementById('sheet-sub').textContent = startLabels;
-  document.getElementById('sheet-desc').textContent = starts.length + '개 지표 동시 변동 시 연쇄 효과';
+  document.getElementById('sheet-desc').textContent = starts.length + '개 지표 동시 변동 시 연쇄 효과 (3단계 전파)';
   document.getElementById('sheet-spark').textContent = '';
 
   const header = document.createElement('div');
@@ -1651,13 +1674,10 @@ function runMultiSim() {
     }
     row.appendChild(iconSpan);
 
-    /* impact 정량 표시 */
-    if (r.link.impact) {
-      const impactSpan = document.createElement('span');
-      impactSpan.style.cssText = 'color:#6366f1;font-size:10px;margin-left:6px;';
-      impactSpan.textContent = r.link.impact;
-      row.appendChild(impactSpan);
-    }
+    const impactPct = document.createElement('span');
+    impactPct.style.cssText = 'color:#a78bfa;font-size:11px;margin-left:6px;font-weight:600;';
+    impactPct.textContent = '(영향도 ' + Math.round(r.impact * 100) + '%)';
+    row.appendChild(impactPct);
 
     const desc = document.createElement('span');
     desc.style.cssText = 'color:#64748b;font-size:11px;margin-left:4px;display:block;';
