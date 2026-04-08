@@ -627,7 +627,7 @@ function detectRegime() {
   /* 배지 업데이트 */
   badge.style.color = cur.color;
   badge.style.borderColor = cur.color + '55';
-  badge.textContent = cur.emoji + ' 현재: ' + cur.label;
+  badge.textContent = cur.emoji + ' ' + cur.label;
 
   /* 패널 4국면 표시 */
   phasesEl.textContent = '';
@@ -664,20 +664,66 @@ function detectRegime() {
     phasesEl.appendChild(row);
   });
 
-  /* 판별 근거 */
+  /* 판별 근거 상세 */
   const pmi = nodeMap['us_pmi']?._val;
   const spread = nodeMap['us_spread']?._val;
   const vix = nodeMap['us_vix']?._val;
   const nfci = nodeMap['us_nfci']?._val;
   const cpi = nodeMap['us_cpi']?._val;
 
-  const parts = ['판별 근거:'];
-  if (pmi != null) parts.push('PMI ' + pmi.toFixed(1));
-  if (spread != null) parts.push('금리차 ' + spread.toFixed(2));
-  if (vix != null) parts.push('VIX ' + vix.toFixed(1));
-  if (nfci != null) parts.push('NFCI ' + nfci.toFixed(2));
-  if (cpi != null) parts.push('CPI ' + cpi.toFixed(1) + '%');
-  basisEl.textContent = parts.join(' | ');
+  basisEl.textContent = '';
+
+  /* 왜 이 국면인가 */
+  const reasonTitle = document.createElement('div');
+  reasonTitle.style.cssText = 'font-weight:700;color:#cbd5e1;margin-bottom:4px;font-size:11px;';
+  reasonTitle.textContent = '왜 "' + cur.label + '"인가?';
+  basisEl.appendChild(reasonTitle);
+
+  const reasons = [];
+  if (currentId === 'crisis') {
+    if (vix != null && vix >= 30) reasons.push('VIX ' + vix.toFixed(1) + ' ≥ 30 (공포 단계)');
+    if (spread != null && spread < -0.5 && pmi != null && pmi < 45) {
+      reasons.push('금리차 ' + spread.toFixed(2) + ' < -0.5 + PMI ' + pmi.toFixed(1) + ' < 45 (침체 진입)');
+    }
+  } else if (currentId === 'slowdown') {
+    if (pmi != null && pmi < 50) reasons.push('PMI ' + pmi.toFixed(1) + ' < 50 (제조업 수축)');
+    if (spread != null && spread < 0) reasons.push('금리차 ' + spread.toFixed(2) + ' < 0 (장단기 역전)');
+    if (nfci != null && nfci > 0) reasons.push('NFCI ' + nfci.toFixed(2) + ' > 0 (금융 긴축)');
+  } else if (currentId === 'overheating') {
+    if (pmi != null && pmi > 55) reasons.push('PMI ' + pmi.toFixed(1) + ' > 55 (강한 확장)');
+    if (vix != null && vix < 15) reasons.push('VIX ' + vix.toFixed(1) + ' < 15 (시장 안일함)');
+    if (cpi != null && cpi > 3) reasons.push('CPI ' + cpi.toFixed(1) + '% > 3% (인플레 압력)');
+  } else if (currentId === 'expansion') {
+    if (pmi != null && pmi >= 50) reasons.push('PMI ' + pmi.toFixed(1) + ' ≥ 50 (확장 영역)');
+    if (spread != null && spread >= 0) reasons.push('금리차 ' + spread.toFixed(2) + ' ≥ 0 (정상 곡선)');
+    if (vix != null && vix < 30) reasons.push('VIX ' + vix.toFixed(1) + ' < 30 (시장 안정)');
+    if (nfci != null && nfci <= 0) reasons.push('NFCI ' + nfci.toFixed(2) + ' ≤ 0 (금융 완화)');
+  }
+
+  reasons.forEach(r => {
+    const div = document.createElement('div');
+    div.style.cssText = 'font-size:10px;color:#94a3b8;padding:2px 0;';
+    div.textContent = '• ' + r;
+    basisEl.appendChild(div);
+  });
+
+  /* 현재 지표값 요약 */
+  const valueTitle = document.createElement('div');
+  valueTitle.style.cssText = 'font-weight:700;color:#cbd5e1;margin-top:8px;margin-bottom:4px;font-size:11px;';
+  valueTitle.textContent = '핵심 지표 현재값';
+  basisEl.appendChild(valueTitle);
+
+  const vals = [];
+  if (pmi != null) vals.push('PMI ' + pmi.toFixed(1));
+  if (spread != null) vals.push('금리차 ' + spread.toFixed(2) + '%');
+  if (vix != null) vals.push('VIX ' + vix.toFixed(1));
+  if (nfci != null) vals.push('NFCI ' + nfci.toFixed(2));
+  if (cpi != null) vals.push('CPI ' + cpi.toFixed(1) + '%');
+
+  const valSpan = document.createElement('div');
+  valSpan.style.cssText = 'font-size:10px;color:#64748b;';
+  valSpan.textContent = vals.join(' · ');
+  basisEl.appendChild(valSpan);
 }
 
 /* ================================================================
@@ -1586,6 +1632,8 @@ svg.on('click.sheet', () => { if (!editMode) closeSheet(); });
   /* 시트 전체에서 스와이프 가능 (스크롤 맨 위일 때만) */
   sheet.addEventListener('touchstart', (e) => {
     if (sheet.scrollTop > 0) return; // 내부 스크롤 중이면 무시
+    /* 버튼/입력 위에서 시작된 터치는 드래그 비활성화 */
+    if (e.target.closest('button, input, a')) return;
     startY = e.touches[0].clientY;
     currentY = startY;
     dragging = true;
@@ -2241,18 +2289,29 @@ function bindEvents() {
   document.getElementById('btn-lv3').addEventListener('click', () => applyLevel(3));
 
   /* 바텀시트 닫기 버튼 */
-  document.getElementById('btn-sheet-close').addEventListener('click', (e) => {
+  const closeBtn = document.getElementById('btn-sheet-close');
+  closeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    e.preventDefault();
+    closeSheet();
+  });
+  closeBtn.addEventListener('touchend', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
     closeSheet();
   });
 
   /* 대시보드로 돌아가기 버튼 */
-  document.getElementById('btn-back-dash').addEventListener('click', (e) => {
+  const backBtn = document.getElementById('btn-back-dash');
+  const backHandler = (e) => {
     e.stopPropagation();
+    e.preventDefault();
     closeSheet();
     renderDashboard();
     document.getElementById('dashboard-panel').style.display = 'block';
-  });
+  };
+  backBtn.addEventListener('click', backHandler);
+  backBtn.addEventListener('touchend', backHandler);
 
   /* 검색 토글 */
   document.getElementById('btn-search-toggle').addEventListener('click', () => {
