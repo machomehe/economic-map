@@ -629,7 +629,8 @@
       "strength": 3,
       "description": "금리↑ → 할인율↑ → 주식↓. 단, 경기 확장 초기에는 실적 개선이 할인율 효과를 상쇄할 수 있음",
       "lag": "1-6개월",
-      "relation": "causal"
+      "relation": "causal",
+      "caveat": "경기 확장 초기에는 금리 인상이 건강한 경제의 신호로 주식에 긍정적일 수 있음 (2016-18년 사례)"
     },
     {
       "id": "us_rate-us_realestate",
@@ -649,7 +650,8 @@
       "strength": 2,
       "description": "실질금리↑ → 금 매력↓",
       "lag": "1-3개월",
-      "relation": "causal"
+      "relation": "causal",
+      "caveat": "중앙은행 매입 급증 시 금리-금 역상관이 약화될 수 있음 (2022-24년 사례)"
     },
     {
       "id": "us_cpi-us_cash",
@@ -679,7 +681,8 @@
       "strength": 4,
       "description": "인플레↑ → 긴축 압력 → 금리↑",
       "lag": "1-6개월",
-      "relation": "causal"
+      "relation": "causal",
+      "caveat": "연준 재량(discretion)이 개입하므로 기계적 반응이 아님. 2021년 '일시적' 판단 사례"
     },
     {
       "id": "us_tariff-us_cpi",
@@ -709,7 +712,8 @@
       "strength": 3,
       "description": "국채발행↑ → 채권가격↓",
       "lag": "즉시-1개월",
-      "relation": "causal"
+      "relation": "causal",
+      "caveat": "경기침체기에는 재정적자 확대와 채권 가격 상승이 동시에 발생할 수 있음"
     },
     {
       "id": "us_spread-us_stocks",
@@ -749,7 +753,8 @@
       "strength": 4,
       "description": "공포↑ → 주식 매도",
       "lag": "즉시",
-      "relation": "correlation"
+      "relation": "correlation",
+      "caveat": "VIX는 S&P500 옵션에서 파생되므로 인과관계가 아닌 동시적 관계"
     },
     {
       "id": "us_vix-us_bonds",
@@ -759,7 +764,8 @@
       "strength": 2,
       "description": "공포↑ → 안전자산(채권) 매수. 단, 인플레 공포나 유동성 위기 시에는 채권도 동반 하락 가능",
       "lag": "즉시",
-      "relation": "correlation"
+      "relation": "correlation",
+      "caveat": "인플레 레짐(CPI>4%)에서는 채권도 동반 하락 가능 (2022년 사례)"
     },
     {
       "id": "us_vix-us_commodity",
@@ -779,7 +785,8 @@
       "strength": 4,
       "description": "유동성↑ → 자산가격↑",
       "lag": "3-6개월",
-      "relation": "causal"
+      "relation": "causal",
+      "caveat": "역레포(ON RRP) 감소가 유동성 버퍼 역할을 하여 QT 효과가 지연될 수 있음"
     },
     {
       "id": "us_liquidity-us_realestate",
@@ -939,7 +946,8 @@
       "strength": 3,
       "description": "고용↑ → 소비 기대↑ → 주식↑. 단, 긴축기에는 고용 호조 → 금리인상 기대 → 주식 하락(good news is bad news)",
       "lag": "즉시-1일",
-      "relation": "correlation"
+      "relation": "correlation",
+      "caveat": "긴축기에는 고용 호조가 금리인상 기대를 높여 주식에 악재(good news is bad news)"
     },
     {
       "id": "us_lfpr-us_nfp",
@@ -1179,7 +1187,8 @@
       "strength": 3,
       "description": "주가↑ → 부의 효과 + 기업 자금조달 용이 → GDP↑. 주식이 GDP를 6-9개월 선행.",
       "lag": "1-3개월",
-      "relation": "causal"
+      "relation": "causal",
+      "caveat": "주식이 GDP를 6-9개월 선행하므로, GDP 개선 확인 후 매수하면 이미 늦을 수 있음"
     },
     {
       "id": "us_vix-us_dollar2",
@@ -1209,7 +1218,8 @@
       "strength": 3,
       "description": "실업↑ → 임금 압력↓ → 인플레↓. 필립스 곡선의 핵심 메커니즘.",
       "lag": "6-12개월",
-      "relation": "causal"
+      "relation": "causal",
+      "caveat": "필립스 곡선이 평탄화되어 실업률 변화의 인플레 영향이 과거보다 약해졌다는 주장이 있음"
     },
     {
       "id": "us_commodity-us_cpi2",
