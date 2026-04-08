@@ -277,7 +277,13 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
 <div id="data-timestamp" style="position:fixed;top:10px;left:10px;z-index:90;font-size:10px;color:#64748b;background:#16161ecc;padding:4px 8px;border-radius:6px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);"></div>
 
 <!-- Regime badge -->
-<div id="regime-badge" style="position:fixed;top:36px;left:10px;z-index:90;font-size:10px;padding:4px 10px;border-radius:6px;background:#16161ecc;border:1px solid #2a2a3a;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#94a3b8;cursor:pointer;" title="현재 경기 국면 (PMI, 금리차, VIX 기반 자동 판별)"></div>
+<div id="regime-badge" style="position:fixed;top:36px;left:10px;z-index:90;font-size:10px;padding:4px 10px;border-radius:6px;background:#16161ecc;border:1px solid #2a2a3a;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#94a3b8;cursor:pointer;" title="탭하여 상세 보기"></div>
+<!-- Regime detail panel -->
+<div id="regime-panel" style="display:none;position:fixed;top:60px;left:10px;z-index:95;background:#1e1e2eee;border:1px solid #2a2a3a;border-radius:12px;padding:14px 16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);width:270px;font-size:11px;color:#cbd5e1;">
+  <div style="font-weight:700;margin-bottom:10px;font-size:12px;color:#e2e8f0;">경기 사이클 국면</div>
+  <div id="regime-phases"></div>
+  <div id="regime-basis" style="margin-top:10px;padding-top:8px;border-top:1px solid #2a2a3a;font-size:10px;color:#64748b;"></div>
+</div>
 
 <!-- Loading spinner -->
 <div id="loading-spinner" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:999;">
@@ -546,46 +552,130 @@ function resetPositions() {
 }
 
 /* ================================================================
-   REGIME DETECTION — 경기 국면 자동 탐지
+   REGIME DETECTION — 경기 4국면 자동 탐지
    ================================================================ */
-function detectRegime() {
-  const badge = document.getElementById('regime-badge');
-  if (!badge) return;
+const REGIME_PHASES = [
+  {
+    id: 'expansion', label: '확장', emoji: '\uD83D\uDFE2', color: '#22c55e',
+    desc: '경기 호조, 위험자산 강세',
+    favored: '주식, 부동산, 원자재',
+    avoid: '현금, 단기채',
+  },
+  {
+    id: 'overheating', label: '과열', emoji: '\uD83D\uDFE0', color: '#f97316',
+    desc: '인플레 압력↑, 긴축 임박',
+    favored: '원자재, 금, TIPS',
+    avoid: '장기 채권, 성장주',
+  },
+  {
+    id: 'slowdown', label: '둔화', emoji: '\uD83D\uDFE7', color: '#f59e0b',
+    desc: '경기 둔화 신호, 방어 자산',
+    favored: '국채, 우량 회사채, 현금',
+    avoid: '원자재, 소형주',
+  },
+  {
+    id: 'crisis', label: '위기/침체', emoji: '\uD83D\uDFE5', color: '#dc2626',
+    desc: '경기 침체, 자산가격 하락',
+    favored: '현금, 국채, 금',
+    avoid: '주식, 회사채, 원자재',
+  },
+];
 
+function detectRegimePhase() {
   const pmi = nodeMap['us_pmi']?._val;
   const spread = nodeMap['us_spread']?._val;
   const vix = nodeMap['us_vix']?._val;
   const nfci = nodeMap['us_nfci']?._val;
+  const cpi = nodeMap['us_cpi']?._val;
 
-  let regime = '판별 불가';
-  let color = '#64748b';
-  let emoji = '';
+  if (pmi == null && spread == null) return null;
 
-  if (pmi == null && spread == null) {
+  /* 위기: VIX>=30 OR (spread<-0.5 AND PMI<45) */
+  if ((vix != null && vix >= 30) || (spread != null && spread < -0.5 && pmi != null && pmi < 45)) {
+    return 'crisis';
+  }
+  /* 둔화: PMI<50 OR spread<0 OR NFCI>0 */
+  if ((pmi != null && pmi < 50) || (spread != null && spread < 0) || (nfci != null && nfci > 0)) {
+    return 'slowdown';
+  }
+  /* 과열: PMI>55 AND (VIX<15 OR CPI>3) */
+  if (pmi != null && pmi > 55 && ((vix != null && vix < 15) || (cpi != null && cpi > 3))) {
+    return 'overheating';
+  }
+  /* 확장 (기본) */
+  return 'expansion';
+}
+
+function detectRegime() {
+  const badge = document.getElementById('regime-badge');
+  const panel = document.getElementById('regime-panel');
+  const phasesEl = document.getElementById('regime-phases');
+  const basisEl = document.getElementById('regime-basis');
+  if (!badge || !phasesEl) return;
+
+  const currentId = detectRegimePhase();
+
+  if (!currentId) {
     badge.textContent = '';
     return;
   }
 
-  /* 위기 (VIX>=30 OR spread<-0.5 AND PMI<45) */
-  if ((vix != null && vix >= 30) || (spread != null && spread < -0.5 && pmi != null && pmi < 45)) {
-    regime = '위기/침체'; color = '#dc2626'; emoji = '\uD83D\uDFE5';
-  }
-  /* 둔화 (PMI<50 OR spread<0 OR NFCI>0) */
-  else if ((pmi != null && pmi < 50) || (spread != null && spread < 0) || (nfci != null && nfci > 0)) {
-    regime = '둔화/경고'; color = '#f59e0b'; emoji = '\uD83D\uDFE7';
-  }
-  /* 과열 (PMI>55 AND VIX<15) */
-  else if (pmi != null && pmi > 55 && vix != null && vix < 15) {
-    regime = '과열 주의'; color = '#f97316'; emoji = '\uD83D\uDFE0';
-  }
-  /* 확장 (PMI>=50 AND spread>0) */
-  else {
-    regime = '확장'; color = '#22c55e'; emoji = '\uD83D\uDFE2';
-  }
+  const cur = REGIME_PHASES.find(p => p.id === currentId);
 
-  badge.style.color = color;
-  badge.style.borderColor = color + '55';
-  badge.textContent = emoji + ' ' + regime;
+  /* 배지 업데이트 */
+  badge.style.color = cur.color;
+  badge.style.borderColor = cur.color + '55';
+  badge.textContent = cur.emoji + ' 현재: ' + cur.label;
+
+  /* 패널 4국면 표시 */
+  phasesEl.textContent = '';
+  REGIME_PHASES.forEach(p => {
+    const isCurrent = p.id === currentId;
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:8px 10px;margin-bottom:6px;border-radius:8px;border:1px solid ' +
+      (isCurrent ? p.color : '#2a2a3a') +
+      ';background:' + (isCurrent ? p.color + '22' : 'transparent') + ';';
+
+    const head = document.createElement('div');
+    head.style.cssText = 'font-weight:700;font-size:11px;margin-bottom:3px;color:' +
+      (isCurrent ? p.color : '#94a3b8') + ';';
+    head.textContent = (isCurrent ? '\u25B6 ' : '') + p.emoji + ' ' + p.label;
+    row.appendChild(head);
+
+    const desc = document.createElement('div');
+    desc.style.cssText = 'font-size:10px;color:#94a3b8;margin-bottom:2px;';
+    desc.textContent = p.desc;
+    row.appendChild(desc);
+
+    if (isCurrent) {
+      const favored = document.createElement('div');
+      favored.style.cssText = 'font-size:10px;color:#22c55e;margin-top:4px;';
+      favored.textContent = '\u2713 유리: ' + p.favored;
+      row.appendChild(favored);
+
+      const avoid = document.createElement('div');
+      avoid.style.cssText = 'font-size:10px;color:#f87171;';
+      avoid.textContent = '\u2717 불리: ' + p.avoid;
+      row.appendChild(avoid);
+    }
+
+    phasesEl.appendChild(row);
+  });
+
+  /* 판별 근거 */
+  const pmi = nodeMap['us_pmi']?._val;
+  const spread = nodeMap['us_spread']?._val;
+  const vix = nodeMap['us_vix']?._val;
+  const nfci = nodeMap['us_nfci']?._val;
+  const cpi = nodeMap['us_cpi']?._val;
+
+  const parts = ['판별 근거:'];
+  if (pmi != null) parts.push('PMI ' + pmi.toFixed(1));
+  if (spread != null) parts.push('금리차 ' + spread.toFixed(2));
+  if (vix != null) parts.push('VIX ' + vix.toFixed(1));
+  if (nfci != null) parts.push('NFCI ' + nfci.toFixed(2));
+  if (cpi != null) parts.push('CPI ' + cpi.toFixed(1) + '%');
+  basisEl.textContent = parts.join(' | ');
 }
 
 /* ================================================================
@@ -630,6 +720,21 @@ function init() {
   }
 
   detectRegime();
+
+  /* 레짐 배지 클릭 → 패널 토글 */
+  document.getElementById('regime-badge').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const panel = document.getElementById('regime-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  });
+  /* 다른 곳 클릭 시 닫기 */
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('regime-panel');
+    const badge = document.getElementById('regime-badge');
+    if (panel.style.display === 'block' && !panel.contains(e.target) && e.target !== badge) {
+      panel.style.display = 'none';
+    }
+  });
 }
 
 /* ================================================================
