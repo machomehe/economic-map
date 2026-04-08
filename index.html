@@ -309,6 +309,7 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
   <button id="btn-reset" style="display:none;">초기화</button>
   <button id="btn-multi-sim" title="복합 시나리오">복합</button>
   <button id="btn-export" title="현재 맵을 PNG로 저장">PNG</button>
+  <button id="btn-calendar" title="경제 발표 일정">캘린더</button>
   <button id="btn-dashboard">대시보드</button>
 </nav>
 <!-- 검색 오버레이 (토글) -->
@@ -324,6 +325,18 @@ svg { display:block; width:100%; height:100%; touch-action:none; }
     <button id="btn-dash-close" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
   </div>
   <div id="dash-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;"></div>
+</div>
+
+<!-- Calendar panel -->
+<div id="calendar-panel" style="display:none;position:fixed;inset:0;z-index:180;background:var(--bg-primary);overflow-y:auto;padding:16px 12px calc(60px + env(safe-area-inset-bottom));">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <h2 style="font-size:16px;font-weight:700;color:var(--text-primary);">경제 발표 일정</h2>
+    <button id="btn-cal-close" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+  </div>
+  <div id="cal-disclaimer" style="font-size:10px;color:#64748b;margin-bottom:12px;padding:6px 10px;background:#1a1a24;border-radius:6px;">
+    ⓘ 모든 날짜/수치는 FRED 및 Fed 공식 발표 기준. 추측 데이터 없음.
+  </div>
+  <div id="cal-timeline"></div>
 </div>
 
 <!-- Multi-sim panel -->
@@ -411,6 +424,7 @@ const BAR_H      = 52;
 
 /* ── State ── */
 let DATA, VALS, nodeMap = {};
+let RELEASES = null;
 let boxes = [];
 let currentLevel = 1;
 let editMode     = false;
@@ -783,6 +797,9 @@ function init() {
       panel.style.display = 'none';
     }
   });
+
+  /* 경제 발표 일정 (releases.json) 백그라운드 로드 */
+  loadReleases();
 }
 
 /* ================================================================
@@ -2280,6 +2297,169 @@ function calcPortfolioImpact() {
 }
 
 /* ================================================================
+   CALENDAR — 경제 발표 일정 (FRED 실데이터)
+   ================================================================ */
+function loadReleases() {
+  fetch('data/releases.json')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => { RELEASES = data; })
+    .catch(() => { RELEASES = null; });
+}
+
+function renderCalendar() {
+  const timeline = document.getElementById('cal-timeline');
+  timeline.textContent = '';
+
+  if (!RELEASES || !RELEASES.releases) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;color:#64748b;padding:40px 20px;font-size:13px;';
+    empty.textContent = 'releases.json 데이터가 없습니다. fetch_data.py를 먼저 실행해주세요.';
+    timeline.appendChild(empty);
+    return;
+  }
+
+  /* 업데이트 시각 */
+  const updated = document.createElement('div');
+  updated.style.cssText = 'font-size:10px;color:#64748b;margin-bottom:12px;';
+  updated.textContent = '데이터 갱신: ' + (RELEASES.updated || '알 수 없음');
+  timeline.appendChild(updated);
+
+  /* 시리즈 → 노드 매핑: DATA.nodes에서 찾기 */
+  const fredToNode = {};
+  DATA.nodes.forEach(n => {
+    if (n.dataSource && n.dataSource.fred) {
+      fredToNode[n.dataSource.fred] = n;
+    }
+  });
+
+  /* 노드 중요도 (level + tag 기반) */
+  function getImportance(node) {
+    if (!node) return 1;
+    const isKey = (node.tags || []).includes('핵심');
+    if (node.level === 1 || isKey) return 3;
+    if (node.level === 2) return 2;
+    return 1;
+  }
+
+  /* FOMC 섹션 */
+  if (RELEASES.fomc2026 && RELEASES.fomc2026.length) {
+    const fomcHeader = document.createElement('div');
+    fomcHeader.style.cssText = 'font-size:12px;font-weight:700;color:#f59e0b;margin:14px 0 6px;padding:4px 0;border-bottom:1px solid #2a2a3a;';
+    fomcHeader.textContent = '📌 FOMC 회의 (Fed 공식)';
+    timeline.appendChild(fomcHeader);
+
+    RELEASES.fomc2026.slice(0, 4).forEach(dateStr => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#1a1a24;border:1px solid #f59e0b55;border-radius:10px;padding:10px 12px;margin-bottom:8px;';
+
+      const dateLine = document.createElement('div');
+      dateLine.style.cssText = 'font-size:11px;color:#f59e0b;font-weight:700;';
+      dateLine.textContent = '⭐⭐⭐ ' + dateStr + ' · FOMC 회의';
+      card.appendChild(dateLine);
+
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:10px;color:#64748b;margin-top:2px;';
+      note.textContent = '출처: federalreserve.gov';
+      card.appendChild(note);
+
+      timeline.appendChild(card);
+    });
+  }
+
+  /* 경제지표 섹션 */
+  const header = document.createElement('div');
+  header.style.cssText = 'font-size:12px;font-weight:700;color:#6366f1;margin:14px 0 6px;padding:4px 0;border-bottom:1px solid #2a2a3a;';
+  header.textContent = '📊 경제지표 발표 (FRED 공식)';
+  timeline.appendChild(header);
+
+  /* 업커밍이 있는 시리즈를 우선 정렬 */
+  const withUpcoming = RELEASES.releases.filter(r => r.upcomingDates && r.upcomingDates.length > 0);
+  const withoutUpcoming = RELEASES.releases.filter(r => !r.upcomingDates || r.upcomingDates.length === 0);
+
+  /* 업커밍 리스트 평탄화: [{seriesId, date, ...}] */
+  const upcomingList = [];
+  withUpcoming.forEach(r => {
+    r.upcomingDates.forEach(d => {
+      upcomingList.push({ ...r, nextDate: d });
+    });
+  });
+  upcomingList.sort((a, b) => a.nextDate.localeCompare(b.nextDate));
+
+  /* 중요도 필터링: 상위 노드만 (중요도 2-3) */
+  const filtered = upcomingList.filter(r => {
+    const node = fredToNode[r.seriesId];
+    return node && getImportance(node) >= 2;
+  });
+
+  if (filtered.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:11px;color:#64748b;padding:10px;';
+    empty.textContent = 'FRED에서 예정 발표일 정보를 가져오지 못했습니다.';
+    timeline.appendChild(empty);
+  } else {
+    filtered.slice(0, 15).forEach(r => {
+      const node = fredToNode[r.seriesId];
+      const importance = getImportance(node);
+      const stars = '⭐'.repeat(importance);
+
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;';
+
+      const dateLine = document.createElement('div');
+      dateLine.style.cssText = 'font-size:11px;color:#6366f1;font-weight:700;';
+      dateLine.textContent = stars + ' ' + r.nextDate + ' · ' + (node ? node.label : r.seriesId);
+      card.appendChild(dateLine);
+
+      /* 실데이터 라인: 직전값, 3개월 평균, 빈도 */
+      const dataLine = document.createElement('div');
+      dataLine.style.cssText = 'font-size:11px;color:#cbd5e1;margin-top:4px;';
+      const parts = [];
+      if (r.lastValue != null) parts.push('직전: ' + r.lastValue);
+      if (r.avg3m != null) parts.push('3M평균: ' + r.avg3m);
+      if (r.frequency) parts.push(r.frequency);
+      dataLine.textContent = parts.join(' · ');
+      card.appendChild(dataLine);
+
+      /* 맵에서 영향 보기 힌트 */
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:10px;color:#a78bfa;margin-top:6px;';
+      hint.textContent = '탭 → 맵에서 연쇄 영향 확인';
+      card.appendChild(hint);
+
+      if (node) {
+        card.addEventListener('click', () => {
+          document.getElementById('calendar-panel').style.display = 'none';
+          sheetFromDashboard = false;
+          openSheet(node);
+        });
+      }
+
+      timeline.appendChild(card);
+    });
+  }
+
+  /* 빈도 기반 참고 (업커밍 없는 경우) */
+  if (withoutUpcoming.length > 0) {
+    const noteHeader = document.createElement('div');
+    noteHeader.style.cssText = 'font-size:11px;color:#64748b;margin:14px 0 6px;padding:4px 0;border-bottom:1px solid #2a2a3a;';
+    noteHeader.textContent = '일간/상시 업데이트 지표 (참고)';
+    timeline.appendChild(noteHeader);
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:6px;font-size:10px;';
+    withoutUpcoming.forEach(r => {
+      const node = fredToNode[r.seriesId];
+      if (!node || getImportance(node) < 2) return;
+      const item = document.createElement('div');
+      item.style.cssText = 'color:#94a3b8;padding:4px 6px;background:#1a1a24;border-radius:4px;';
+      item.textContent = (node.label || r.seriesId) + ' · ' + (r.frequency || '?');
+      grid.appendChild(item);
+    });
+    timeline.appendChild(grid);
+  }
+}
+
+/* ================================================================
    EVENTS
    ================================================================ */
 function bindEvents() {
@@ -2375,6 +2555,20 @@ function bindEvents() {
   });
   document.getElementById('btn-dash-close').addEventListener('click', () => {
     document.getElementById('dashboard-panel').style.display = 'none';
+  });
+
+  /* 캘린더 토글 */
+  document.getElementById('btn-calendar').addEventListener('click', () => {
+    const panel = document.getElementById('calendar-panel');
+    if (panel.style.display === 'none') {
+      if (!RELEASES) loadReleases();
+      setTimeout(() => { renderCalendar(); panel.style.display = 'block'; }, 100);
+    } else {
+      panel.style.display = 'none';
+    }
+  });
+  document.getElementById('btn-cal-close').addEventListener('click', () => {
+    document.getElementById('calendar-panel').style.display = 'none';
   });
 
   /* Resize */

@@ -144,6 +144,76 @@ def calc_yoy_pct(series):
     return result
 
 
+def fetch_series_meta(series_id):
+    """FRED 시리즈 메타데이터 조회 (release_id, last_updated, frequency, title)."""
+    params = urllib.parse.urlencode({
+        'series_id': series_id,
+        'api_key': FRED_API_KEY,
+        'file_type': 'json',
+    })
+    url = 'https://api.stlouisfed.org/fred/series?' + params
+    try:
+        with urllib.request.urlopen(url, timeout=15) as resp:
+            data = json.loads(resp.read())
+            seriess = data.get('seriess', [])
+            if not seriess:
+                return None
+            s = seriess[0]
+            return {
+                'title': s.get('title', ''),
+                'frequency': s.get('frequency', ''),
+                'last_updated': s.get('last_updated', ''),
+                'observation_start': s.get('observation_start', ''),
+                'observation_end': s.get('observation_end', ''),
+            }
+    except Exception as e:
+        print(f'  META FAILED {series_id}: {e}')
+        return None
+
+
+def fetch_upcoming_releases(release_id, from_date):
+    """FRED release/dates 엔드포인트에서 실제 예정된 발표일 조회.
+    from_date: YYYY-MM-DD (오늘 기준 이후만 반환)"""
+    params = urllib.parse.urlencode({
+        'release_id': release_id,
+        'api_key': FRED_API_KEY,
+        'file_type': 'json',
+        'sort_order': 'asc',
+        'limit': 10,
+        'include_release_dates_with_no_data': 'true',
+    })
+    url = 'https://api.stlouisfed.org/fred/release/dates?' + params
+    try:
+        with urllib.request.urlopen(url, timeout=15) as resp:
+            data = json.loads(resp.read())
+            dates = data.get('release_dates', [])
+            # 오늘 이후 날짜만 필터
+            upcoming = [d['date'] for d in dates if d.get('date', '') >= from_date]
+            return upcoming[:5]  # 최대 5개
+    except Exception as e:
+        print(f'  UPCOMING FAILED {release_id}: {e}')
+        return []
+
+
+def fetch_series_release_id(series_id):
+    """시리즈가 속한 release_id 조회."""
+    params = urllib.parse.urlencode({
+        'series_id': series_id,
+        'api_key': FRED_API_KEY,
+        'file_type': 'json',
+    })
+    url = 'https://api.stlouisfed.org/fred/series/release?' + params
+    try:
+        with urllib.request.urlopen(url, timeout=15) as resp:
+            data = json.loads(resp.read())
+            releases = data.get('releases', [])
+            if releases:
+                return releases[0].get('id')
+    except Exception as e:
+        print(f'  RELEASE_ID FAILED {series_id}: {e}')
+    return None
+
+
 def resample_to_monthly(series):
     """Convert any frequency to monthly (last value per month)."""
     if not series:
@@ -191,6 +261,79 @@ def main():
         json.dump(output, f, separators=(',', ':'))
 
     print(f'Done. data/values.json updated at {output["updated"]}')
+
+    # ==========================================
+    # releases.json 생성 (실데이터만)
+    # ==========================================
+    print('\n=== Fetching release metadata ===')
+    from datetime import date
+    today = date.today().isoformat()
+
+    releases_data = []
+    release_id_cache = {}  # release_id → upcoming dates (중복 호출 방지)
+
+    for sid in SERIES_IDS:
+        meta = fetch_series_meta(sid)
+        if not meta:
+            continue
+
+        # 이전값/최신값은 이미 result에 있음
+        series_values = result.get(sid, [])
+        last_val = series_values[0]['value'] if series_values else None
+        prev_val = series_values[1]['value'] if len(series_values) > 1 else None
+
+        # 3개월 평균 (월간 기준 첫 3개)
+        try:
+            recent = [float(v['value']) for v in series_values[:3]]
+            avg_3m = round(sum(recent) / len(recent), 2) if recent else None
+        except:
+            avg_3m = None
+
+        # 향후 발표일 (FRED 공식)
+        rid = fetch_series_release_id(sid)
+        upcoming = []
+        if rid:
+            if rid not in release_id_cache:
+                release_id_cache[rid] = fetch_upcoming_releases(rid, today)
+            upcoming = release_id_cache[rid]
+
+        releases_data.append({
+            'seriesId': sid,
+            'title': meta['title'],
+            'frequency': meta['frequency'],
+            'lastUpdated': meta['last_updated'],
+            'lastValue': last_val,
+            'previousValue': prev_val,
+            'avg3m': avg_3m,
+            'releaseId': rid,
+            'upcomingDates': upcoming,
+        })
+        print(f'  {sid}: last={meta["last_updated"][:10] if meta["last_updated"] else "N/A"}, upcoming={len(upcoming)}')
+
+    # Fed 공식 2026 FOMC 일정 (federalreserve.gov 공식)
+    fomc_2026 = [
+        '2026-01-27', '2026-01-28',
+        '2026-03-17', '2026-03-18',
+        '2026-04-28', '2026-04-29',
+        '2026-06-16', '2026-06-17',
+        '2026-07-28', '2026-07-29',
+        '2026-09-15', '2026-09-16',
+        '2026-11-03', '2026-11-04',
+        '2026-12-15', '2026-12-16',
+    ]
+    fomc_upcoming = [d for d in fomc_2026 if d >= today]
+
+    releases_output = {
+        'updated': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC'),
+        'source': 'FRED API (series release_dates) + Fed 공식 FOMC 일정',
+        'disclaimer': '추측 데이터 없음. 모든 날짜와 수치는 FRED/Fed 공식 발표 기준.',
+        'releases': releases_data,
+        'fomc2026': fomc_upcoming,
+    }
+
+    with open('data/releases.json', 'w') as f:
+        json.dump(releases_output, f, ensure_ascii=False, indent=2)
+    print(f'\nDone. data/releases.json updated at {releases_output["updated"]}')
 
 if __name__ == '__main__':
     main()

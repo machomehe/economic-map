@@ -21,8 +21,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/values.json
+          git add data/values.json data/releases.json
           if ! git diff --cached --quiet; then
-            git commit -m "chore: update FRED data ($(date -u +%Y-%m-%d))"
+            git commit -m "chore: update FRED data + releases ($(date -u +%Y-%m-%d))"
             git push
           fi
