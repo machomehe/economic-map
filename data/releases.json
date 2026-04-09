@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-09 06:12 UTC",
+  "updated": "2026-04-09 17:37 UTC",
   "source": "FRED API (series release_dates) + Fed 공식 FOMC 일정",
   "disclaimer": "추측 데이터 없음. 모든 날짜와 수치는 FRED/Fed 공식 발표 기준.",
   "releases": [
@@ -26,9 +26,9 @@
       "title": "Market Yield on U.S. Treasury Securities at 10-Year Constant Maturity, Quoted on an Investment Basis, Inflation-Indexed",
       "frequency": "Daily",
       "lastUpdated": "2026-04-08 15:16:36-05",
-      "lastValue": "1.96",
-      "previousValue": "2.0",
-      "avg3m": 1.89,
+      "lastValue": null,
+      "previousValue": null,
+      "avg3m": null,
       "releaseId": 18,
       "recentReleases": [
         "2026-04-08",
@@ -43,18 +43,18 @@
       "seriesId": "A191RL1Q225SBEA",
       "title": "Real Gross Domestic Product",
       "frequency": "Quarterly",
-      "lastUpdated": "2026-03-13 07:52:58-05",
-      "lastValue": "0.7",
+      "lastUpdated": "2026-04-09 07:59:11-05",
+      "lastValue": "0.5",
       "previousValue": "4.4",
-      "avg3m": 2.97,
+      "avg3m": 2.9,
       "releaseId": 53,
       "recentReleases": [
+        "2026-04-09",
         "2026-03-13",
         "2026-02-20",
         "2026-01-22",
         "2025-12-23",
-        "2025-09-25",
-        "2025-08-28"
+        "2025-09-25"
       ]
     },
     {
@@ -151,18 +151,18 @@
       "seriesId": "BAMLH0A0HYM2",
       "title": "ICE BofA US High Yield Index Option-Adjusted Spread",
       "frequency": "Daily, Close",
-      "lastUpdated": "2026-04-08 09:20:04-05",
-      "lastValue": "3.12",
+      "lastUpdated": "2026-04-09 07:30:00-05",
+      "lastValue": "2.94",
       "previousValue": "3.28",
-      "avg3m": 3.17,
+      "avg3m": 3.11,
       "releaseId": 209,
       "recentReleases": [
+        "2026-04-08",
         "2026-04-07",
         "2026-04-06",
         "2026-04-03",
         "2026-04-02",
-        "2026-04-01",
-        "2026-03-31"
+        "2026-04-01"
       ]
     },
     {
@@ -205,18 +205,18 @@
       "seriesId": "VIXCLS",
       "title": "CBOE Volatility Index: VIX",
       "frequency": "Daily, Close",
-      "lastUpdated": "2026-04-08 08:38:36-05",
-      "lastValue": "25.78",
+      "lastUpdated": "2026-04-09 08:38:29-05",
+      "lastValue": "21.04",
       "previousValue": "25.25",
-      "avg3m": 23.63,
+      "avg3m": 22.05,
       "releaseId": 200,
       "recentReleases": [
+        "2026-04-08",
         "2026-04-07",
         "2026-04-06",
         "2026-04-02",
         "2026-04-01",
-        "2026-03-31",
-        "2026-03-30"
+        "2026-03-31"
       ]
     },
     {
@@ -224,9 +224,9 @@
       "title": "S&P Cotality Case-Shiller U.S. National Home Price Index",
       "frequency": "Monthly",
       "lastUpdated": "2026-03-31 08:14:28-05",
-      "lastValue": "0.91",
-      "previousValue": "1.15",
-      "avg3m": 1.12,
+      "lastValue": null,
+      "previousValue": null,
+      "avg3m": null,
       "releaseId": 199,
       "recentReleases": [
         "2026-03-31",
@@ -278,9 +278,9 @@
       "title": "Assets: Total Assets: Total Assets (Less Eliminations from Consolidation): Wednesday Level",
       "frequency": "Weekly, As of Wednesday",
       "lastUpdated": "2026-04-02 15:33:33-05",
-      "lastValue": "-0.72",
-      "previousValue": "-1.23",
-      "avg3m": -1.4,
+      "lastValue": null,
+      "previousValue": null,
+      "avg3m": null,
       "releaseId": 20,
       "recentReleases": [
         "2026-04-02",
@@ -367,36 +367,36 @@
       "seriesId": "USEPUINDXD",
       "title": "Economic Policy Uncertainty Index for United States",
       "frequency": "Daily, 7-Day",
-      "lastUpdated": "2026-04-08 08:02:43-05",
-      "lastValue": "319.36000",
-      "previousValue": "394.15000",
-      "avg3m": 287.85,
+      "lastUpdated": "2026-04-09 08:16:42-05",
+      "lastValue": "170.09000",
+      "previousValue": "387.51000",
+      "avg3m": 235.88,
       "releaseId": 279,
       "recentReleases": [
+        "2026-04-09",
         "2026-04-08",
         "2026-04-07",
         "2026-04-06",
         "2026-04-03",
-        "2026-04-02",
-        "2026-04-01"
+        "2026-04-02"
       ]
     },
     {
       "seriesId": "OVXCLS",
       "title": "CBOE Crude Oil ETF Volatility Index",
       "frequency": "Daily, Close",
-      "lastUpdated": "2026-04-08 08:38:34-05",
-      "lastValue": "98.79",
+      "lastUpdated": "2026-04-09 08:38:31-05",
+      "lastValue": "83.91",
       "previousValue": "89.39",
-      "avg3m": 84.29,
+      "avg3m": 79.33,
       "releaseId": 200,
       "recentReleases": [
+        "2026-04-08",
         "2026-04-07",
         "2026-04-06",
         "2026-04-02",
         "2026-04-01",
-        "2026-03-31",
-        "2026-03-30"
+        "2026-03-31"
       ]
     },
     {
@@ -457,18 +457,18 @@
       "seriesId": "ICSA",
       "title": "Initial Claims",
       "frequency": "Weekly, Ending Saturday",
-      "lastUpdated": "2026-04-02 15:16:44-05",
-      "lastValue": "202000",
-      "previousValue": "214000",
-      "avg3m": 215333.33,
+      "lastUpdated": "2026-04-09 09:48:44-05",
+      "lastValue": "219000",
+      "previousValue": "203000",
+      "avg3m": 212000.0,
       "releaseId": 180,
       "recentReleases": [
+        "2026-04-09",
         "2026-04-02",
         "2026-03-26",
         "2026-03-19",
         "2026-03-12",
-        "2026-03-05",
-        "2026-02-26"
+        "2026-03-05"
       ]
     },
     {
@@ -511,18 +511,18 @@
       "seriesId": "PCEPILFE",
       "title": "Personal Consumption Expenditures Excluding Food and Energy (Chain-Type Price Index)",
       "frequency": "Monthly",
-      "lastUpdated": "2026-03-13 07:43:38-05",
-      "lastValue": "3.06",
-      "previousValue": "3.01",
-      "avg3m": 2.97,
+      "lastUpdated": "2026-04-09 07:44:02-05",
+      "lastValue": "2.97",
+      "previousValue": "3.05",
+      "avg3m": 3.0,
       "releaseId": 54,
       "recentReleases": [
+        "2026-04-09",
         "2026-03-13",
         "2026-02-20",
         "2026-01-22",
         "2025-12-23",
-        "2025-12-05",
-        "2025-09-26"
+        "2025-12-05"
       ]
     },
     {
@@ -584,10 +584,68 @@
       "title": "Job Openings: Total Nonfarm",
       "frequency": "Monthly",
       "lastUpdated": "2026-03-31 09:11:11-05",
-      "lastValue": "-4.97",
-      "previousValue": "-2.57",
-      "avg3m": -5.92,
+      "lastValue": null,
+      "previousValue": null,
+      "avg3m": null,
       "releaseId": 192,
+      "recentReleases": [
+        "2026-03-31",
+        "2026-03-13",
+        "2026-02-05",
+        "2026-01-07",
+        "2025-12-09",
+        "2025-09-30"
+      ]
+    },
+    {
+      "seriesId": "CSCICP03USM665S",
+      "title": "Composite Leading Indicators: Composite Consumer Confidence Amplitude Adjusted for United States",
+      "frequency": "Monthly",
+      "lastUpdated": "2025-11-17 14:44:15-06",
+      "lastValue": null,
+      "previousValue": null,
+      "avg3m": null,
+      "releaseId": 205,
+      "recentReleases": [
+        "2026-03-16",
+        "2026-02-16",
+        "2026-01-15",
+        "2025-12-15",
+        "2025-11-17",
+        "2025-10-15"
+      ]
+    },
+    {
+      "seriesId": "PPIFIS",
+      "title": "Producer Price Index by Commodity: Final Demand",
+      "frequency": "Monthly",
+      "lastUpdated": "2026-03-18 09:36:01-05",
+      "lastValue": "3.37",
+      "previousValue": "2.85",
+      "avg3m": 3.06,
+      "releaseId": null,
+      "recentReleases": []
+    },
+    {
+      "seriesId": "HOUST",
+      "title": "New Privately-Owned Housing Units Started: Total Units",
+      "frequency": "Monthly",
+      "lastUpdated": "2026-03-12 07:32:44-05",
+      "lastValue": "9.5",
+      "previousValue": "-8.39",
+      "avg3m": 1.12,
+      "releaseId": null,
+      "recentReleases": []
+    },
+    {
+      "seriesId": "PERMIT",
+      "title": "New Privately-Owned Housing Units Authorized in Permit-Issuing Places: Total Units",
+      "frequency": "Monthly",
+      "lastUpdated": "2026-03-27 15:00:43-05",
+      "lastValue": "-5.07",
+      "previousValue": "-1.69",
+      "avg3m": -4.91,
+      "releaseId": 27,
       "recentReleases": []
     }
   ],
