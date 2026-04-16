@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-16 07:11 UTC",
+  "updated": "2026-04-16 17:58 UTC",
   "source": "FRED API (series release_dates) + Fed 공식 FOMC 일정",
   "disclaimer": "추측 데이터 없음. 모든 날짜와 수치는 FRED/Fed 공식 발표 기준.",
   "releases": [
@@ -151,18 +151,18 @@
       "seriesId": "BAMLH0A0HYM2",
       "title": "ICE BofA US High Yield Index Option-Adjusted Spread",
       "frequency": "Daily, Close",
-      "lastUpdated": "2026-04-15 09:00:33-05",
-      "lastValue": "2.84",
+      "lastUpdated": "2026-04-16 08:45:50-05",
+      "lastValue": "2.85",
       "previousValue": "3.28",
       "avg3m": 3.08,
       "releaseId": 209,
       "recentReleases": [
+        "2026-04-15",
         "2026-04-14",
         "2026-04-13",
         "2026-04-10",
         "2026-04-09",
-        "2026-04-08",
-        "2026-04-07"
+        "2026-04-08"
       ]
     },
     {
@@ -205,18 +205,18 @@
       "seriesId": "VIXCLS",
       "title": "CBOE Volatility Index: VIX",
       "frequency": "Daily, Close",
-      "lastUpdated": "2026-04-15 08:37:35-05",
-      "lastValue": "18.36",
+      "lastUpdated": "2026-04-16 08:37:36-05",
+      "lastValue": "18.17",
       "previousValue": "25.25",
-      "avg3m": 21.16,
+      "avg3m": 21.09,
       "releaseId": 200,
       "recentReleases": [
+        "2026-04-15",
         "2026-04-14",
         "2026-04-13",
         "2026-04-10",
         "2026-04-09",
-        "2026-04-08",
-        "2026-04-07"
+        "2026-04-08"
       ]
     },
     {
@@ -367,11 +367,29 @@
       "seriesId": "USEPUINDXD",
       "title": "Economic Policy Uncertainty Index for United States",
       "frequency": "Daily, 7-Day",
-      "lastUpdated": "2026-04-15 08:02:40-05",
-      "lastValue": "388.97000",
-      "previousValue": "385.77000",
-      "avg3m": 308.26,
+      "lastUpdated": "2026-04-16 08:02:51-05",
+      "lastValue": "2.59000",
+      "previousValue": "385.71000",
+      "avg3m": 179.45,
       "releaseId": 279,
+      "recentReleases": [
+        "2026-04-16",
+        "2026-04-15",
+        "2026-04-14",
+        "2026-04-13",
+        "2026-04-10",
+        "2026-04-09"
+      ]
+    },
+    {
+      "seriesId": "OVXCLS",
+      "title": "CBOE Crude Oil ETF Volatility Index",
+      "frequency": "Daily, Close",
+      "lastUpdated": "2026-04-16 08:37:38-05",
+      "lastValue": "72.23",
+      "previousValue": "89.39",
+      "avg3m": 75.43,
+      "releaseId": 200,
       "recentReleases": [
         "2026-04-15",
         "2026-04-14",
@@ -379,24 +397,6 @@
         "2026-04-10",
         "2026-04-09",
         "2026-04-08"
-      ]
-    },
-    {
-      "seriesId": "OVXCLS",
-      "title": "CBOE Crude Oil ETF Volatility Index",
-      "frequency": "Daily, Close",
-      "lastUpdated": "2026-04-15 08:37:32-05",
-      "lastValue": "75.35",
-      "previousValue": "89.39",
-      "avg3m": 76.47,
-      "releaseId": 200,
-      "recentReleases": [
-        "2026-04-14",
-        "2026-04-13",
-        "2026-04-10",
-        "2026-04-09",
-        "2026-04-08",
-        "2026-04-07"
       ]
     },
     {
@@ -425,15 +425,8 @@
       "lastValue": "61.9",
       "previousValue": "62.0",
       "avg3m": 62.0,
-      "releaseId": 50,
-      "recentReleases": [
-        "2026-04-03",
-        "2026-03-06",
-        "2026-02-11",
-        "2026-01-09",
-        "2025-12-16",
-        "2025-11-20"
-      ]
+      "releaseId": null,
+      "recentReleases": []
     },
     {
       "seriesId": "T5YIE",
@@ -457,18 +450,18 @@
       "seriesId": "ICSA",
       "title": "Initial Claims",
       "frequency": "Weekly, Ending Saturday",
-      "lastUpdated": "2026-04-09 09:48:44-05",
-      "lastValue": "219000",
+      "lastUpdated": "2026-04-16 07:49:38-05",
+      "lastValue": "207000",
       "previousValue": "203000",
-      "avg3m": 212000.0,
+      "avg3m": 208000.0,
       "releaseId": 180,
       "recentReleases": [
+        "2026-04-16",
         "2026-04-09",
         "2026-04-02",
         "2026-03-26",
         "2026-03-19",
-        "2026-03-12",
-        "2026-03-05"
+        "2026-03-12"
       ]
     },
     {
@@ -523,132 +516,6 @@
         "2026-01-22",
         "2025-12-23",
         "2025-12-05"
-      ]
-    },
-    {
-      "seriesId": "CES0500000003",
-      "title": "Average Hourly Earnings of All Employees, Total Private",
-      "frequency": "Monthly",
-      "lastUpdated": "2026-04-03 08:23:31-05",
-      "lastValue": "3.52",
-      "previousValue": "3.76",
-      "avg3m": 3.65,
-      "releaseId": 50,
-      "recentReleases": [
-        "2026-04-03",
-        "2026-03-06",
-        "2026-02-11",
-        "2026-01-09",
-        "2025-12-16",
-        "2025-11-20"
-      ]
-    },
-    {
-      "seriesId": "DEXJPUS",
-      "title": "Japanese Yen to U.S. Dollar Spot Exchange Rate",
-      "frequency": "Daily",
-      "lastUpdated": "2026-04-13 15:16:45-05",
-      "lastValue": "159.22",
-      "previousValue": "159.08",
-      "avg3m": 158.12,
-      "releaseId": 17,
-      "recentReleases": [
-        "2026-04-13",
-        "2026-04-06",
-        "2026-03-30",
-        "2026-03-23",
-        "2026-03-16",
-        "2026-03-09"
-      ]
-    },
-    {
-      "seriesId": "CPILFESL",
-      "title": "Consumer Price Index for All Urban Consumers: All Items Less Food and Energy in U.S. City Average",
-      "frequency": "Monthly",
-      "lastUpdated": "2026-04-10 08:07:42-05",
-      "lastValue": "2.6",
-      "previousValue": "2.47",
-      "avg3m": 2.53,
-      "releaseId": 10,
-      "recentReleases": [
-        "2026-04-10",
-        "2026-03-11",
-        "2026-02-13",
-        "2026-01-13",
-        "2025-12-18",
-        "2025-10-24"
-      ]
-    },
-    {
-      "seriesId": "JTSJOL",
-      "title": "Job Openings: Total Nonfarm",
-      "frequency": "Monthly",
-      "lastUpdated": "2026-03-31 09:11:11-05",
-      "lastValue": "-4.97",
-      "previousValue": "-2.57",
-      "avg3m": -5.92,
-      "releaseId": 192,
-      "recentReleases": [
-        "2026-03-31",
-        "2026-03-13",
-        "2026-02-05",
-        "2026-01-07",
-        "2025-12-09",
-        "2025-09-30"
-      ]
-    },
-    {
-      "seriesId": "CSCICP03USM665S",
-      "title": "Composite Leading Indicators: Composite Consumer Confidence Amplitude Adjusted for United States",
-      "frequency": "Monthly",
-      "lastUpdated": "2025-11-17 14:44:15-06",
-      "lastValue": "98.91297",
-      "previousValue": "98.1097",
-      "avg3m": 98.19,
-      "releaseId": 205,
-      "recentReleases": [
-        "2026-04-15",
-        "2026-03-16",
-        "2026-02-16",
-        "2026-01-15",
-        "2025-12-15",
-        "2025-11-17"
-      ]
-    },
-    {
-      "seriesId": "PPIFIS",
-      "title": "Producer Price Index by Commodity: Final Demand",
-      "frequency": "Monthly",
-      "lastUpdated": "2026-04-14 09:37:28-05",
-      "lastValue": "4.02",
-      "previousValue": "3.36",
-      "avg3m": 3.47,
-      "releaseId": 46,
-      "recentReleases": [
-        "2026-04-14",
-        "2026-03-18",
-        "2026-02-27",
-        "2026-01-30",
-        "2026-01-14",
-        "2025-11-25"
-      ]
-    },
-    {
-      "seriesId": "INDPRO",
-      "title": "Industrial Production: Total Index",
-      "frequency": "Monthly",
-      "lastUpdated": "2026-03-16 08:21:17-05",
-      "lastValue": "1.44",
-      "previousValue": "2.33",
-      "avg3m": 1.71,
-      "releaseId": 13,
-      "recentReleases": [
-        "2026-03-16",
-        "2026-02-18",
-        "2026-01-16",
-        "2025-12-23",
-        "2025-12-03",
-        "2025-11-24"
       ]
     },
     {
